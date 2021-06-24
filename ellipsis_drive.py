@@ -27,7 +27,7 @@ from requests.structures import CaseInsensitiveDict
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -218,6 +218,10 @@ class EllipsisConnect:
     def onPasswordChange(self, text):
         self.password = text
 
+    def addToList(self, value):
+        # better to make something like self.items, so we can explicitly change the items
+        # https://doc.qt.io/qtforpython/PySide6/QtWidgets/QListWidgetItem.html
+        QListWidgetItem("string", self.dlg.listWidget)
 
     def run(self):
         """Run method that performs all the real work"""
@@ -231,7 +235,7 @@ class EllipsisConnect:
             self.dlg.pushButton_login.clicked.connect(self.loginButton)
             self.dlg.lineEdit_username.textChanged.connect(self.onUsernameChange)
             self.dlg.lineEdit_password.textChanged.connect(self.onPasswordChange)
-
+            self.dlg.pushButton_addtolist.clicked.connect(self.addToList)
 
         # show the dialog
         self.dlg.show()

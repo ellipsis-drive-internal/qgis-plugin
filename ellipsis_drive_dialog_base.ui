@@ -104,6 +104,29 @@
       <string>Output: </string>
      </property>
     </widget>
+    <widget class="QListWidget" name="listWidget">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>270</y>
+       <width>256</width>
+       <height>192</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QPushButton" name="pushButton_addtolist">
+     <property name="geometry">
+      <rect>
+       <x>170</x>
+       <y>230</y>
+       <width>89</width>
+       <height>25</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>add to list</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="communitytab">
     <attribute name="title">
