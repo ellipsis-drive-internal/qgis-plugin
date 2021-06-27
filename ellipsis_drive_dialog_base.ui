@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>1</number>
+    <number>0</number>
    </property>
    <widget class="QWidget" name="mydrivetab">
     <attribute name="title">
@@ -96,15 +96,15 @@
       <rect>
        <x>30</x>
        <y>200</y>
-       <width>281</width>
-       <height>17</height>
+       <width>291</width>
+       <height>16</height>
       </rect>
      </property>
      <property name="text">
       <string>Output: </string>
      </property>
     </widget>
-    <widget class="QListWidget" name="listWidget_personal">
+    <widget class="QListWidget" name="listWidget_mydrive">
      <property name="geometry">
       <rect>
        <x>30</x>

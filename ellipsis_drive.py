@@ -101,6 +101,14 @@ class EllipsisConnect:
         self.username = ""
         self.password = ""
         self.communitySearch = ""
+        self.loggedIn = False
+        self.loginToken = ""
+
+        self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
+        if (self.settings.contains("token")):
+            self.loggedIn = True
+            self.loginToken = self.settings.value("token")
+        
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -225,11 +233,15 @@ class EllipsisConnect:
         print(data)
         resp = requests.post(apiurl, headers=headers, data=data)
         jprint(resp.json())
+        data = resp.json()
         if resp:
-            self.dlg.label_output.setText(f"Output: logged in!")
-            print(f"Token: {resp.token}")
+            #print(f"Token: {data['token']}")
+            self.loggedIn = True
+            self.loginToken = data['token']
+            self.settings.setValue("token",data["token"])
         else:
-            self.dlg.label_output.setText(f"Output: login failed")
+            self.loggedIn = False
+            self.loginToken = ""
             print(f"Login failed")
         #print(f'token: {token}')
         #self.dlg.label_output.setText(f"Output:")
@@ -243,7 +255,7 @@ class EllipsisConnect:
     def addToList(self, value):
         # better to make something like self.items, so we can explicitly change the items
         # https://doc.qt.io/qtforpython/PySide6/QtWidgets/QListWidgetItem.html
-        QListWidgetItem("string", self.dlg.listWidget)
+        QListWidgetItem("string", self.dlg.listWidget_mydrive)
 
     @debounce(0.5)
     def getCommunityList(self):
@@ -293,6 +305,12 @@ class EllipsisConnect:
             
             self.getCommunityList()
             self.dlg.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
+
+        print("run")
+        if self.loggedIn:
+            self.dlg.label_output.setText(f"Token: {self.loginToken}")
+        else:
+            self.dlg.label_output.setText(f"Not logged in")
 
         # show the dialog
         self.dlg.show()
