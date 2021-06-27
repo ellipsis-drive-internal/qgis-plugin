@@ -36,6 +36,26 @@ from .resources import *
 from .ellipsis_drive_dialog import EllipsisConnectDialog
 import os.path
 
+from threading import Timer
+
+# taken from https://gist.github.com/walkermatt/2871026
+def debounce(wait):
+    """ Decorator that will postpone a functions
+        execution until after wait seconds
+        have elapsed since the last time it was invoked. """
+    def decorator(fn):
+        def debounced(*args, **kwargs):
+            def call_it():
+                fn(*args, **kwargs)
+            try:
+                debounced.t.cancel()
+            except(AttributeError):
+                pass
+            debounced.t = Timer(wait, call_it)
+            debounced.t.start()
+        return debounced
+    return decorator
+
 def jprint(obj):
     # create a formatted string of the Python JSON object
     text = json.dumps(obj, sort_keys=True, indent=4)
@@ -80,6 +100,7 @@ class EllipsisConnect:
 
         self.username = ""
         self.password = ""
+        self.communitySearch = ""
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -224,12 +245,18 @@ class EllipsisConnect:
         # https://doc.qt.io/qtforpython/PySide6/QtWidgets/QListWidgetItem.html
         QListWidgetItem("string", self.dlg.listWidget)
 
+    @debounce(0.5)
     def getCommunityList(self):
+        # reset the list before updating it
+        self.dlg.listWidget_community.clear()
+        # TODO add functionality to search for name etc
+        # add functionality for raster/vector data
         apiurl = f"{URL}/account/maps"
         print("Getting community maps")
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         data = {
-            "access": ["public"]
+            "access": ["public"],
+            "name": f"{self.communitySearch}"
         }
 
         j1 = requests.post(apiurl, json=data, headers=headers)
@@ -237,9 +264,16 @@ class EllipsisConnect:
             print("getCommunityList failed!")
             return []
         data = json.loads(j1.text)
-        for mapdata in data["result"]:
-            print(mapdata["name"])
         
+        for mapdata in data["result"]:
+            QListWidgetItem(mapdata["name"], self.dlg.listWidget_community)
+        
+    def onCommunitySearchChange(self, text):
+        self.communitySearch = text
+        self.getCommunityList()
+
+    def onCommunityItemClick(self, item):
+        print(item.text())
 
     def run(self):
         """Run method that performs all the real work"""
@@ -251,10 +285,14 @@ class EllipsisConnect:
             self.first_start = False
             self.dlg = EllipsisConnectDialog()
             self.dlg.pushButton_login.clicked.connect(self.loginButton)
+            self.dlg.pushButton_addtolist.clicked.connect(self.addToList)
+
             self.dlg.lineEdit_username.textChanged.connect(self.onUsernameChange)
             self.dlg.lineEdit_password.textChanged.connect(self.onPasswordChange)
-            self.dlg.pushButton_addtolist.clicked.connect(self.addToList)
-            self.communityList = self.getCommunityList()
+            self.dlg.lineEdit_communitysearch.textChanged.connect(self.onCommunitySearchChange)
+            
+            self.getCommunityList()
+            self.dlg.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
 
         # show the dialog
         self.dlg.show()

@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>1</number>
    </property>
    <widget class="QWidget" name="mydrivetab">
     <attribute name="title">
@@ -104,7 +104,7 @@
       <string>Output: </string>
      </property>
     </widget>
-    <widget class="QListWidget" name="listWidget">
+    <widget class="QListWidget" name="listWidget_personal">
      <property name="geometry">
       <rect>
        <x>30</x>
@@ -130,8 +130,41 @@
    </widget>
    <widget class="QWidget" name="communitytab">
     <attribute name="title">
-     <string>Community</string>
+     <string>Community Library</string>
     </attribute>
+    <widget class="QListWidget" name="listWidget_community">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>50</y>
+       <width>231</width>
+       <height>411</height>
+      </rect>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label">
+     <property name="geometry">
+      <rect>
+       <x>20</x>
+       <y>10</y>
+       <width>67</width>
+       <height>17</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Search</string>
+     </property>
+    </widget>
+    <widget class="QLineEdit" name="lineEdit_communitysearch">
+     <property name="geometry">
+      <rect>
+       <x>120</x>
+       <y>10</y>
+       <width>113</width>
+       <height>25</height>
+      </rect>
+     </property>
+    </widget>
    </widget>
   </widget>
  </widget>
