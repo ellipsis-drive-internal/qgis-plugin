@@ -23,6 +23,7 @@
 """
 import json
 import requests
+from requests import api
 from requests.structures import CaseInsensitiveDict
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
@@ -203,7 +204,7 @@ class EllipsisConnect:
         print(data)
         resp = requests.post(apiurl, headers=headers, data=data)
         jprint(resp.json())
-        if resp.status_code == 200:
+        if resp:
             self.dlg.label_output.setText(f"Output: logged in!")
             print(f"Token: {resp.token}")
         else:
@@ -223,6 +224,23 @@ class EllipsisConnect:
         # https://doc.qt.io/qtforpython/PySide6/QtWidgets/QListWidgetItem.html
         QListWidgetItem("string", self.dlg.listWidget)
 
+    def getCommunityList(self):
+        apiurl = f"{URL}/account/maps"
+        print("Getting community maps")
+        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+        data = {
+            "access": ["public"]
+        }
+
+        j1 = requests.post(apiurl, json=data, headers=headers)
+        if not j1:
+            print("getCommunityList failed!")
+            return []
+        data = json.loads(j1.text)
+        for mapdata in data["result"]:
+            print(mapdata["name"])
+        
+
     def run(self):
         """Run method that performs all the real work"""
 
@@ -236,6 +254,7 @@ class EllipsisConnect:
             self.dlg.lineEdit_username.textChanged.connect(self.onUsernameChange)
             self.dlg.lineEdit_password.textChanged.connect(self.onPasswordChange)
             self.dlg.pushButton_addtolist.clicked.connect(self.addToList)
+            self.communityList = self.getCommunityList()
 
         # show the dialog
         self.dlg.show()
