@@ -30,6 +30,8 @@ from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget
 
+from PyQt5 import QtCore
+
 # Initialize Qt resources from file resources.py
 from .resources import *
 # Import the code for the dialog
@@ -239,6 +241,7 @@ class EllipsisConnect:
             self.loggedIn = True
             self.loginToken = data['token']
             self.settings.setValue("token",data["token"])
+            #TODO: UI elementen weghalen/toevoegen? misschien zelfs in constructor doen eigenlijk
         else:
             self.loggedIn = False
             self.loginToken = ""
@@ -259,6 +262,7 @@ class EllipsisConnect:
 
     @debounce(0.5)
     def getCommunityList(self):
+        """ gets the list of public projects and add them to the list widget on the community tab """
         # reset the list before updating it
         self.dlg.listWidget_community.clear()
         # TODO add functionality to search for name etc
@@ -276,16 +280,35 @@ class EllipsisConnect:
             print("getCommunityList failed!")
             return []
         data = json.loads(j1.text)
-        
         for mapdata in data["result"]:
-            QListWidgetItem(mapdata["name"], self.dlg.listWidget_community)
+            newitem = QListWidgetItem()
+            newitem.setText(mapdata["name"])
+            newitem.setData(QtCore.Qt.UserRole, mapdata["id"])
+            self.dlg.listWidget_community.addItem(newitem)
         
     def onCommunitySearchChange(self, text):
+        """ Change the internal state of the community search string """
         self.communitySearch = text
         self.getCommunityList()
 
     def onCommunityItemClick(self, item):
-        print(item.text())
+        print(f"{item.text()}, data: {item.data((QtCore.Qt.UserRole))}")
+
+    def getMetadata(self, mapid):
+        """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
+        apiurl = F"{URL}/metadata"
+        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+        data = {
+            "mapId": f"{mapid}",
+        }
+        j1 = requests.post(apiurl, json=data, headers=headers)
+        if not j1:
+            print("getMetadata failed!")
+            return {}
+        data = json.loads(j1.text)
+        jprint(data)
+        return data
+
 
     def run(self):
         """Run method that performs all the real work"""
