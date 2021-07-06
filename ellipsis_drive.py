@@ -105,13 +105,17 @@ class EllipsisConnect:
         self.communitySearch = ""
         self.loggedIn = False
         self.loginToken = ""
+        self.rememberMe = False
 
         self.radioState = ""
 
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         if (self.settings.contains("token")):
+            print("Login data found")
             self.loggedIn = True
             self.loginToken = self.settings.value("token")
+        else:
+            print("No login data found")
         
 
     # noinspection PyMethodMayBeStatic
@@ -242,7 +246,8 @@ class EllipsisConnect:
             #print(f"Token: {data['token']}")
             self.loggedIn = True
             self.loginToken = data['token']
-            self.settings.setValue("token",data["token"])
+            if self.rememberMe:
+                self.settings.setValue("token",data["token"])
             #TODO: UI elementen weghalen/toevoegen? misschien zelfs in constructor doen eigenlijk
         else:
             self.loggedIn = False
@@ -309,10 +314,7 @@ class EllipsisConnect:
                 self.radioState = "raster"
 
     def onChangeRemember(self, button):
-        if button.isChecked():
-            print("remember pls")
-        else:
-            print("dont remember pls")
+        self.rememberMe = button.isChecked()
 
     def getMetadata(self, mapid):
         """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
