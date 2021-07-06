@@ -106,6 +106,8 @@ class EllipsisConnect:
         self.loggedIn = False
         self.loginToken = ""
 
+        self.radioState = ""
+
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         if (self.settings.contains("token")):
             self.loggedIn = True
@@ -294,6 +296,24 @@ class EllipsisConnect:
     def onCommunityItemClick(self, item):
         print(f"{item.text()}, data: {item.data((QtCore.Qt.UserRole))}")
 
+    def manageRadioState(self, b):
+        if b.text() == "Raster data":
+            if b.isChecked():
+                self.radioState = "raster"
+            else:
+                self.radioState = "vector"
+        elif b.text() == "Vector data":
+            if b.isChecked():
+                self.radioState = "vector"
+            else:
+                self.radioState = "raster"
+
+    def onChangeRemember(self, button):
+        if button.isChecked():
+            print("remember pls")
+        else:
+            print("dont remember pls")
+
     def getMetadata(self, mapid):
         """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
         apiurl = F"{URL}/metadata"
@@ -326,6 +346,11 @@ class EllipsisConnect:
             self.dlg.lineEdit_password.textChanged.connect(self.onPasswordChange)
             self.dlg.lineEdit_communitysearch.textChanged.connect(self.onCommunitySearchChange)
             
+            self.dlg.radioRaster.toggled.connect(lambda:self.manageRadioState(self.dlg.radioRaster))
+            self.dlg.radioVector.toggled.connect(lambda:self.manageRadioState(self.dlg.radioVector))
+
+            self.dlg.checkBox_remember.stateChanged.connect(lambda:self.onChangeRemember(self.dlg.checkBox_remember))
+
             self.getCommunityList()
             self.dlg.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
 

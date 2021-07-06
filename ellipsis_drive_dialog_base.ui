@@ -16,8 +16,8 @@
   <widget class="QTabWidget" name="tabWidget">
    <property name="geometry">
     <rect>
-     <x>-4</x>
-     <y>-1</y>
+     <x>0</x>
+     <y>0</y>
      <width>341</width>
      <height>561</height>
     </rect>
@@ -81,8 +81,8 @@
     <widget class="QPushButton" name="pushButton_login">
      <property name="geometry">
       <rect>
-       <x>100</x>
-       <y>140</y>
+       <x>170</x>
+       <y>120</y>
        <width>89</width>
        <height>25</height>
       </rect>
@@ -127,6 +127,19 @@
       <string>add to list</string>
      </property>
     </widget>
+    <widget class="QCheckBox" name="checkBox_remember">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>120</y>
+       <width>121</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Remember me</string>
+     </property>
+    </widget>
    </widget>
    <widget class="QWidget" name="communitytab">
     <attribute name="title">
@@ -136,7 +149,7 @@
      <property name="geometry">
       <rect>
        <x>30</x>
-       <y>50</y>
+       <y>90</y>
        <width>231</width>
        <height>411</height>
       </rect>
@@ -163,6 +176,35 @@
        <width>113</width>
        <height>25</height>
       </rect>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioRaster">
+     <property name="geometry">
+      <rect>
+       <x>30</x>
+       <y>50</y>
+       <width>112</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Raster data</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+    <widget class="QRadioButton" name="radioVector">
+     <property name="geometry">
+      <rect>
+       <x>150</x>
+       <y>50</y>
+       <width>112</width>
+       <height>23</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>Vector data</string>
      </property>
     </widget>
    </widget>
