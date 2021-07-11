@@ -40,6 +40,12 @@ import os.path
 
 from threading import Timer
 
+DEBUG = True
+
+def log(text):
+    if DEBUG:
+        print(text)
+
 class ListData:
     """ Class used for objects in the QList of the EllipsisConnect plugin """
     def __init__(self, type="none", data=""):
@@ -77,7 +83,7 @@ def debounce(wait):
 def jprint(obj):
     # create a formatted string of the Python JSON object
     text = json.dumps(obj, sort_keys=True, indent=4)
-    print(text)
+    log(text)
 
 URL = 'https://api.ellipsis-drive.com/v1'
 
@@ -127,11 +133,11 @@ class EllipsisConnect:
 
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         if (self.settings.contains("token")):
-            print("Login data found")
+            log("Login data found")
             self.loggedIn = True
             self.loginToken = self.settings.value("token")
         else:
-            print("No login data found")
+            log("No login data found")
         
 
     # noinspection PyMethodMayBeStatic
@@ -248,13 +254,13 @@ class EllipsisConnect:
 
     def loginButton(self, value):
         apiurl = f"{URL}/account/login"
-        print(f'Logging in: username: {self.username}, password: {self.password}')
+        log(f'Logging in: username: {self.username}, password: {self.password}')
 
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
         data = '{"username": "%s", "password": "%s"}' % (self.username, self.password)
 
-        print(data)
+        log(data)
         resp = requests.post(apiurl, headers=headers, data=data)
         jprint(resp.json())
         data = resp.json()
@@ -262,18 +268,18 @@ class EllipsisConnect:
             #print(f"Token: {data['token']}")
             self.loggedIn = True
             self.loginToken = data['token']
-            print("logged in")
+            log("logged in")
             if self.rememberMe and self.confirmRemember():
                 # make sure people want their token saved!!
                 self.settings.setValue("token",data["token"])
-                print("login token saved to settings")
+                log("login token saved to settings")
             else:
-                print("token NOT saved to settings")
+                log("token NOT saved to settings")
             #TODO: UI elementen weghalen/toevoegen? misschien zelfs in constructor doen eigenlijk
         else:
             self.loggedIn = False
             self.loginToken = ""
-            print(f"Login failed")
+            log("Login failed")
         #print(f'token: {token}')
         #self.dlg.label_output.setText(f"Output:")
 
@@ -296,7 +302,7 @@ class EllipsisConnect:
         # TODO add functionality to search for name etc
         # add functionality for raster/vector data
         apiurl = f"{URL}/account/maps"
-        print("Getting community maps")
+        log("Getting community maps")
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         data = {
             "access": ["public"],
@@ -305,7 +311,7 @@ class EllipsisConnect:
 
         j1 = requests.post(apiurl, json=data, headers=headers)
         if not j1:
-            print("getCommunityList failed!")
+            log("getCommunityList failed!")
             return []
         data = json.loads(j1.text)
         for mapdata in data["result"]:
@@ -321,7 +327,7 @@ class EllipsisConnect:
         self.getCommunityList()
 
     def onCommunityItemClick(self, item):
-        print(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
+        log(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
 
     def manageRadioState(self, b):
         if b.text() == "Raster data":
@@ -357,14 +363,14 @@ class EllipsisConnect:
         }
         j1 = requests.post(apiurl, json=data, headers=headers)
         if not j1:
-            print("getMetadata failed!")
+            log("getMetadata failed!")
             return {}
         data = json.loads(j1.text)
         jprint(data)
         return data
 
     def logOut(self):
-        print("logging out")
+        log("logging out")
         if (self.settings.contains("token")):
             self.settings.remove("token")
 
@@ -374,7 +380,7 @@ class EllipsisConnect:
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
         if self.first_start == True:
-            print("first time who dis")
+            log("first run of run()")
             self.first_start = False
             self.dlg = EllipsisConnectDialog()
             self.dlg.pushButton_login.clicked.connect(self.loginButton)
@@ -393,7 +399,7 @@ class EllipsisConnect:
             self.getCommunityList()
             self.dlg.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
 
-        print("run")
+        log("run")
         if self.loggedIn:
             self.dlg.label_output.setText(f"Logged in! {self.loginToken}")
         else:
