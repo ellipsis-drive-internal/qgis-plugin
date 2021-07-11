@@ -40,6 +40,22 @@ import os.path
 
 from threading import Timer
 
+class ListData:
+    """ Class used for objects in the QList of the EllipsisConnect plugin """
+    def __init__(self, type="none", data=""):
+        self.type = type
+        self.data = data
+    
+    def setData(self, type, data):
+        self.type = type
+        self.data = data
+
+    def getData(self):
+        return self.data
+
+    def getType(self):
+        return self.type
+
 # taken from https://gist.github.com/walkermatt/2871026
 def debounce(wait):
     """ Decorator that will postpone a functions
@@ -290,7 +306,8 @@ class EllipsisConnect:
         for mapdata in data["result"]:
             newitem = QListWidgetItem()
             newitem.setText(mapdata["name"])
-            newitem.setData(QtCore.Qt.UserRole, mapdata["id"])
+            item = ListData("id", mapdata["id"])
+            newitem.setData(QtCore.Qt.UserRole, item)
             self.dlg.listWidget_community.addItem(newitem)
         
     def onCommunitySearchChange(self, text):
@@ -299,7 +316,7 @@ class EllipsisConnect:
         self.getCommunityList()
 
     def onCommunityItemClick(self, item):
-        print(f"{item.text()}, data: {item.data((QtCore.Qt.UserRole))}")
+        print(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
 
     def manageRadioState(self, b):
         if b.text() == "Raster data":
@@ -331,6 +348,10 @@ class EllipsisConnect:
         jprint(data)
         return data
 
+    def logOut(self):
+        print("logging out")
+        if (self.settings.contains("token")):
+            self.settings.remove("token")
 
     def run(self):
         """Run method that performs all the real work"""
@@ -342,6 +363,7 @@ class EllipsisConnect:
             self.first_start = False
             self.dlg = EllipsisConnectDialog()
             self.dlg.pushButton_login.clicked.connect(self.loginButton)
+            self.dlg.pushButton_logout.clicked.connect(self.logOut)
             self.dlg.pushButton_addtolist.clicked.connect(self.addToList)
 
             self.dlg.lineEdit_username.textChanged.connect(self.onUsernameChange)
@@ -358,7 +380,7 @@ class EllipsisConnect:
 
         print("run")
         if self.loggedIn:
-            self.dlg.label_output.setText(f"Token: {self.loginToken}")
+            self.dlg.label_output.setText(f"Logged in! {self.loginToken}")
         else:
             self.dlg.label_output.setText(f"Not logged in")
 
