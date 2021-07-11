@@ -28,7 +28,7 @@ from requests.structures import CaseInsensitiveDict
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget
+from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox
 
 from PyQt5 import QtCore
 
@@ -262,8 +262,13 @@ class EllipsisConnect:
             #print(f"Token: {data['token']}")
             self.loggedIn = True
             self.loginToken = data['token']
-            if self.rememberMe:
+            print("logged in")
+            if self.rememberMe and self.confirmRemember():
+                # make sure people want their token saved!!
                 self.settings.setValue("token",data["token"])
+                print("login token saved to settings")
+            else:
+                print("token NOT saved to settings")
             #TODO: UI elementen weghalen/toevoegen? misschien zelfs in constructor doen eigenlijk
         else:
             self.loggedIn = False
@@ -333,6 +338,16 @@ class EllipsisConnect:
     def onChangeRemember(self, button):
         self.rememberMe = button.isChecked()
 
+    def confirmRemember(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+
+        msg.setText("Remembering your login data should only be done on devices you trust.")
+        msg.setWindowTitle("Are you sure?")
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        retval = msg.exec_()
+        return retval == QMessageBox.Ok
+
     def getMetadata(self, mapid):
         """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
         apiurl = F"{URL}/metadata"
@@ -382,7 +397,7 @@ class EllipsisConnect:
         if self.loggedIn:
             self.dlg.label_output.setText(f"Logged in! {self.loginToken}")
         else:
-            self.dlg.label_output.setText(f"Not logged in")
+            self.dlg.label_output.setText("Not logged in")
 
         # show the dialog
         self.dlg.show()
