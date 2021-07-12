@@ -24,12 +24,64 @@
 
 import os
 
+from PyQt5.QtWidgets import QCheckBox, QLineEdit
+
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+
+from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox, QWidget, QGridLayout, QLabel
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'ellipsis_drive_dialog_base.ui'))
+
+class MyDriveTab(QWidget):
+    def __init__(self):
+        super(MyDriveTab, self).__init__()
+
+
+        self.loggedIn = False
+        self.username = ""
+        self.password = ""
+        layout = QGridLayout()
+
+        usernameLabel = QLabel()
+        passwordLabel = QLabel()
+        usernameLineEdit = QLineEdit()
+        passwordLineEdit = QLineEdit()
+
+        rememberMeCheckBox = QCheckBox()
+        rememberMeLabel = QLabel()
+
+        usernameLabel.setText("Username:")
+        passwordLabel.setText("Password:")
+        rememberMeLabel.setText("Remember me")
+
+        passwordLineEdit.setEchoMode(QLineEdit.Password)
+
+
+        layout.addWidget(usernameLabel, 0,0)
+        layout.addWidget(usernameLineEdit, 1,0)
+        layout.addWidget(passwordLabel, 2,0)
+        layout.addWidget(passwordLineEdit, 3,0)
+        layout.addWidget(rememberMeCheckBox, 4,0)
+        layout.addWidget(rememberMeLabel, 4,1)
+
+        layout.setRowStretch(0, 1)
+        layout.setRowStretch(1, 1)
+        layout.setRowStretch(2, 1)
+        layout.setRowStretch(3, 1)
+        layout.setRowStretch(4, 1)
+        self.setLayout(layout)
+
+
+class CommunityTab(QWidget):
+    def __init__(self):
+        super(CommunityTab, self).__init__()
+
+        layout = QGridLayout()
+
+        self.setLayout(layout)
 
 
 class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
@@ -42,3 +94,6 @@ class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        self.tabWidget.removeTab(1)
+        self.tabWidget.addTab(MyDriveTab(), "My Drive")
+        #self.tabWidget.addTab(CommunityTab(), "Community Library")

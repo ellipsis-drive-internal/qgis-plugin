@@ -28,7 +28,7 @@ from requests.structures import CaseInsensitiveDict
 
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox
+from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox, QWidget, QGridLayout, QLabel
 
 from PyQt5 import QtCore
 
