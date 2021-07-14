@@ -24,7 +24,7 @@
 
 import os
 
-from PyQt5.QtWidgets import QCheckBox, QLineEdit
+from PyQt5.QtWidgets import QCheckBox, QDialog, QLineEdit, QMainWindow
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
@@ -35,11 +35,14 @@ from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageB
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'ellipsis_drive_dialog_base.ui'))
 
-class MyDriveTab(QWidget):
+TABSFOLDER = os.path.join(os.path.dirname(__file__), "tabs/")
+
+class MyDriveTab(QDialog):
     def __init__(self):
         super(MyDriveTab, self).__init__()
-
-
+        uic.loadUi(os.path.join(TABSFOLDER, "LoginTab.ui"), self)
+    
+    def wegstoppen(self):
         self.loggedIn = False
         self.username = ""
         self.password = ""
@@ -72,18 +75,15 @@ class MyDriveTab(QWidget):
         layout.setRowStretch(2, 1)
         layout.setRowStretch(3, 1)
         layout.setRowStretch(4, 1)
-        self.setLayout(layout)
+        self.setLayout(layout)      
 
-
-class CommunityTab(QWidget):
+class CommunityTab(QDialog):
     def __init__(self):
         super(CommunityTab, self).__init__()
+        uic.loadUi(os.path.join(TABSFOLDER, "CommunityTab.ui"), self)
 
-        layout = QGridLayout()
-
-        self.setLayout(layout)
-
-
+        
+# idee: laat de Tabs wel gewoon hun eigen klasse zijn, maar de UI files laden
 class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
@@ -93,7 +93,28 @@ class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
         # self.<objectname>, and you can use autoconnect slots - see
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
+        #loginTab = uic.loadUi(os.path.join(TABSFOLDER, "LoginTab.ui"))
+        #communityTab = uic.loadUi(os.path.join(TABSFOLDER, "CommunityTab.ui"))
+
         self.setupUi(self)
-        self.tabWidget.removeTab(1)
+        self.tabWidget.removeTab(0)
+        self.tabWidget.removeTab(0)
         self.tabWidget.addTab(MyDriveTab(), "My Drive")
-        #self.tabWidget.addTab(CommunityTab(), "Community Library")
+        #self.tabWidget.addTab(loginTab, "My Drive")
+        #self.tabWidget.addTab(communityTab, "Community Library")
+        self.tabWidget.addTab(CommunityTab(), "Community Library")
+
+
+###
+ #       # import tab1
+ #       self.tab1_widget = QtWidgets.QWidget()
+ #       ui = mygui.interfaces.tab1.Ui_MyTab1()
+ #       ui.setupUi(self.tab1_widget)
+ #       self.ui.tabWidget.insertTab(0, self.tab1_widget, "tab1")
+ #
+ #       # import tab2
+ #       self.tab2_widget = QtWidgets.QWidget()
+ #       ui = mygui.interfaces.tab2.Ui_Form()
+ #       ui.setupUi(self.tab2_widget)
+ #       self.ui.tabWidget.insertTab(1, self.tab2_widget, "tab2")
+###
