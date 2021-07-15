@@ -23,60 +23,165 @@
 """
 
 import os
+import json
+import requests
+from requests import api
+from requests.structures import CaseInsensitiveDict
 
 from PyQt5.QtWidgets import QCheckBox, QDialog, QLineEdit, QMainWindow
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 
+from qgis.PyQt.QtCore import QSettings, pyqtSignal
+
 from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox, QWidget, QGridLayout, QLabel
+
+
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'ellipsis_drive_dialog_base.ui'))
 
 TABSFOLDER = os.path.join(os.path.dirname(__file__), "tabs/")
+URL = 'https://api.ellipsis-drive.com/v1'
+
+DEBUG = True
+
+def log(text):
+    if DEBUG:
+        print(text)
+
+def jprint(obj):
+    # create a formatted string of the Python JSON object
+    text = json.dumps(obj, sort_keys=True, indent=4)
+    log(text)
+
+class MyDriveLoginTab(QDialog):
+    """ login tab, sends a signal with the token on succesful login """
+    loginSignal = pyqtSignal(object)
+    def __init__(self):
+        super(MyDriveLoginTab, self).__init__()
+        uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoginTab.ui"), self)
+        self.pushButton_login.clicked.connect(self.loginButton)
+        self.lineEdit_username.textChanged.connect(self.onUsernameChange)
+        self.lineEdit_password.textChanged.connect(self.onPasswordChange)
+        self.checkBox_remember.stateChanged.connect(lambda:self.onChangeRemember(self.checkBox_remember))
+        
+        self.username = ""
+        self.password = ""
+        self.rememberMe = False
+    
+    def onChangeRemember(self, button):
+        self.rememberMe = button.isChecked()
+
+    def confirmRemember(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+
+        msg.setText("Remembering your login data should only be done on devices you trust.")
+        msg.setWindowTitle("Are you sure?")
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        retval = msg.exec_()
+        return retval == QMessageBox.Ok
+    
+    def loginButton(self, value):
+        apiurl = f"{URL}/account/login"
+        log(f'Logging in: username: {self.username}, password: {self.password}')
+
+        headers = CaseInsensitiveDict()
+        headers["Content-Type"] = "application/json"
+        data = '{"username": "%s", "password": "%s"}' % (self.username, self.password)
+
+        log(data)
+        resp = requests.post(apiurl, headers=headers, data=data)
+        jprint(resp.json())
+        data = resp.json()
+        if resp:
+            #print(f"Token: {data['token']}")
+            self.loggedIn = True
+            loginToken = data['token']
+            log("logged in")
+            if self.rememberMe and self.confirmRemember():
+                # make sure people want their token saved!!
+                self.settings.setValue("token",data["token"])
+                log("login token saved to settings")
+            else:
+                log("token NOT saved to settings")
+            self.loginSignal.emit(loginToken)
+        else:
+            log("Login failed")
+
+    def onUsernameChange(self, text):
+        self.username = text
+
+    def onPasswordChange(self, text):
+        self.password = text
+
+class MyDriveLoggedInTab(QDialog):
+    logoutSignal = pyqtSignal()
+    def __init__(self):
+        super(MyDriveLoggedInTab, self).__init__()
+        uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoggedInTab.ui"), self)
+        self.loginToken = ""
+        self.loggedIn = False
+        self.pushButton_logout.clicked.connect(self.logOut)
+        self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
+    
+    def logOut(self):
+        log("logging out")
+        if (self.settings.contains("token")):
+            self.settings.remove("token")
+        self.logoutSignal.emit()
 
 class MyDriveTab(QDialog):
     def __init__(self):
         super(MyDriveTab, self).__init__()
-        uic.loadUi(os.path.join(TABSFOLDER, "LoginTab.ui"), self)
-    
-    def wegstoppen(self):
+        uic.loadUi(os.path.join(TABSFOLDER, "MyDriveStack.ui"), self)
+
+        # idea: use QStacketWidget to switch between logged in and logged out
+
+        self.loginWidget = MyDriveLoginTab()
+        self.loggedInWidget = MyDriveLoggedInTab()
+
         self.loggedIn = False
-        self.username = ""
-        self.password = ""
-        layout = QGridLayout()
+        self.loginToken = ""
 
-        usernameLabel = QLabel()
-        passwordLabel = QLabel()
-        usernameLineEdit = QLineEdit()
-        passwordLineEdit = QLineEdit()
+        self.loginWidget.loginSignal.connect(self.handleLoginSignal)
+        self.loggedInWidget.logoutSignal.connect(self.handleLogoutSignal)
 
-        rememberMeCheckBox = QCheckBox()
-        rememberMeLabel = QLabel()
+        self.stackedWidget.addWidget(self.loginWidget)
+        self.stackedWidget.addWidget(self.loggedInWidget)
+        
+        self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
 
-        usernameLabel.setText("Username:")
-        passwordLabel.setText("Password:")
-        rememberMeLabel.setText("Remember me")
+        if (self.settings.contains("token")):
+            log("Login data found")
+            self.loggedIn = True
+            self.loginToken = self.settings.value("token")
+            self.stackedWidget.setCurrentIndex(1)
+        else:
+            log("No login data found")
 
-        passwordLineEdit.setEchoMode(QLineEdit.Password)
+    def handleLoginSignal(self, token):
+        log("login signal received!")
+        self.loginToken = token
+        self.loggedIn = True
+        self.loggedInWidget.loginToken = token
+        self.loggedInWidget.loggedIn = True
+        self.stackedWidget.setCurrentIndex(1)
+    
+    def handleLogoutSignal(self):
+        log("logout signal received!")
+        self.loggedIn = False
+        self.loginToken = ""
+        self.loggedInWidget.loggedIn = False
+        self.loggedInWidget.loginToken = ""
+        self.stackedWidget.setCurrentIndex(0)
 
 
-        layout.addWidget(usernameLabel, 0,0)
-        layout.addWidget(usernameLineEdit, 1,0)
-        layout.addWidget(passwordLabel, 2,0)
-        layout.addWidget(passwordLineEdit, 3,0)
-        layout.addWidget(rememberMeCheckBox, 4,0)
-        layout.addWidget(rememberMeLabel, 4,1)
-
-        layout.setRowStretch(0, 1)
-        layout.setRowStretch(1, 1)
-        layout.setRowStretch(2, 1)
-        layout.setRowStretch(3, 1)
-        layout.setRowStretch(4, 1)
-        self.setLayout(layout)      
-
+    
+#TODO alles
 class CommunityTab(QDialog):
     def __init__(self):
         super(CommunityTab, self).__init__()
@@ -97,8 +202,6 @@ class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
         #communityTab = uic.loadUi(os.path.join(TABSFOLDER, "CommunityTab.ui"))
 
         self.setupUi(self)
-        self.tabWidget.removeTab(0)
-        self.tabWidget.removeTab(0)
         self.tabWidget.addTab(MyDriveTab(), "My Drive")
         #self.tabWidget.addTab(loginTab, "My Drive")
         #self.tabWidget.addTab(communityTab, "Community Library")

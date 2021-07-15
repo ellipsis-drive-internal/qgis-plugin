@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Ellipsis Drive Connect</string>
   </property>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -23,6 +23,36 @@
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
+    <item row="1" column="0">
+     <widget class="QLineEdit" name="lineEdit_username"/>
+    </item>
+    <item row="4" column="1">
+     <widget class="QPushButton" name="pushButton_login">
+      <property name="text">
+       <string>Login</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>128</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="3" column="0">
+     <widget class="QLineEdit" name="lineEdit_password">
+      <property name="echoMode">
+       <enum>QLineEdit::Password</enum>
+      </property>
+     </widget>
+    </item>
     <item row="0" column="0">
      <widget class="QLabel" name="label_username">
       <property name="text">
@@ -30,20 +60,10 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="0">
-     <widget class="QLineEdit" name="lineEdit_username"/>
-    </item>
     <item row="2" column="0">
      <widget class="QLabel" name="label_password">
       <property name="text">
        <string>Password</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="0">
-     <widget class="QLineEdit" name="lineEdit_password">
-      <property name="echoMode">
-       <enum>QLineEdit::Password</enum>
       </property>
      </widget>
     </item>
@@ -54,36 +74,12 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="1">
-     <widget class="QPushButton" name="pushButton_login">
-      <property name="text">
-       <string>Login</string>
-      </property>
-     </widget>
-    </item>
     <item row="5" column="0">
-     <widget class="QPushButton" name="pushButton_logout">
+     <widget class="QPushButton" name="refreshButton">
       <property name="text">
-       <string>Logout</string>
+       <string>Refresh</string>
       </property>
      </widget>
-    </item>
-    <item row="6" column="0" colspan="2">
-     <widget class="QLabel" name="label_output">
-      <property name="text">
-       <string>Output: </string>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="1">
-     <widget class="QPushButton" name="pushButton_addtolist">
-      <property name="text">
-       <string>add to list</string>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="0" colspan="2">
-     <widget class="QListWidget" name="listWidget_mydrive"/>
     </item>
    </layout>
   </widget>
