@@ -38,49 +38,6 @@ from .resources import *
 from .ellipsis_drive_dialog import EllipsisConnectDialog
 import os.path
 
-from threading import Timer
-
-class ListData:
-    """ Class used for objects in the QList of the EllipsisConnect plugin """
-    def __init__(self, type="none", data=""):
-        self.type = type
-        self.data = data
-    
-    def setData(self, type, data):
-        self.type = type
-        self.data = data
-
-    def getData(self):
-        return self.data
-
-    def getType(self):
-        return self.type
-
-# taken from https://gist.github.com/walkermatt/2871026
-def debounce(wait):
-    """ Decorator that will postpone a functions
-        execution until after wait seconds
-        have elapsed since the last time it was invoked. """
-    def decorator(fn):
-        def debounced(*args, **kwargs):
-            def call_it():
-                fn(*args, **kwargs)
-            try:
-                debounced.t.cancel()
-            except(AttributeError):
-                pass
-            debounced.t = Timer(wait, call_it)
-            debounced.t.start()
-        return debounced
-    return decorator
-
-def jprint(obj):
-    # create a formatted string of the Python JSON object
-    text = json.dumps(obj, sort_keys=True, indent=4)
-    print(text)
-
-URL = 'https://api.ellipsis-drive.com/v1'
-
 class EllipsisConnect:
     """QGIS Plugin Implementation."""
 
@@ -115,23 +72,6 @@ class EllipsisConnect:
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
-
-        self.username = ""
-        self.password = ""
-        self.communitySearch = ""
-        self.loggedIn = False
-        self.loginToken = ""
-        self.rememberMe = False
-
-        self.radioState = ""
-
-        self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
-        if (self.settings.contains("token")):
-            print("Login data found")
-            self.loggedIn = True
-            self.loginToken = self.settings.value("token")
-        else:
-            print("No login data found")
         
 
     # noinspection PyMethodMayBeStatic
@@ -246,128 +186,6 @@ class EllipsisConnect:
                 action)
             self.iface.removeToolBarIcon(action)
 
-    def loginButton(self, value):
-        apiurl = f"{URL}/account/login"
-        print(f'Logging in: username: {self.username}, password: {self.password}')
-
-        headers = CaseInsensitiveDict()
-        headers["Content-Type"] = "application/json"
-        data = '{"username": "%s", "password": "%s"}' % (self.username, self.password)
-
-        print(data)
-        resp = requests.post(apiurl, headers=headers, data=data)
-        jprint(resp.json())
-        data = resp.json()
-        if resp:
-            #print(f"Token: {data['token']}")
-            self.loggedIn = True
-            self.loginToken = data['token']
-            print("logged in")
-            if self.rememberMe and self.confirmRemember():
-                # make sure people want their token saved!!
-                self.settings.setValue("token",data["token"])
-                print("login token saved to settings")
-            else:
-                print("token NOT saved to settings")
-            #TODO: UI elementen weghalen/toevoegen? misschien zelfs in constructor doen eigenlijk
-        else:
-            self.loggedIn = False
-            self.loginToken = ""
-            print("Login failed")
-        #print(f'token: {token}')
-        #self.dlg.label_output.setText(f"Output:")
-
-    def onUsernameChange(self, text):
-        self.username = text
-
-    def onPasswordChange(self, text):
-        self.password = text
-
-    def addToList(self, value):
-        # better to make something like self.items, so we can explicitly change the items
-        # https://doc.qt.io/qtforpython/PySide6/QtWidgets/QListWidgetItem.html
-        QListWidgetItem("string", self.dlg.listWidget_mydrive)
-
-    @debounce(0.5)
-    def getCommunityList(self):
-        """ gets the list of public projects and add them to the list widget on the community tab """
-        # reset the list before updating it
-        self.dlg.listWidget_community.clear()
-        # TODO add functionality to search for name etc
-        # add functionality for raster/vector data
-        apiurl = f"{URL}/account/maps"
-        print("Getting community maps")
-        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-        data = {
-            "access": ["public"],
-            "name": f"{self.communitySearch}"
-        }
-
-        j1 = requests.post(apiurl, json=data, headers=headers)
-        if not j1:
-            print("getCommunityList failed!")
-            return []
-        data = json.loads(j1.text)
-        for mapdata in data["result"]:
-            newitem = QListWidgetItem()
-            newitem.setText(mapdata["name"])
-            item = ListData("id", mapdata["id"])
-            newitem.setData(QtCore.Qt.UserRole, item)
-            self.dlg.listWidget_community.addItem(newitem)
-        
-    def onCommunitySearchChange(self, text):
-        """ Change the internal state of the community search string """
-        self.communitySearch = text
-        self.getCommunityList()
-
-    def onCommunityItemClick(self, item):
-        print(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
-
-    def manageRadioState(self, b):
-        if b.text() == "Raster data":
-            if b.isChecked():
-                self.radioState = "raster"
-            else:
-                self.radioState = "vector"
-        elif b.text() == "Vector data":
-            if b.isChecked():
-                self.radioState = "vector"
-            else:
-                self.radioState = "raster"
-
-    def onChangeRemember(self, button):
-        self.rememberMe = button.isChecked()
-
-    def confirmRemember(self):
-        msg = QMessageBox()
-        msg.setIcon(QMessageBox.Warning)
-
-        msg.setText("Remembering your login data should only be done on devices you trust.")
-        msg.setWindowTitle("Are you sure?")
-        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        retval = msg.exec_()
-        return retval == QMessageBox.Ok
-
-    def getMetadata(self, mapid):
-        """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
-        apiurl = F"{URL}/metadata"
-        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-        data = {
-            "mapId": f"{mapid}",
-        }
-        j1 = requests.post(apiurl, json=data, headers=headers)
-        if not j1:
-            print("getMetadata failed!")
-            return {}
-        data = json.loads(j1.text)
-        jprint(data)
-        return data
-
-    def logOut(self):
-        print("logging out")
-        if (self.settings.contains("token")):
-            self.settings.remove("token")
-
     def run(self):
         """Run method that performs all the real work"""
 
@@ -377,23 +195,6 @@ class EllipsisConnect:
             print("first run of run()")
             self.first_start = False
             self.dlg = EllipsisConnectDialog()
-            #self.dlg.pushButton_login.clicked.connect(self.loginButton)
-            #self.dlg.pushButton_logout.clicked.connect(self.logOut)
-            #self.dlg.pushButton_addtolist.clicked.connect(self.addToList)
-
-            #self.dlg.lineEdit_username.textChanged.connect(self.onUsernameChange)
-            #self.dlg.lineEdit_password.textChanged.connect(self.onPasswordChange)
-            #self.dlg.lineEdit_communitysearch.textChanged.connect(self.onCommunitySearchChange)
-            
-            #self.dlg.radioRaster.toggled.connect(lambda:self.manageRadioState(self.dlg.radioRaster))
-            #self.dlg.radioVector.toggled.connect(lambda:self.manageRadioState(self.dlg.radioVector))
-
-            #self.dlg.checkBox_remember.stateChanged.connect(lambda:self.onChangeRemember(self.dlg.checkBox_remember))
-
-            #self.getCommunityList()
-            #self.dlg.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
-
-        print("run")
 
         # show the dialog
         self.dlg.show()
