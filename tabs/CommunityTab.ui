@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Ellipsis Drive Connect</string>
   </property>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -56,6 +56,12 @@
    </layout>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>lineEdit_communitysearch</tabstop>
+  <tabstop>radioRaster</tabstop>
+  <tabstop>radioVector</tabstop>
+  <tabstop>listWidget_community</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

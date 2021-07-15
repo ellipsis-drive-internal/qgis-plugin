@@ -26,13 +26,6 @@
     <item row="0" column="0">
      <widget class="QStackedWidget" name="stackedWidget"/>
     </item>
-    <item row="1" column="0">
-     <widget class="QPushButton" name="switchButton">
-      <property name="text">
-       <string>switch</string>
-      </property>
-     </widget>
-    </item>
    </layout>
   </widget>
  </widget>
