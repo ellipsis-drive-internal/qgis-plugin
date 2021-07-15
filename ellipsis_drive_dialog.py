@@ -28,6 +28,9 @@ import requests
 from requests import api
 from requests.structures import CaseInsensitiveDict
 
+from threading import Timer
+
+
 from PyQt5.QtWidgets import QCheckBox, QDialog, QLineEdit, QMainWindow
 
 from qgis.PyQt import uic
@@ -35,9 +38,58 @@ from qgis.PyQt import QtWidgets
 
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
 
+from PyQt5 import QtCore
+
 from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox, QWidget, QGridLayout, QLabel
 
+def getMetadata(mapid, token):
+    """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
+    apiurl = F"{URL}/metadata"
+    headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+    data = {
+        "mapId": f"{mapid}",
+    }
+    j1 = requests.post(apiurl, json=data, headers=headers)
+    if not j1:
+        log("getMetadata failed!")
+        return {}
+    data = json.loads(j1.text)
+    jprint(data)
+    return data
 
+class ListData:
+    """ Class used for objects in the QList of the EllipsisConnect plugin """
+    def __init__(self, type="none", data=""):
+        self.type = type
+        self.data = data
+    
+    def setData(self, type, data):
+        self.type = type
+        self.data = data
+
+    def getData(self):
+        return self.data
+
+    def getType(self):
+        return self.type
+
+# taken from https://gist.github.com/walkermatt/2871026
+def debounce(wait):
+    """ Decorator that will postpone a functions
+        execution until after wait seconds
+        have elapsed since the last time it was invoked. """
+    def decorator(fn):
+        def debounced(*args, **kwargs):
+            def call_it():
+                fn(*args, **kwargs)
+            try:
+                debounced.t.cancel()
+            except(AttributeError):
+                pass
+            debounced.t = Timer(wait, call_it)
+            debounced.t.start()
+        return debounced
+    return decorator
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -68,6 +120,8 @@ class MyDriveLoginTab(QDialog):
         self.lineEdit_password.textChanged.connect(self.onPasswordChange)
         self.checkBox_remember.stateChanged.connect(lambda:self.onChangeRemember(self.checkBox_remember))
         
+        self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
+
         self.username = ""
         self.password = ""
         self.rememberMe = False
@@ -178,14 +232,70 @@ class MyDriveTab(QDialog):
         self.loggedInWidget.loggedIn = False
         self.loggedInWidget.loginToken = ""
         self.stackedWidget.setCurrentIndex(0)
-
-
     
 #TODO alles
 class CommunityTab(QDialog):
     def __init__(self):
         super(CommunityTab, self).__init__()
         uic.loadUi(os.path.join(TABSFOLDER, "CommunityTab.ui"), self)
+        self.communitySearch = ""
+        self.radioState = ""
+        
+
+        self.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
+        self.lineEdit_communitysearch.textChanged.connect(self.onCommunitySearchChange)
+        
+        self.radioRaster.toggled.connect(lambda:self.manageRadioState(self.radioRaster))
+        self.radioVector.toggled.connect(lambda:self.manageRadioState(self.radioVector))
+
+        self.getCommunityList()
+
+    def manageRadioState(self, b):
+        if b.text() == "Raster data":
+            if b.isChecked():
+                self.radioState = "raster"
+            else:
+                self.radioState = "vector"
+        elif b.text() == "Vector data":
+            if b.isChecked():
+                self.radioState = "vector"
+            else:
+                self.radioState = "raster"
+
+    @debounce(0.5)
+    def getCommunityList(self):
+        """ gets the list of public projects and add them to the list widget on the community tab """
+        # reset the list before updating it
+        self.listWidget_community.clear()
+        # TODO add functionality to search for name etc
+        # add functionality for raster/vector data
+        apiurl = f"{URL}/account/maps"
+        print("Getting community maps")
+        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+        data = {
+            "access": ["public"],
+            "name": f"{self.communitySearch}"
+        }
+
+        j1 = requests.post(apiurl, json=data, headers=headers)
+        if not j1:
+            print("getCommunityList failed!")
+            return []
+        data = json.loads(j1.text)
+        for mapdata in data["result"]:
+            newitem = QListWidgetItem()
+            newitem.setText(mapdata["name"])
+            item = ListData("id", mapdata["id"])
+            newitem.setData(QtCore.Qt.UserRole, item)
+            self.listWidget_community.addItem(newitem)
+        
+    def onCommunitySearchChange(self, text):
+        """ Change the internal state of the community search string """
+        self.communitySearch = text
+        self.getCommunityList()
+
+    def onCommunityItemClick(self, item):
+        print(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
 
         
 # idee: laat de Tabs wel gewoon hun eigen klasse zijn, maar de UI files laden
@@ -203,21 +313,4 @@ class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
 
         self.setupUi(self)
         self.tabWidget.addTab(MyDriveTab(), "My Drive")
-        #self.tabWidget.addTab(loginTab, "My Drive")
-        #self.tabWidget.addTab(communityTab, "Community Library")
         self.tabWidget.addTab(CommunityTab(), "Community Library")
-
-
-###
- #       # import tab1
- #       self.tab1_widget = QtWidgets.QWidget()
- #       ui = mygui.interfaces.tab1.Ui_MyTab1()
- #       ui.setupUi(self.tab1_widget)
- #       self.ui.tabWidget.insertTab(0, self.tab1_widget, "tab1")
- #
- #       # import tab2
- #       self.tab2_widget = QtWidgets.QWidget()
- #       ui = mygui.interfaces.tab2.Ui_Form()
- #       ui.setupUi(self.tab2_widget)
- #       self.ui.tabWidget.insertTab(1, self.tab2_widget, "tab2")
-###
