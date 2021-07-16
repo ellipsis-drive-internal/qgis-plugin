@@ -125,6 +125,7 @@ class MyDriveLoginTab(QDialog):
         self.username = ""
         self.password = ""
         self.rememberMe = False
+        self.loggedIn = False
     
     def onChangeRemember(self, button):
         self.rememberMe = button.isChecked()
@@ -139,7 +140,21 @@ class MyDriveLoginTab(QDialog):
         retval = msg.exec_()
         return retval == QMessageBox.Ok
     
+    # als de gebruiker 'remember me' niet heeft ingevuld: gewoon inloggen
+    # als de gebruiker 'remember me' wel invult: verifiëren
+    # Zo ja: inloggen en opslaan
+    # Zo nee: niet inloggen
+
     def loginButton(self, value):
+        actual_remember = False
+        # check if the user is sure that they want us to remember their login token
+        if (self.rememberMe):
+            confirm_remember = self.confirmRemember()
+            if (not confirm_remember):
+                return
+            else:
+                actual_remember = True
+
         apiurl = f"{URL}/account/login"
         log(f'Logging in: username: {self.username}, password: {self.password}')
 
@@ -156,13 +171,17 @@ class MyDriveLoginTab(QDialog):
             self.loggedIn = True
             loginToken = data['token']
             log("logged in")
-            if self.rememberMe and self.confirmRemember():
-                # make sure people want their token saved!!
+            if actual_remember:
                 self.settings.setValue("token",data["token"])
                 log("login token saved to settings")
             else:
                 log("token NOT saved to settings")
             self.loginSignal.emit(loginToken)
+            self.username = ""
+            self.password = ""
+            self.lineEdit_username.setText("")
+            self.lineEdit_password.setText("")
+
         else:
             log("Login failed")
 
