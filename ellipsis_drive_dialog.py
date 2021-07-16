@@ -324,16 +324,15 @@ class CommunityTab(QDialog):
     @debounce(0.5)
     def getCommunityList(self):
         """ gets the list of public projects and add them to the list widget on the community tab """
-        # reset the list before updating it
-
-        log("getCommunityList()")
+        
+        # deselect everything, otherwise we crash :'(
         for i in range(self.listWidget_community.count()):
             self.listWidget_community.item(i).setSelected(False)
 
+        # reset the list before updating it
         self.listWidget_community.clear()
         self.disableCorrectButtons(True)
-        # TODO add functionality to search for name etc
-        # add functionality for raster/vector data
+
         apiurl = f"{URL}/account/maps"
         log("Getting community maps")
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
