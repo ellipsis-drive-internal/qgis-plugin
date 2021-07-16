@@ -340,8 +340,11 @@ class CommunityTab(QDialog):
         """ gets the list of public projects and add them to the list widget on the community tab """
 
         # reset the list before updating it
-        self.listWidget_community.clearSelection()
-        self.listWidget_community.clear()
+        # self.listWidget_community.clear()
+
+        for _ in range(self.listWidget_community.count()):
+            self.listWidget_community.takeItem(0)
+        
         self.currentlySelectedId = ""
         self.disableCorrectButtons(True)
 
