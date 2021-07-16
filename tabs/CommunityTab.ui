@@ -23,16 +23,6 @@
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Search</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="1" colspan="2">
-     <widget class="QLineEdit" name="lineEdit_communitysearch"/>
-    </item>
     <item row="1" column="0" colspan="2">
      <widget class="QRadioButton" name="radioRaster">
       <property name="text">
@@ -43,6 +33,33 @@
       </property>
      </widget>
     </item>
+    <item row="0" column="1" colspan="2">
+     <widget class="QLineEdit" name="lineEdit_communitysearch"/>
+    </item>
+    <item row="3" column="1">
+     <widget class="QPushButton" name="pushButton_wmts">
+      <property name="text">
+       <string>Get wmts</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="2">
+     <widget class="QPushButton" name="pushButton_wfs">
+      <property name="text">
+       <string>Get wfs</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" colspan="3">
+     <widget class="QListWidget" name="listWidget_community"/>
+    </item>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Search</string>
+      </property>
+     </widget>
+    </item>
     <item row="1" column="2">
      <widget class="QRadioButton" name="radioVector">
       <property name="text">
@@ -50,8 +67,28 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="0" colspan="3">
-     <widget class="QListWidget" name="listWidget_community"/>
+    <item row="3" column="0">
+     <widget class="QPushButton" name="pushButton_wms">
+      <property name="text">
+       <string>Get wms</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Preferred</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>0</width>
+        <height>30</height>
+       </size>
+      </property>
+     </spacer>
     </item>
    </layout>
   </widget>

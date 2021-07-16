@@ -42,6 +42,23 @@ from PyQt5 import QtCore
 
 from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox, QWidget, QGridLayout, QLabel
 
+
+
+# This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
+FORM_CLASS, _ = uic.loadUiType(os.path.join(
+    os.path.dirname(__file__), 'ellipsis_drive_dialog_base.ui'))
+
+# definitions of constants
+
+TABSFOLDER = os.path.join(os.path.dirname(__file__), "tabs/")
+URL = 'https://api.ellipsis-drive.com/v1'
+
+DEBUG = True
+
+# api.ellipsis-drive.com/v1/wms/mapId
+# api.ellipsis-drive.com/v1/wmts/mapId
+# api.ellipsis-drive.com/v1/wfs/mapId
+
 def getMetadata(mapid, token):
     """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
     apiurl = F"{URL}/metadata"
@@ -54,7 +71,7 @@ def getMetadata(mapid, token):
         log("getMetadata failed!")
         return {}
     data = json.loads(j1.text)
-    jprint(data)
+    jlog(data)
     return data
 
 class ListData:
@@ -91,20 +108,11 @@ def debounce(wait):
         return debounced
     return decorator
 
-# This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'ellipsis_drive_dialog_base.ui'))
-
-TABSFOLDER = os.path.join(os.path.dirname(__file__), "tabs/")
-URL = 'https://api.ellipsis-drive.com/v1'
-
-DEBUG = True
-
 def log(text):
     if DEBUG:
         print(text)
 
-def jprint(obj):
+def jlog(obj):
     # create a formatted string of the Python JSON object
     text = json.dumps(obj, sort_keys=True, indent=4)
     log(text)
@@ -164,7 +172,7 @@ class MyDriveLoginTab(QDialog):
 
         log(data)
         resp = requests.post(apiurl, headers=headers, data=data)
-        jprint(resp.json())
+        jlog(resp.json())
         data = resp.json()
         if resp:
             #print(f"Token: {data['token']}")
@@ -252,22 +260,50 @@ class MyDriveTab(QDialog):
         self.loggedInWidget.loginToken = ""
         self.stackedWidget.setCurrentIndex(0)
     
-#TODO alles
 class CommunityTab(QDialog):
     def __init__(self):
         super(CommunityTab, self).__init__()
         uic.loadUi(os.path.join(TABSFOLDER, "CommunityTab.ui"), self)
         self.communitySearch = ""
-        self.radioState = ""
-        
+        self.radioState = "raster"
+        self.currentlySelectedId = ""
 
         self.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
         self.lineEdit_communitysearch.textChanged.connect(self.onCommunitySearchChange)
+
+        self.pushButton_wms.clicked.connect(lambda:self.getUrl("wms", self.currentlySelectedId))
+        self.pushButton_wmts.clicked.connect(lambda:self.getUrl("wmts", self.currentlySelectedId))
+        self.pushButton_wfs.clicked.connect(lambda:self.getUrl("wfs", self.currentlySelectedId))
+
+        self.disableCorrectButtons(True)
         
         self.radioRaster.toggled.connect(lambda:self.manageRadioState(self.radioRaster))
         self.radioVector.toggled.connect(lambda:self.manageRadioState(self.radioVector))
 
         self.getCommunityList()
+
+# api.ellipsis-drive.com/v1/wms/mapId
+# api.ellipsis-drive.com/v1/wmts/mapId
+# api.ellipsis-drive.com/v1/wfs/mapId
+
+    def disableCorrectButtons(self, all = False):
+        if all:
+            self.pushButton_wms.setEnabled(False)
+            self.pushButton_wmts.setEnabled(False)
+            self.pushButton_wfs.setEnabled(False)
+        elif self.radioState == "raster":
+            self.pushButton_wms.setEnabled(True)
+            self.pushButton_wmts.setEnabled(False)
+            self.pushButton_wfs.setEnabled(False)
+        else:
+            self.pushButton_wms.setEnabled(False)
+            self.pushButton_wmts.setEnabled(True)
+            self.pushButton_wfs.setEnabled(True)
+            
+
+    def getUrl(self, mode, mapId):
+        apiurl = f"{URL}/{mode}/{mapId}"
+        log(f"getUrl: {apiurl}")
 
     def manageRadioState(self, b):
         if b.text() == "Raster data":
@@ -280,16 +316,26 @@ class CommunityTab(QDialog):
                 self.radioState = "vector"
             else:
                 self.radioState = "raster"
+        if (self.currentlySelectedId != ""):
+            self.disableCorrectButtons()
+        else:
+            self.disableCorrectButtons(True)
 
     @debounce(0.5)
     def getCommunityList(self):
         """ gets the list of public projects and add them to the list widget on the community tab """
         # reset the list before updating it
+
+        log("getCommunityList()")
+        for i in range(self.listWidget_community.count()):
+            self.listWidget_community.item(i).setSelected(False)
+
         self.listWidget_community.clear()
+        self.disableCorrectButtons(True)
         # TODO add functionality to search for name etc
         # add functionality for raster/vector data
         apiurl = f"{URL}/account/maps"
-        print("Getting community maps")
+        log("Getting community maps")
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         data = {
             "access": ["public"],
@@ -298,7 +344,7 @@ class CommunityTab(QDialog):
 
         j1 = requests.post(apiurl, json=data, headers=headers)
         if not j1:
-            print("getCommunityList failed!")
+            log("getCommunityList failed!")
             return []
         data = json.loads(j1.text)
         for mapdata in data["result"]:
@@ -314,7 +360,9 @@ class CommunityTab(QDialog):
         self.getCommunityList()
 
     def onCommunityItemClick(self, item):
-        print(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
+        self.disableCorrectButtons()
+        self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
+        log(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
 
         
 # idee: laat de Tabs wel gewoon hun eigen klasse zijn, maar de UI files laden
