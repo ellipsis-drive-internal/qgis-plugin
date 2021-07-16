@@ -23,13 +23,13 @@
 """
 
 import os
+import sys
 import json
 import requests
 from requests import api
 from requests.structures import CaseInsensitiveDict
 
 from threading import Timer
-
 
 from PyQt5.QtWidgets import QCheckBox, QDialog, QLineEdit, QMainWindow
 
@@ -42,7 +42,13 @@ from PyQt5 import QtCore
 
 from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox, QWidget, QGridLayout, QLabel
 
-
+try:
+    import pyclip
+except ImportError:
+    this_dir = os.path.dirname(os.path.realpath(__file__))
+    path = os.path.join(this_dir, 'pyclip-0.5.4-py3-none-any')
+    sys.path.append(path)
+    import pyclip
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -293,17 +299,25 @@ class CommunityTab(QDialog):
             self.pushButton_wfs.setEnabled(False)
         elif self.radioState == "raster":
             self.pushButton_wms.setEnabled(True)
-            self.pushButton_wmts.setEnabled(False)
+            self.pushButton_wmts.setEnabled(True)
             self.pushButton_wfs.setEnabled(False)
         else:
             self.pushButton_wms.setEnabled(False)
-            self.pushButton_wmts.setEnabled(True)
+            self.pushButton_wmts.setEnabled(False)
             self.pushButton_wfs.setEnabled(True)
             
 
     def getUrl(self, mode, mapId):
         apiurl = f"{URL}/{mode}/{mapId}"
         log(f"getUrl: {apiurl}")
+        pyclip.copy(apiurl)
+        msg = QMessageBox()
+        msg.setWindowTitle("Success")
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("Url copied to clipboard!")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+
 
     def manageRadioState(self, b):
         if b.text() == "Raster data":
@@ -324,13 +338,11 @@ class CommunityTab(QDialog):
     @debounce(0.5)
     def getCommunityList(self):
         """ gets the list of public projects and add them to the list widget on the community tab """
-        
-        # deselect everything, otherwise we crash :'(
-        for i in range(self.listWidget_community.count()):
-            self.listWidget_community.item(i).setSelected(False)
 
         # reset the list before updating it
+        self.listWidget_community.clearSelection()
         self.listWidget_community.clear()
+        self.currentlySelectedId = ""
         self.disableCorrectButtons(True)
 
         apiurl = f"{URL}/account/maps"
