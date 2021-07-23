@@ -57,7 +57,13 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 # definitions of constants
 
 TABSFOLDER = os.path.join(os.path.dirname(__file__), "tabs/")
+
 URL = 'https://api.ellipsis-drive.com/v1'
+#URL = 'http://dev.api.ellipsis-drive.com/v1'
+
+# for reference
+# API = 'https://api.ellipsis-drive.com/v1'
+DEVAPI = 'http://dev.api.ellipsis-drive.com/v1'
 
 DEBUG = True
 
@@ -128,7 +134,7 @@ def jlog(obj):
 
 class MyDriveLoginTab(QDialog):
     """ login tab, sends a signal with the token on succesful login """
-    loginSignal = pyqtSignal(object)
+    loginSignal = pyqtSignal(object, object)
     def __init__(self):
         super(MyDriveLoginTab, self).__init__()
         uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoginTab.ui"), self)
@@ -141,6 +147,7 @@ class MyDriveLoginTab(QDialog):
 
         self.username = ""
         self.password = ""
+        self.userInfo = {}
         self.rememberMe = False
         self.loggedIn = False
     
@@ -162,7 +169,22 @@ class MyDriveLoginTab(QDialog):
     # Zo ja: inloggen en opslaan
     # Zo nee: niet inloggen
 
-    def loginButton(self, value):
+    def getUserData(self, token):
+        log("Getting user data")
+        apiurl = f"{URL}/account/info"
+        headers = CaseInsensitiveDict()
+        headers["Authorization"] = f"Bearer {token}"
+        resp = requests.get(apiurl, headers=headers)
+        data = resp.json()
+        jlog(data)
+        if (resp):
+            print("huts")
+            self.userInfo = data
+            return True
+        return False
+        
+
+    def loginButton(self):
         actual_remember = False
         # check if the user is sure that they want us to remember their login token
         if (self.rememberMe):
@@ -181,8 +203,8 @@ class MyDriveLoginTab(QDialog):
 
         log(data)
         resp = requests.post(apiurl, headers=headers, data=data)
-        jlog(resp.json())
         data = resp.json()
+        jlog(data)
         if resp:
             #print(f"Token: {data['token']}")
             self.loggedIn = True
@@ -193,11 +215,15 @@ class MyDriveLoginTab(QDialog):
                 log("login token saved to settings")
             else:
                 log("token NOT saved to settings")
-            self.loginSignal.emit(loginToken)
+            
+            if self.getUserData(loginToken):
+                self.loginSignal.emit(loginToken, self.userInfo)
             self.username = ""
             self.password = ""
             self.lineEdit_username.setText("")
             self.lineEdit_password.setText("")
+
+
 
         else:
             log("Login failed")
@@ -215,6 +241,7 @@ class MyDriveLoggedInTab(QDialog):
         uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoggedInTab.ui"), self)
         self.loginToken = ""
         self.loggedIn = False
+        self.userInfo = {}
         self.selected = ListData()
         self.level = 0
         self.mode = ""
@@ -293,6 +320,8 @@ class MyDriveTab(QDialog):
         self.loggedIn = False
         self.loginToken = ""
 
+        self.userInfo = {}
+
         self.loginWidget.loginSignal.connect(self.handleLoginSignal)
         self.loggedInWidget.logoutSignal.connect(self.handleLogoutSignal)
 
@@ -309,12 +338,14 @@ class MyDriveTab(QDialog):
         else:
             log("No login data found")
 
-    def handleLoginSignal(self, token):
+    def handleLoginSignal(self, token, userInfo):
         log("login signal received!")
         self.loginToken = token
         self.loggedIn = True
         self.loggedInWidget.loginToken = token
         self.loggedInWidget.loggedIn = True
+        self.loggedInWidget.userInfo = userInfo
+        self.userInfo = userInfo
         self.stackedWidget.setCurrentIndex(1)
     
     def handleLogoutSignal(self):
