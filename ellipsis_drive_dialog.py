@@ -96,6 +96,9 @@ class ListData:
     def getType(self):
         return self.type
 
+    def isEmpty(self):
+        return self.type == "none" and self.data == ""
+
 # taken from https://gist.github.com/walkermatt/2871026
 def debounce(wait):
     """ Decorator that will postpone a functions
@@ -212,14 +215,70 @@ class MyDriveLoggedInTab(QDialog):
         uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoggedInTab.ui"), self)
         self.loginToken = ""
         self.loggedIn = False
+        self.selected = ListData()
+        self.level = 0
+        self.mode = ""
+        self.listWidget_mydrive.itemClicked.connect(self.onListWidgetClick)
         self.pushButton_logout.clicked.connect(self.logOut)
+        self.pushButton_previous.clicked.connect(self.onPrevious)
+        self.pushButton_next.clicked.connect(self.onNext)
+        
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
+        self.fixEnabledButtons(True)
+        self.populateList()
+
+    def onNext(self):
+        self.level += 1
+        pass
     
+    def onPrevious(self):
+        pass
+    
+    def fixEnabledButtons(self, disableAll=False):
+        self.pushButton_previous.setEnabled(True)
+        self.pushButton_next.setEnabled(True)
+
+        if disableAll:
+            self.pushButton_previous.setEnabled(False)
+            self.pushButton_next.setEnabled(False)
+        elif self.selected.data(QtCore.Qt.UserRole).isEmpty(): 
+            self.pushButton_next.setEnabled(False)
+        elif self.level == 0:
+            self.pushButton_previous.setEnabled(False)
+        
+
+
+    def onListWidgetClick(self, item):
+        self.selected = item
+        self.fixEnabledButtons()
+
     def logOut(self):
         log("logging out")
         if (self.settings.contains("token")):
             self.settings.remove("token")
         self.logoutSignal.emit()
+
+    def populateList(self):
+        myproject = ListData("rootfolder", "myproject")
+        sharedwithme = ListData("rootfolder", "sharedwithme")
+        favorites = ListData("rootfolder", "favorites")
+
+        myprojectitem = QListWidgetItem()
+        sharedwithmeitem = QListWidgetItem()
+        favoritesitem = QListWidgetItem()
+
+        myprojectitem.setText("My Project")
+        sharedwithmeitem.setText("Shared with me")
+        favoritesitem.setText("Favorites")
+
+
+        myprojectitem.setData(QtCore.Qt.UserRole, myproject)
+        sharedwithmeitem.setData(QtCore.Qt.UserRole, sharedwithme)
+        favoritesitem.setData(QtCore.Qt.UserRole, favorites)
+
+        self.listWidget_mydrive.addItem(myprojectitem)
+        self.listWidget_mydrive.addItem(sharedwithmeitem)
+        self.listWidget_mydrive.addItem(favoritesitem)
 
 class MyDriveTab(QDialog):
     def __init__(self):
@@ -288,9 +347,9 @@ class CommunityTab(QDialog):
 
         self.getCommunityList()
 
-# api.ellipsis-drive.com/v1/wms/mapId
-# api.ellipsis-drive.com/v1/wmts/mapId
-# api.ellipsis-drive.com/v1/wfs/mapId
+    # api.ellipsis-drive.com/v1/wms/mapId
+    # api.ellipsis-drive.com/v1/wmts/mapId
+    # api.ellipsis-drive.com/v1/wfs/mapId
 
     def disableCorrectButtons(self, all = False):
         if all:
