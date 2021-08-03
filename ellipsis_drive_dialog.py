@@ -199,7 +199,7 @@ class MyDriveLoginTab(QDialog):
 
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
-        data = '{"username": "%s", "password": "%s"}' % (self.username, self.password)
+        data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 3155760000)
 
         log(data)
         resp = requests.post(apiurl, headers=headers, data=data)
@@ -222,9 +222,6 @@ class MyDriveLoginTab(QDialog):
             self.password = ""
             self.lineEdit_username.setText("")
             self.lineEdit_password.setText("")
-
-
-
         else:
             log("Login failed")
 
@@ -255,11 +252,14 @@ class MyDriveLoggedInTab(QDialog):
         self.populateList()
 
     def onNext(self):
+        if (self.level == 0):
+            self.onNextRoot()
         self.level += 1
-        pass
+        self.fixEnabledButtons()
     
     def onPrevious(self):
-        pass
+        self.level -= 1
+        self.fixEnabledButtons()
     
     def fixEnabledButtons(self, disableAll=False):
         self.pushButton_previous.setEnabled(True)
@@ -272,8 +272,36 @@ class MyDriveLoggedInTab(QDialog):
             self.pushButton_next.setEnabled(False)
         elif self.level == 0:
             self.pushButton_previous.setEnabled(False)
-        
 
+    def onNextRoot(self):
+        """ 
+        Lists the maps/folders in a root folder. (No access level).
+        root: (Optional) The root folder for which to retrieve information. Must be one of 'myMaps', 'shared', 'trash' or 'favorites'. Default 'myMaps'.
+        type: (Optional) The type of objects to retrieve information of. Must be one of 'map', 'folder'. Default 'map'.
+        pageSize: (Optional) The maximum number of items to retrieve. Maximum 50. Default 50.
+        pageStart: (Optional) The uuid of the map/folder to start the search from. Default null.
+        Returns:
+        Returns an object with properties 'nextPageStart' and 'result'. 'nextPageStart' is the id to use as 'pageStart' to get the next page. This value is null if there are no more items to return. 'result' are the items that satisfy the criteria.
+        """
+        apiurl = f"{URL}/path/listRoot"
+
+        root = self.selected.data(QtCore.Qt.UserRole).getData()
+
+        log(f"Getting the maps in root folder {root}")
+        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+        headers["Authorization"] = f"Bearer {self.loginToken}"
+        data = {
+            "root": f"{root}",
+            "type": "map"
+        }
+
+        j1 = requests.post(apiurl, json=data, headers=headers)
+        if not j1:
+            log("onNextRoot failed!")
+            jlog(j1.reason)
+            return
+        data = json.loads(j1.text)
+        jlog(data)
 
     def onListWidgetClick(self, item):
         self.selected = item
@@ -286,24 +314,24 @@ class MyDriveLoggedInTab(QDialog):
         self.logoutSignal.emit()
 
     def populateList(self):
-        myproject = ListData("rootfolder", "myproject")
-        sharedwithme = ListData("rootfolder", "sharedwithme")
+        myprojects = ListData("rootfolder", "myMaps")
+        sharedwithme = ListData("rootfolder", "shared")
         favorites = ListData("rootfolder", "favorites")
 
-        myprojectitem = QListWidgetItem()
+        myprojectsitem = QListWidgetItem()
         sharedwithmeitem = QListWidgetItem()
         favoritesitem = QListWidgetItem()
 
-        myprojectitem.setText("My Project")
+        myprojectsitem.setText("My Projects")
         sharedwithmeitem.setText("Shared with me")
         favoritesitem.setText("Favorites")
 
 
-        myprojectitem.setData(QtCore.Qt.UserRole, myproject)
+        myprojectsitem.setData(QtCore.Qt.UserRole, myprojects)
         sharedwithmeitem.setData(QtCore.Qt.UserRole, sharedwithme)
         favoritesitem.setData(QtCore.Qt.UserRole, favorites)
 
-        self.listWidget_mydrive.addItem(myprojectitem)
+        self.listWidget_mydrive.addItem(myprojectsitem)
         self.listWidget_mydrive.addItem(sharedwithmeitem)
         self.listWidget_mydrive.addItem(favoritesitem)
 
