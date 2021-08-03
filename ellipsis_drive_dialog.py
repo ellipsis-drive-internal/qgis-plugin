@@ -71,6 +71,16 @@ DEBUG = True
 # api.ellipsis-drive.com/v1/wmts/mapId
 # api.ellipsis-drive.com/v1/wfs/mapId
 
+#TODO fix the folder structure (next and previous), specifically the folderstack.
+
+
+def mapDataToListItem(mapdata):
+    newitem = QListWidgetItem()
+    newitem.setText(mapdata["name"])
+    item = ListData("id", mapdata["id"])
+    newitem.setData(QtCore.Qt.UserRole, item)
+    return newitem
+
 def getMetadata(mapid, token):
     """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
     apiurl = F"{URL}/metadata"
@@ -242,6 +252,8 @@ class MyDriveLoggedInTab(QDialog):
         self.selected = ListData()
         self.level = 0
         self.mode = ""
+        self.path = "/"
+        self.folderstack = []
         self.listWidget_mydrive.itemClicked.connect(self.onListWidgetClick)
         self.pushButton_logout.clicked.connect(self.logOut)
         self.pushButton_previous.clicked.connect(self.onPrevious)
@@ -251,18 +263,114 @@ class MyDriveLoggedInTab(QDialog):
         self.fixEnabledButtons(True)
         self.populateListWithRoot()
 
+    # TODO implement a better way to handle these strings?
+
+    def removeFromPath(self):
+        if (self.level == 0):
+            self.setPath("/")
+            return
+        self.setPath(self.path.rsplit('/',1)[0])
+
+    def addToPath(self, foldername):
+        if self.path == "/":
+            self.path = ""
+        self.setPath(f"{self.path}/{foldername}")
+
+    def setPath(self, path):
+        self.path = path
+        self.label_path.setText(f"Path: {path}")
+
     def onNext(self):
         if (self.level == 0):
             self.onNextRoot()
+        else:
+            self.onNextNormal()
         self.level += 1
         self.fixEnabledButtons()
+        # TODO using addToPath
+
+    def onNextNormal(self):
+        pathId = self.selected.data(QtCore.Qt.UserRole).getData()
+        self.getFolder(pathId)
+        self.folderstack.append(pathId)
+        self.addToPath(self.selected.text())
+        
+        #self.addToPath(pathId = self.selected.get)
+
+    def onNextRoot(self):
+        root = self.selected.data(QtCore.Qt.UserRole).getData()
+        self.getFolder(root, True)
+        self.folderstack.append(root)
+        self.addToPath(root)
     
+
+    def getFolder(self, id, isRoot=False):
+        # TODO decide wether this function returns the items or just replaces them..
+        """ replaces listwidgets with the folders and maps in a folder (id)"""
+        apiurl = ""
+        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+        headers["Authorization"] = f"Bearer {self.loginToken}"
+        data = {}
+        data2= {}
+        if (isRoot):
+            apiurl = f"{URL}/path/listRoot"
+            data = {
+            "root": f"{id}",
+            "type": "map"
+            }
+            data2 = {
+                "root": f"{id}",
+                "type": "folder"
+            }
+        else:
+            apiurl = f"{URL}/path/listFolder"
+            data = {
+                "pathId": f"{id}",
+                "type": "map"
+            }
+            data2 = {
+                "pathId": f"{id}",
+                "type": "folder"
+            }
+
+        j1 = requests.post(apiurl, json=data, headers=headers)
+        j2 = requests.post(apiurl, json=data2, headers=headers)
+
+        if not j1 or not j2:
+            log("getFolder failed!")
+            if not j1:
+                jlog(j1.reason)
+            if not j2:
+                jlog(j2.reason)
+            return False
+        
+        self.clearListWidget()
+        maps = json.loads(j1.text)
+        folders = json.loads(j2.text)
+
+        [self.listWidget_mydrive_maps.addItem(mapDataToListItem(mapdata)) for mapdata in maps["result"]]
+        [self.listWidget_mydrive.addItem(mapDataToListItem(folderdata)) for folderdata in folders["result"]]
+
     def onPrevious(self):
         self.level -= 1
+        self.removeFromPath()
         self.fixEnabledButtons()
+
         if self.level == 0:
             self.clearListWidget()
             self.populateListWithRoot()
+            self.path = "/"
+            self.folderstack = []
+            return
+        
+        if self.level == 1:
+            self.getFolder(self.folderstack[0], True)
+            self.folderstack = []
+            return
+
+        self.folderstack.pop()
+        self.getFolder(self.folderstack[len(self.folderstack) - 1])
+        
     
     def fixEnabledButtons(self, disableAll=False):
         self.pushButton_previous.setEnabled(True)
@@ -276,46 +384,17 @@ class MyDriveLoggedInTab(QDialog):
         elif self.level == 0:
             self.pushButton_previous.setEnabled(False)
 
-    def onNextRoot(self):
-        """ 
-        Lists the maps/folders in a root folder. (No access level).
-        root: (Optional) The root folder for which to retrieve information. Must be one of 'myMaps', 'shared', 'trash' or 'favorites'. Default 'myMaps'.
-        type: (Optional) The type of objects to retrieve information of. Must be one of 'map', 'folder'. Default 'map'.
-        pageSize: (Optional) The maximum number of items to retrieve. Maximum 50. Default 50.
-        pageStart: (Optional) The uuid of the map/folder to start the search from. Default null.
-        Returns:
-        Returns an object with properties 'nextPageStart' and 'result'. 'nextPageStart' is the id to use as 'pageStart' to get the next page. This value is null if there are no more items to return. 'result' are the items that satisfy the criteria.
-        """
-        apiurl = f"{URL}/path/listRoot"
-
-        root = self.selected.data(QtCore.Qt.UserRole).getData()
-
-        log(f"Getting the maps in root folder {root}")
-        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-        headers["Authorization"] = f"Bearer {self.loginToken}"
-        data = {
-            "root": f"{root}",
-            "type": "map"
-        }
-
-        j1 = requests.post(apiurl, json=data, headers=headers)
-        if not j1:
-            log("onNextRoot failed!")
-            jlog(j1.reason)
-            return False
+    def clearListWidget(self, which=0):
+        """ clears list widgets, 0 = both, 1 = folders, 2 = maps. defaults to both"""
+        # boolean statement could be improved, but I think this is more readable
+        if (which == 0 or which == 1):
+            for _ in range(self.listWidget_mydrive.count()):
+                self.listWidget_mydrive.takeItem(0)
         
-        self.clearListWidget()
-        data = json.loads(j1.text)
-        for mapdata in data["result"]:
-            newitem = QListWidgetItem()
-            newitem.setText(mapdata["name"])
-            item = ListData("id", mapdata["id"])
-            newitem.setData(QtCore.Qt.UserRole, item)
-            self.listWidget_mydrive.addItem(newitem)
-
-    def clearListWidget(self):
-        for _ in range(self.listWidget_mydrive.count()):
-            self.listWidget_mydrive.takeItem(0)
+        if (which == 0 or which == 2):
+            for _ in range(self.listWidget_mydrive_maps.count()):
+                self.listWidget_mydrive_maps.takeItem(0)
+        
 
     def onListWidgetClick(self, item):
         self.selected = item
@@ -496,11 +575,7 @@ class CommunityTab(QDialog):
             return []
         data = json.loads(j1.text)
         for mapdata in data["result"]:
-            newitem = QListWidgetItem()
-            newitem.setText(mapdata["name"])
-            item = ListData("id", mapdata["id"])
-            newitem.setData(QtCore.Qt.UserRole, item)
-            self.listWidget_community.addItem(newitem)
+            self.listWidget_community.addItem(mapDataToListItem(mapdata))
         
     def onCommunitySearchChange(self, text):
         """ Change the internal state of the community search string """
