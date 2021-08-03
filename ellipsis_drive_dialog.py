@@ -249,7 +249,7 @@ class MyDriveLoggedInTab(QDialog):
         
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         self.fixEnabledButtons(True)
-        self.populateList()
+        self.populateListWithRoot()
 
     def onNext(self):
         if (self.level == 0):
@@ -260,6 +260,9 @@ class MyDriveLoggedInTab(QDialog):
     def onPrevious(self):
         self.level -= 1
         self.fixEnabledButtons()
+        if self.level == 0:
+            self.clearListWidget()
+            self.populateListWithRoot()
     
     def fixEnabledButtons(self, disableAll=False):
         self.pushButton_previous.setEnabled(True)
@@ -324,7 +327,7 @@ class MyDriveLoggedInTab(QDialog):
             self.settings.remove("token")
         self.logoutSignal.emit()
 
-    def populateList(self):
+    def populateListWithRoot(self):
         myprojects = ListData("rootfolder", "myMaps")
         sharedwithme = ListData("rootfolder", "shared")
         favorites = ListData("rootfolder", "favorites")
