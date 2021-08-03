@@ -299,9 +299,20 @@ class MyDriveLoggedInTab(QDialog):
         if not j1:
             log("onNextRoot failed!")
             jlog(j1.reason)
-            return
+            return False
+        
+        self.clearListWidget()
         data = json.loads(j1.text)
-        jlog(data)
+        for mapdata in data["result"]:
+            newitem = QListWidgetItem()
+            newitem.setText(mapdata["name"])
+            item = ListData("id", mapdata["id"])
+            newitem.setData(QtCore.Qt.UserRole, item)
+            self.listWidget_mydrive.addItem(newitem)
+
+    def clearListWidget(self):
+        for _ in range(self.listWidget_mydrive.count()):
+            self.listWidget_mydrive.takeItem(0)
 
     def onListWidgetClick(self, item):
         self.selected = item
@@ -362,6 +373,8 @@ class MyDriveTab(QDialog):
             log("Login data found")
             self.loggedIn = True
             self.loginToken = self.settings.value("token")
+            self.loggedInWidget.loginToken = self.loginToken
+
             self.stackedWidget.setCurrentIndex(1)
         else:
             log("No login data found")
