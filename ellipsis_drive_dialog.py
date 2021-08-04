@@ -71,8 +71,8 @@ DEBUG = True
 # api.ellipsis-drive.com/v1/wmts/mapId
 # api.ellipsis-drive.com/v1/wfs/mapId
 
-#TODO fix the folder structure (next and previous), specifically the folderstack.
-
+# TODO
+# - pagination of folders and maps
 
 def mapDataToListItem(mapdata):
     newitem = QListWidgetItem()
