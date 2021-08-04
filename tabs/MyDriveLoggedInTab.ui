@@ -26,24 +26,14 @@
     <property name="rightMargin">
      <number>11</number>
     </property>
-    <item row="2" column="0" colspan="3">
-     <widget class="QListWidget" name="listWidget_mydrive"/>
-    </item>
-    <item row="0" column="2">
-     <widget class="QPushButton" name="pushButton_logout">
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_path">
       <property name="text">
-       <string>Logout</string>
+       <string>Path: /</string>
       </property>
      </widget>
     </item>
-    <item row="6" column="2">
-     <widget class="QPushButton" name="pushButton_2">
-      <property name="text">
-       <string>WFS</string>
-      </property>
-     </widget>
-    </item>
-    <item row="7" column="2">
+    <item row="12" column="2">
      <spacer name="verticalSpacer">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
@@ -66,41 +56,68 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="0" colspan="3">
-     <widget class="QLabel" name="label_path">
-      <property name="text">
-       <string>Path: /</string>
-      </property>
-     </widget>
+    <item row="8" column="0" colspan="3">
+     <widget class="QListWidget" name="listWidget_mydrive_maps"/>
     </item>
-    <item row="6" column="0">
-     <widget class="QPushButton" name="pushButton">
+    <item row="11" column="0">
+     <widget class="QPushButton" name="pushButton_wms">
       <property name="text">
        <string>WMS</string>
       </property>
      </widget>
     </item>
-    <item row="5" column="0" colspan="3">
-     <widget class="QListWidget" name="listWidget_mydrive_maps"/>
-    </item>
-    <item row="4" column="2">
+    <item row="7" column="2">
      <widget class="QPushButton" name="pushButton_next">
       <property name="text">
        <string>Next</string>
       </property>
      </widget>
     </item>
-    <item row="6" column="1">
-     <widget class="QPushButton" name="pushButton_3">
+    <item row="0" column="2">
+     <widget class="QPushButton" name="pushButton_logout">
+      <property name="text">
+       <string>Logout</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0" colspan="3">
+     <widget class="QListWidget" name="listWidget_mydrive"/>
+    </item>
+    <item row="11" column="1">
+     <widget class="QPushButton" name="pushButton_wmts">
       <property name="text">
        <string>WMTS</string>
       </property>
      </widget>
     </item>
-    <item row="4" column="0">
+    <item row="7" column="0">
      <widget class="QPushButton" name="pushButton_previous">
       <property name="text">
        <string>Previous</string>
+      </property>
+     </widget>
+    </item>
+    <item row="11" column="2">
+     <widget class="QPushButton" name="pushButton_wfs">
+      <property name="text">
+       <string>WFS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="0">
+     <widget class="QRadioButton" name="radioRaster">
+      <property name="text">
+       <string>Raster data</string>
+      </property>
+      <property name="checked">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="2">
+     <widget class="QRadioButton" name="radioVector">
+      <property name="text">
+       <string>Vector data</string>
       </property>
      </widget>
     </item>
@@ -113,9 +130,9 @@
   <tabstop>pushButton_previous</tabstop>
   <tabstop>pushButton_next</tabstop>
   <tabstop>listWidget_mydrive_maps</tabstop>
-  <tabstop>pushButton</tabstop>
-  <tabstop>pushButton_3</tabstop>
-  <tabstop>pushButton_2</tabstop>
+  <tabstop>pushButton_wms</tabstop>
+  <tabstop>pushButton_wmts</tabstop>
+  <tabstop>pushButton_wfs</tabstop>
  </tabstops>
  <resources/>
  <connections/>
