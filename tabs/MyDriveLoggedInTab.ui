@@ -26,24 +26,24 @@
     <property name="rightMargin">
      <number>11</number>
     </property>
-    <item row="4" column="0">
-     <widget class="QPushButton" name="pushButton_previous">
-      <property name="text">
-       <string>Previous</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="0" colspan="2">
+    <item row="2" column="0" colspan="3">
      <widget class="QListWidget" name="listWidget_mydrive"/>
     </item>
-    <item row="0" column="1">
+    <item row="0" column="2">
      <widget class="QPushButton" name="pushButton_logout">
       <property name="text">
        <string>Logout</string>
       </property>
      </widget>
     </item>
-    <item row="5" column="1">
+    <item row="6" column="2">
+     <widget class="QPushButton" name="pushButton_2">
+      <property name="text">
+       <string>WFS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="7" column="2">
      <spacer name="verticalSpacer">
       <property name="orientation">
        <enum>Qt::Vertical</enum>
@@ -59,20 +59,6 @@
       </property>
      </spacer>
     </item>
-    <item row="4" column="1">
-     <widget class="QPushButton" name="pushButton_next">
-      <property name="text">
-       <string>Next</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="0" colspan="2">
-     <widget class="QLabel" name="label_path">
-      <property name="text">
-       <string>Path: /</string>
-      </property>
-     </widget>
-    </item>
     <item row="0" column="0">
      <widget class="QLabel" name="label">
       <property name="text">
@@ -80,8 +66,43 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="0" colspan="2">
+    <item row="1" column="0" colspan="3">
+     <widget class="QLabel" name="label_path">
+      <property name="text">
+       <string>Path: /</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QPushButton" name="pushButton">
+      <property name="text">
+       <string>WMS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="5" column="0" colspan="3">
      <widget class="QListWidget" name="listWidget_mydrive_maps"/>
+    </item>
+    <item row="4" column="2">
+     <widget class="QPushButton" name="pushButton_next">
+      <property name="text">
+       <string>Next</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="1">
+     <widget class="QPushButton" name="pushButton_3">
+      <property name="text">
+       <string>WMTS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="0">
+     <widget class="QPushButton" name="pushButton_previous">
+      <property name="text">
+       <string>Previous</string>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
@@ -89,6 +110,12 @@
  <tabstops>
   <tabstop>pushButton_logout</tabstop>
   <tabstop>listWidget_mydrive</tabstop>
+  <tabstop>pushButton_previous</tabstop>
+  <tabstop>pushButton_next</tabstop>
+  <tabstop>listWidget_mydrive_maps</tabstop>
+  <tabstop>pushButton</tabstop>
+  <tabstop>pushButton_3</tabstop>
+  <tabstop>pushButton_2</tabstop>
  </tabstops>
  <resources/>
  <connections/>
