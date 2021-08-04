@@ -249,7 +249,7 @@ class MyDriveLoggedInTab(QDialog):
         self.loginToken = ""
         self.loggedIn = False
         self.userInfo = {}
-        self.selected = ListData()
+        self.selected = None
         self.level = 0
         self.mode = ""
         self.path = "/"
@@ -281,12 +281,17 @@ class MyDriveLoggedInTab(QDialog):
         self.label_path.setText(f"Path: {path}")
 
     def onNext(self):
+        log("BEGIN")
+        log(self.folderstack)
         if (self.level == 0):
             self.onNextRoot()
         else:
             self.onNextNormal()
         self.level += 1
+        self.selected = None
         self.fixEnabledButtons()
+        log(self.folderstack)
+        log("END")
         # TODO using addToPath
 
     def onNextNormal(self):
@@ -352,36 +357,47 @@ class MyDriveLoggedInTab(QDialog):
         [self.listWidget_mydrive.addItem(mapDataToListItem(folderdata)) for folderdata in folders["result"]]
 
     def onPrevious(self):
+        log("BEGIN")
+        log(self.folderstack)
         self.level -= 1
         self.removeFromPath()
         self.fixEnabledButtons()
+        self.selected = None
 
         if self.level == 0:
-            self.clearListWidget()
             self.populateListWithRoot()
             self.path = "/"
             self.folderstack = []
+            log(self.folderstack)
+            log("END2")
             return
         
         if self.level == 1:
+            self.folderstack.pop()
             self.getFolder(self.folderstack[0], True)
-            self.folderstack = []
+            log(self.folderstack)
+            log("END3")
             return
 
         self.folderstack.pop()
         self.getFolder(self.folderstack[len(self.folderstack) - 1])
+        log(self.folderstack)
+        log("END1")
         
     
     def fixEnabledButtons(self, disableAll=False):
-        self.pushButton_previous.setEnabled(True)
-        self.pushButton_next.setEnabled(True)
-
         if disableAll:
             self.pushButton_previous.setEnabled(False)
             self.pushButton_next.setEnabled(False)
-        elif self.selected.data(QtCore.Qt.UserRole).isEmpty(): 
-            self.pushButton_next.setEnabled(False)
-        elif self.level == 0:
+            return
+        
+        self.pushButton_previous.setEnabled(True)
+        self.pushButton_next.setEnabled(False)
+
+        if not (self.selected is None):
+            self.pushButton_next.setEnabled(True)
+        
+        if self.level == 0:
             self.pushButton_previous.setEnabled(False)
 
     def clearListWidget(self, which=0):
@@ -407,6 +423,7 @@ class MyDriveLoggedInTab(QDialog):
         self.logoutSignal.emit()
 
     def populateListWithRoot(self):
+        self.clearListWidget()
         myprojects = ListData("rootfolder", "myMaps")
         sharedwithme = ListData("rootfolder", "shared")
         favorites = ListData("rootfolder", "favorites")
