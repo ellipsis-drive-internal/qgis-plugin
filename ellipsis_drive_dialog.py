@@ -74,7 +74,7 @@ DEBUG = True
 # TODO
 # - pagination of folders and maps
 
-def mapDataToListItem(mapdata):
+def convertMapdataToListItem(mapdata):
     newitem = QListWidgetItem()
     newitem.setText(mapdata["name"])
     item = ListData("id", mapdata["id"])
@@ -95,6 +95,17 @@ def getMetadata(mapid, token):
     data = json.loads(j1.text)
     jlog(data)
     return data
+
+def getUrl(mode, mapId):
+    apiurl = f"{URL}/{mode}/{mapId}"
+    log(f"getUrl: {apiurl}")
+    pyclip.copy(apiurl)
+    msg = QMessageBox()
+    msg.setWindowTitle("Success")
+    msg.setIcon(QMessageBox.Information)
+    msg.setText("Url copied to clipboard!")
+    msg.setStandardButtons(QMessageBox.Ok)
+    msg.exec_()
 
 class ListData:
     """ Class used for objects in the QList of the EllipsisConnect plugin """
@@ -254,16 +265,62 @@ class MyDriveLoggedInTab(QDialog):
         self.mode = ""
         self.path = "/"
         self.folderstack = []
+        self.currentlySelectedId = ""
+        self.radioState = "raster"
         self.listWidget_mydrive.itemClicked.connect(self.onListWidgetClick)
+
         self.pushButton_logout.clicked.connect(self.logOut)
         self.pushButton_previous.clicked.connect(self.onPrevious)
         self.pushButton_next.clicked.connect(self.onNext)
+
+        self.pushButton_wms.clicked.connect(lambda:getUrl("wms", self.currentlySelectedId))
+        self.pushButton_wmts.clicked.connect(lambda:getUrl("wmts", self.currentlySelectedId))
+        self.pushButton_wfs.clicked.connect(lambda:getUrl("wfs", self.currentlySelectedId))
+
+        self.radioRaster.toggled.connect(lambda:self.manageRadioState(self.radioRaster))
+        self.radioVector.toggled.connect(lambda:self.manageRadioState(self.radioVector))
+
+        self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
         
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         self.fixEnabledButtons(True)
+        self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
-    # TODO implement a better way to handle these strings?
+    def disableCorrectButtons(self, all = False):
+        if all:
+            self.pushButton_wms.setEnabled(False)
+            self.pushButton_wmts.setEnabled(False)
+            self.pushButton_wfs.setEnabled(False)
+        elif self.radioState == "raster":
+            self.pushButton_wms.setEnabled(True)
+            self.pushButton_wmts.setEnabled(True)
+            self.pushButton_wfs.setEnabled(False)
+        else:
+            self.pushButton_wms.setEnabled(False)
+            self.pushButton_wmts.setEnabled(False)
+            self.pushButton_wfs.setEnabled(True)
+
+    def manageRadioState(self, b):
+        if b.text() == "Raster data":
+            if b.isChecked():
+                self.radioState = "raster"
+            else:
+                self.radioState = "vector"
+        elif b.text() == "Vector data":
+            if b.isChecked():
+                self.radioState = "vector"
+            else:
+                self.radioState = "raster"
+        if (self.currentlySelectedId != ""):
+            self.disableCorrectButtons()
+        else:
+            self.disableCorrectButtons(True)
+
+    def onMapItemClick(self, item):
+        self.disableCorrectButtons()
+        self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
+        log(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
 
     def removeFromPath(self):
         if (self.level == 0):
@@ -289,6 +346,7 @@ class MyDriveLoggedInTab(QDialog):
             self.onNextNormal()
         self.level += 1
         self.selected = None
+        self.disableCorrectButtons()
         self.fixEnabledButtons()
         log(self.folderstack)
         log("END")
@@ -353,8 +411,8 @@ class MyDriveLoggedInTab(QDialog):
         maps = json.loads(j1.text)
         folders = json.loads(j2.text)
 
-        [self.listWidget_mydrive_maps.addItem(mapDataToListItem(mapdata)) for mapdata in maps["result"]]
-        [self.listWidget_mydrive.addItem(mapDataToListItem(folderdata)) for folderdata in folders["result"]]
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata)) for mapdata in maps["result"]]
+        [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata)) for folderdata in folders["result"]]
 
     def onPrevious(self):
         log("BEGIN")
@@ -368,6 +426,7 @@ class MyDriveLoggedInTab(QDialog):
             self.populateListWithRoot()
             self.path = "/"
             self.folderstack = []
+            self.disableCorrectButtons(True)
             log(self.folderstack)
             log("END2")
             return
@@ -375,12 +434,14 @@ class MyDriveLoggedInTab(QDialog):
         if self.level == 1:
             self.folderstack.pop()
             self.getFolder(self.folderstack[0], True)
+            self.disableCorrectButtons()
             log(self.folderstack)
             log("END3")
             return
 
         self.folderstack.pop()
         self.getFolder(self.folderstack[len(self.folderstack) - 1])
+        self.disableCorrectButtons()
         log(self.folderstack)
         log("END1")
         
@@ -507,9 +568,9 @@ class CommunityTab(QDialog):
         self.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
         self.lineEdit_communitysearch.textChanged.connect(self.onCommunitySearchChange)
 
-        self.pushButton_wms.clicked.connect(lambda:self.getUrl("wms", self.currentlySelectedId))
-        self.pushButton_wmts.clicked.connect(lambda:self.getUrl("wmts", self.currentlySelectedId))
-        self.pushButton_wfs.clicked.connect(lambda:self.getUrl("wfs", self.currentlySelectedId))
+        self.pushButton_wms.clicked.connect(lambda:getUrl("wms", self.currentlySelectedId))
+        self.pushButton_wmts.clicked.connect(lambda:getUrl("wmts", self.currentlySelectedId))
+        self.pushButton_wfs.clicked.connect(lambda:getUrl("wfs", self.currentlySelectedId))
 
         self.disableCorrectButtons(True)
         
@@ -535,19 +596,6 @@ class CommunityTab(QDialog):
             self.pushButton_wms.setEnabled(False)
             self.pushButton_wmts.setEnabled(False)
             self.pushButton_wfs.setEnabled(True)
-            
-
-    def getUrl(self, mode, mapId):
-        apiurl = f"{URL}/{mode}/{mapId}"
-        log(f"getUrl: {apiurl}")
-        pyclip.copy(apiurl)
-        msg = QMessageBox()
-        msg.setWindowTitle("Success")
-        msg.setIcon(QMessageBox.Information)
-        msg.setText("Url copied to clipboard!")
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
-
 
     def manageRadioState(self, b):
         if b.text() == "Raster data":
@@ -592,7 +640,7 @@ class CommunityTab(QDialog):
             return []
         data = json.loads(j1.text)
         for mapdata in data["result"]:
-            self.listWidget_community.addItem(mapDataToListItem(mapdata))
+            self.listWidget_community.addItem(convertMapdataToListItem(mapdata))
         
     def onCommunitySearchChange(self, text):
         """ Change the internal state of the community search string """
