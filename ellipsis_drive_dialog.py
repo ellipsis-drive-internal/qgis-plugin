@@ -426,7 +426,7 @@ class MyDriveLoggedInTab(QDialog):
         [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata)) for folderdata in folders["result"]]
 
     def onPrevious(self):
-        log("BEGIN")
+        log("onPrevious start")
         log(self.folderstack)
         self.level -= 1
         self.removeFromPath()
@@ -439,7 +439,7 @@ class MyDriveLoggedInTab(QDialog):
             self.folderstack = []
             self.disableCorrectButtons(True)
             log(self.folderstack)
-            log("END2")
+            log("onPrevious level 0 end")
             return
         
         if self.level == 1:
@@ -447,17 +447,18 @@ class MyDriveLoggedInTab(QDialog):
             self.getFolder(self.folderstack[0], True)
             self.disableCorrectButtons()
             log(self.folderstack)
-            log("END3")
+            log("onPrevious level 1 end")
             return
 
         self.folderstack.pop()
         self.getFolder(self.folderstack[len(self.folderstack) - 1])
         self.disableCorrectButtons()
         log(self.folderstack)
-        log("END1")
+        log("onPrevious regular end")
         
     
     def fixEnabledButtons(self, disableAll=False):
+        """ correctly enable and disable buttons in the MyDrive tab """
         if disableAll:
             self.pushButton_previous.setEnabled(False)
             self.pushButton_next.setEnabled(False)
@@ -489,12 +490,14 @@ class MyDriveLoggedInTab(QDialog):
         self.fixEnabledButtons()
 
     def logOut(self):
+        """ emits the logout signal and removes the login token from the settings """
         log("logging out")
         if (self.settings.contains("token")):
             self.settings.remove("token")
         self.logoutSignal.emit()
 
     def populateListWithRoot(self):
+        """ Clears the listwidgets and adds the 3 root folders to the folder widget """
         self.clearListWidget()
         myprojects = ListData("rootfolder", "myMaps")
         sharedwithme = ListData("rootfolder", "shared")
@@ -595,6 +598,7 @@ class CommunityTab(QDialog):
     # api.ellipsis-drive.com/v1/wfs/mapId
 
     def disableCorrectButtons(self, all = False):
+        """ enable and disable the correct buttons in the community library tab """
         if all:
             self.pushButton_wms.setEnabled(False)
             self.pushButton_wmts.setEnabled(False)
