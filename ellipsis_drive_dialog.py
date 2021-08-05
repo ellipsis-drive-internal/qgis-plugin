@@ -73,6 +73,7 @@ DEBUG = True
 
 # TODO
 # - pagination of folders and maps
+# - Trash folder?
 
 def convertMapdataToListItem(mapdata):
     newitem = QListWidgetItem()
@@ -97,9 +98,10 @@ def getMetadata(mapid, token):
     return data
 
 def getUrl(mode, mapId):
-    apiurl = f"{URL}/{mode}/{mapId}"
-    log(f"getUrl: {apiurl}")
-    pyclip.copy(apiurl)
+    """ constructs the url and copies it to the clipboard"""
+    theurl = f"{URL}/{mode}/{mapId}"
+    log(f"getUrl: {theurl}")
+    pyclip.copy(theurl)
     msg = QMessageBox()
     msg.setWindowTitle("Success")
     msg.setIcon(QMessageBox.Information)
@@ -145,11 +147,12 @@ def debounce(wait):
     return decorator
 
 def log(text):
+    """ only prints when DEBUG is True """
     if DEBUG:
         print(text)
 
 def jlog(obj):
-    # create a formatted string of the Python JSON object
+    """ logs a JSON object"""
     text = json.dumps(obj, sort_keys=True, indent=4)
     log(text)
 
@@ -199,13 +202,15 @@ class MyDriveLoginTab(QDialog):
         data = resp.json()
         jlog(data)
         if (resp):
-            print("huts")
+            log("getUserData success")
             self.userInfo = data
             return True
+        log("getUserData failed")
         return False
         
 
     def loginButton(self):
+        """ handler for the log in button """
         actual_remember = False
         # check if the user is sure that they want us to remember their login token
         if (self.rememberMe):
@@ -253,6 +258,7 @@ class MyDriveLoginTab(QDialog):
         self.password = text
 
 class MyDriveLoggedInTab(QDialog):
+    """ The LoggedIn tab, giving users access to their drive"""
     logoutSignal = pyqtSignal()
     def __init__(self):
         super(MyDriveLoggedInTab, self).__init__()
@@ -287,8 +293,9 @@ class MyDriveLoggedInTab(QDialog):
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
-    def disableCorrectButtons(self, all = False):
-        if all:
+    def disableCorrectButtons(self, disableAll = False):
+        """ helper function to fix the currently enabled buttons """
+        if disableAll:
             self.pushButton_wms.setEnabled(False)
             self.pushButton_wmts.setEnabled(False)
             self.pushButton_wfs.setEnabled(False)
@@ -323,6 +330,7 @@ class MyDriveLoggedInTab(QDialog):
         log(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
 
     def removeFromPath(self):
+        """ remove one level from the path, useful when going back in the folder structure """
         if (self.level == 0):
             self.setPath("/")
             return
@@ -334,10 +342,12 @@ class MyDriveLoggedInTab(QDialog):
         self.setPath(f"{self.path}/{foldername}")
 
     def setPath(self, path):
+        """ set the displayed path """
         self.path = path
         self.label_path.setText(f"Path: {path}")
 
     def onNext(self):
+        """ handler for the Next button, used for navigating the folder structure """
         log("BEGIN")
         log(self.folderstack)
         if (self.level == 0):
@@ -353,6 +363,7 @@ class MyDriveLoggedInTab(QDialog):
         # TODO using addToPath
 
     def onNextNormal(self):
+        """ non-root onNext"""
         pathId = self.selected.data(QtCore.Qt.UserRole).getData()
         self.getFolder(pathId)
         self.folderstack.append(pathId)
@@ -361,6 +372,7 @@ class MyDriveLoggedInTab(QDialog):
         #self.addToPath(pathId = self.selected.get)
 
     def onNextRoot(self):
+        """ onNext for root folders """
         root = self.selected.data(QtCore.Qt.UserRole).getData()
         self.getFolder(root, True)
         self.folderstack.append(root)
@@ -368,8 +380,7 @@ class MyDriveLoggedInTab(QDialog):
     
 
     def getFolder(self, id, isRoot=False):
-        # TODO decide wether this function returns the items or just replaces them..
-        """ replaces listwidgets with the folders and maps in a folder (id)"""
+        """ clears the listwidgets and fills them with the folders and maps in the specified folder """
         apiurl = ""
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         headers["Authorization"] = f"Bearer {self.loginToken}"
@@ -653,19 +664,10 @@ class CommunityTab(QDialog):
         log(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
 
         
-# idee: laat de Tabs wel gewoon hun eigen klasse zijn, maar de UI files laden
 class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
         super(EllipsisConnectDialog, self).__init__(parent)
-        # Set up the user interface from Designer through FORM_CLASS.
-        # After self.setupUi() you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
-        #loginTab = uic.loadUi(os.path.join(TABSFOLDER, "LoginTab.ui"))
-        #communityTab = uic.loadUi(os.path.join(TABSFOLDER, "CommunityTab.ui"))
-
         self.setupUi(self)
         self.tabWidget.addTab(MyDriveTab(), "My Drive")
         self.tabWidget.addTab(CommunityTab(), "Community Library")
