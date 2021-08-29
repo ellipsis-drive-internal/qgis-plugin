@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>336</width>
+    <width>325</width>
     <height>558</height>
    </rect>
   </property>
@@ -26,67 +26,55 @@
     <property name="rightMargin">
      <number>11</number>
     </property>
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_path">
-      <property name="text">
-       <string>Path: /</string>
-      </property>
-     </widget>
-    </item>
-    <item row="12" column="2">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>30</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Logged in!</string>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="0" colspan="3">
-     <widget class="QListWidget" name="listWidget_mydrive_maps"/>
-    </item>
-    <item row="11" column="0">
+    <item row="10" column="1">
      <widget class="QPushButton" name="pushButton_wms">
       <property name="text">
-       <string>WMS</string>
+       <string>Get WMS</string>
       </property>
      </widget>
     </item>
-    <item row="7" column="2">
+    <item row="8" column="0" colspan="2">
+     <widget class="QListWidget" name="listWidget_mydrive_maps"/>
+    </item>
+    <item row="7" column="1">
      <widget class="QPushButton" name="pushButton_next">
       <property name="text">
        <string>Next</string>
       </property>
      </widget>
     </item>
-    <item row="0" column="2">
-     <widget class="QPushButton" name="pushButton_logout">
+    <item row="10" column="0">
+     <widget class="QPushButton" name="pushButton_wfs">
       <property name="text">
-       <string>Logout</string>
+       <string>Get WFS</string>
       </property>
      </widget>
     </item>
-    <item row="5" column="0" colspan="3">
-     <widget class="QListWidget" name="listWidget_mydrive"/>
+    <item row="9" column="0">
+     <widget class="QPushButton" name="pushButton_wcs">
+      <property name="text">
+       <string>Get WCS</string>
+      </property>
+     </widget>
     </item>
-    <item row="11" column="1">
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Welcome!</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="0" colspan="2">
+     <widget class="QLabel" name="label_path">
+      <property name="text">
+       <string>Current path: /</string>
+      </property>
+     </widget>
+    </item>
+    <item row="9" column="1">
      <widget class="QPushButton" name="pushButton_wmts">
       <property name="text">
-       <string>WMTS</string>
+       <string>Get WMTS</string>
       </property>
      </widget>
     </item>
@@ -97,42 +85,45 @@
       </property>
      </widget>
     </item>
-    <item row="11" column="2">
-     <widget class="QPushButton" name="pushButton_wfs">
+    <item row="13" column="1">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>0</width>
+        <height>30</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item row="0" column="1">
+     <widget class="QPushButton" name="pushButton_logout">
       <property name="text">
-       <string>WFS</string>
+       <string>Logout</string>
       </property>
      </widget>
     </item>
-    <item row="9" column="0">
-     <widget class="QRadioButton" name="radioRaster">
-      <property name="text">
-       <string>Raster data</string>
-      </property>
-      <property name="checked">
-       <bool>true</bool>
-      </property>
-     </widget>
-    </item>
-    <item row="9" column="2">
-     <widget class="QRadioButton" name="radioVector">
-      <property name="text">
-       <string>Vector data</string>
-      </property>
-     </widget>
+    <item row="5" column="0" colspan="2">
+     <widget class="QListWidget" name="listWidget_mydrive"/>
     </item>
    </layout>
   </widget>
  </widget>
  <tabstops>
-  <tabstop>pushButton_logout</tabstop>
   <tabstop>listWidget_mydrive</tabstop>
   <tabstop>pushButton_previous</tabstop>
   <tabstop>pushButton_next</tabstop>
   <tabstop>listWidget_mydrive_maps</tabstop>
-  <tabstop>pushButton_wms</tabstop>
+  <tabstop>pushButton_wcs</tabstop>
   <tabstop>pushButton_wmts</tabstop>
   <tabstop>pushButton_wfs</tabstop>
+  <tabstop>pushButton_wms</tabstop>
+  <tabstop>pushButton_logout</tabstop>
  </tabstops>
  <resources/>
  <connections/>
