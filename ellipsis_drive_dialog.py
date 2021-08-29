@@ -82,12 +82,16 @@ DEBUG = True
 # - Trash folder?
 # - properly allign the 'My Drive' and 'Community Library' tabs (buttons should remain stationary when switching)
 
-def convertMapdataToListItem(mapdata, isFolder = True, isCommunity = False):
+def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False):
     # TODO other object as data, maybe the entire mapdata object?
     newitem = QListWidgetItem()
     icon = QIcon()
-    if isCommunity:
-        item = ListData("id", mapdata["id"])
+    if isShape:
+        icon = QIcon(VECTORICON)
+        item = ListData("id", mapdata["id"], True)
+    elif isMap:
+        icon= QIcon(RASTERICON)
+        item = ListData("id", mapdata["id"], False)
     elif isFolder:
         icon = QIcon(FOLDERICON)
         item = ListData("id", mapdata["id"])
@@ -656,6 +660,7 @@ class CommunityTab(QDialog):
         self.disableCorrectButtons(True)
 
         apiurl = f"{URL}/account/maps"
+        apiurl2 = f"{URL}/account/shapes"
         log("Getting community maps")
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         data = {
@@ -664,16 +669,15 @@ class CommunityTab(QDialog):
         }
 
         j1 = requests.post(apiurl, json=data, headers=headers)
-        if not j1:
+        j2 = requests.post(apiurl2, json=data, headers=headers)
+        if not j1 or not j2:
             log("getCommunityList failed!")
-            return []
+            return
         data = json.loads(j1.text)
-        firstpass = True
-        for mapdata in data["result"]:
-            if firstpass:
-                getMetadata(mapdata["id"])
-                firstpass = False
-            self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, True))
+        data2 = json.loads(j2.text)
+
+        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, False, True)) for mapdata in data["result"]]
+        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, True, False)) for mapdata in data2["result"]]
         
     def onCommunitySearchChange(self, text):
         """ Change the internal state of the community search string """
