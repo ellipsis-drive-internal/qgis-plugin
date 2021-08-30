@@ -43,13 +43,7 @@ from PyQt5 import QtCore
 
 from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox, QWidget, QGridLayout, QLabel
 
-try:
-    import pyclip
-except ImportError:
-    this_dir = os.path.dirname(os.path.realpath(__file__))
-    path = os.path.join(this_dir, 'pyclip-0.5.4-py3-none-any')
-    sys.path.append(path)
-    import pyclip
+import pyclip
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
