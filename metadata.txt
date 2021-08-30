@@ -12,8 +12,8 @@ email=info@ellipsis-drive.com
 
 about=Easily open Ellipsis Drive content
 
-tracker=http://bugs
-repository=http://github.com/ellipsis-drive-internal/qgis-plugin
+tracker=https://github.com/ellipsis-drive-internal/qgis-plugin/issues
+repository=https://github.com/ellipsis-drive-internal/qgis-plugin
 # End of mandatory metadata
 
 # Recommended items:
@@ -23,9 +23,9 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python
+tags=python,ellipsis-drive,ellipsis drive
 
-homepage=http://homepage
+homepage=https://ellipsis-drive.com
 category=Plugins
 icon=icon.png
 # experimental flag
