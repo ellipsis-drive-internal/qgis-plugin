@@ -554,6 +554,8 @@ class MyDriveLoggedInTab(QDialog):
         self.listWidget_mydrive.addItem(favoritesitem)
 
 class MyDriveTab(QDialog):
+    loginSignal = pyqtSignal(object)
+    logoutSignal = pyqtSignal()
     def __init__(self):
         super(MyDriveTab, self).__init__()
         uic.loadUi(os.path.join(TABSFOLDER, "MyDriveStack.ui"), self)
@@ -594,6 +596,7 @@ class MyDriveTab(QDialog):
         self.loggedInWidget.loggedIn = True
         self.loggedInWidget.userInfo = userInfo
         self.userInfo = userInfo
+        self.loginSignal.emit(token)
         self.stackedWidget.setCurrentIndex(1)
     
     def handleLogoutSignal(self):
@@ -611,6 +614,7 @@ class CommunityTab(QDialog):
         self.communitySearch = ""
         self.currentlySelectedId = ""
         self.currentlySelectedMap = None
+        self.loginToken = ""
 
         self.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
         self.lineEdit_communitysearch.textChanged.connect(self.onCommunitySearchChange)
@@ -618,8 +622,15 @@ class CommunityTab(QDialog):
         self.pushButton_wms.clicked.connect(lambda:getUrl("wms", self.currentlySelectedId))
         self.pushButton_wmts.clicked.connect(lambda:getUrl("wmts", self.currentlySelectedId))
         self.pushButton_wfs.clicked.connect(lambda:getUrl("wfs", self.currentlySelectedId))
+        self.pushButton_wcs.clicked.connect(lambda:getUrl("wcs", self.currentlySelectedId))
+        
 
         self.disableCorrectButtons(True)
+
+        self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
+
+        if (self.settings.contains("token")):
+            self.loginToken = self.settings.value("token")
 
         self.getCommunityList()
 
@@ -653,6 +664,8 @@ class CommunityTab(QDialog):
         # reset the list before updating it
         # self.listWidget_community.clear()
 
+        print(f"getCommunityList called, token = '{self.loginToken}'")
+
         for _ in range(self.listWidget_community.count()):
             self.listWidget_community.takeItem(0)
         
@@ -663,6 +676,8 @@ class CommunityTab(QDialog):
         apiurl2 = f"{URL}/account/shapes"
         log("Getting community maps")
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+        if (not self.loginToken == ""):
+            headers["Authorization"] = f"Bearer {self.loginToken}"
         data = {
             "access": ["public"],
             "name": f"{self.communitySearch}"
@@ -695,6 +710,18 @@ class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
         super(EllipsisConnectDialog, self).__init__(parent)
+        self.mydrivetab = MyDriveTab()
+        self.communitytab = CommunityTab()
+        self.mydrivetab.loginSignal.connect(self.handleLoginSignal)
+        self.mydrivetab.logoutSignal.connect(self.handleLogoutSignal)
         self.setupUi(self)
-        self.tabWidget.addTab(MyDriveTab(), "My Drive")
-        self.tabWidget.addTab(CommunityTab(), "Community Library")
+        self.tabWidget.addTab(self.mydrivetab, "My Drive")
+        self.tabWidget.addTab(self.communitytab, "Community Library")
+    
+    def handleLoginSignal(self, token):
+        self.communitytab.loginToken = token
+        self.communitytab.getCommunityList()
+    
+    def handleLogoutSignal(self):
+        self.communitytab.loginToken = ""
+        self.communitytab.getCommunityList()
