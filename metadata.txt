@@ -8,12 +8,12 @@ qgisMinimumVersion=3.0
 description=Connect to Ellipsis Drive
 version=0.1
 author=Ellipsis Drive
-email=floydremmerswaal@gmail.com
+email=info@ellipsis-drive.com
 
 about=Easily open Ellipsis Drive content
 
 tracker=http://bugs
-repository=http://repo
+repository=http://github.com/ellipsis-drive-internal/qgis-plugin
 # End of mandatory metadata
 
 # Recommended items:
