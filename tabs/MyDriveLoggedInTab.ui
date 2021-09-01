@@ -36,24 +36,10 @@
       </property>
      </widget>
     </item>
-    <item row="8" column="1">
-     <widget class="QPushButton" name="pushButton_previous">
-      <property name="text">
-       <string>Previous</string>
-      </property>
-     </widget>
-    </item>
     <item row="2" column="1" colspan="2">
      <widget class="QLabel" name="label_path">
       <property name="text">
        <string>Current path: /</string>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="2">
-     <widget class="QPushButton" name="pushButton_next">
-      <property name="text">
-       <string>Next</string>
       </property>
      </widget>
     </item>
@@ -164,8 +150,6 @@
  </widget>
  <tabstops>
   <tabstop>listWidget_mydrive</tabstop>
-  <tabstop>pushButton_previous</tabstop>
-  <tabstop>pushButton_next</tabstop>
   <tabstop>listWidget_mydrive_maps</tabstop>
   <tabstop>pushButton_wcs</tabstop>
   <tabstop>pushButton_wmts</tabstop>

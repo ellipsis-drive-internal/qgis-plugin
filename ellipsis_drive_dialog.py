@@ -306,8 +306,6 @@ class MyDriveLoggedInTab(QDialog):
         self.listWidget_mydrive.itemClicked.connect(self.onListWidgetClick)
 
         self.pushButton_logout.clicked.connect(self.logOut)
-        self.pushButton_previous.clicked.connect(self.onPrevious)
-        self.pushButton_next.clicked.connect(self.onNext)
 
         self.pushButton_wms.clicked.connect(lambda:getUrl("wms", self.currentlySelectedId, self.loginToken))
         self.pushButton_wmts.clicked.connect(lambda:getUrl("wmts", self.currentlySelectedId, self.loginToken))
@@ -317,7 +315,6 @@ class MyDriveLoggedInTab(QDialog):
         self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
         
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
-        self.fixEnabledButtons(True)
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
@@ -376,7 +373,6 @@ class MyDriveLoggedInTab(QDialog):
         self.currentlySelectedMap = None
         self.currentlySelectedId = ""
         self.disableCorrectButtons()
-        self.fixEnabledButtons()
         log(self.folderstack)
         log("END")
         # TODO using addToPath
@@ -452,7 +448,6 @@ class MyDriveLoggedInTab(QDialog):
         log(self.folderstack)
         self.level -= 1
         self.removeFromPath()
-        self.fixEnabledButtons()
         self.selected = None
         self.currentlySelectedId = ""
         self.currentlySelectedMap = None
@@ -480,38 +475,29 @@ class MyDriveLoggedInTab(QDialog):
         log(self.folderstack)
         log("onPrevious regular end")
         
-    
-    def fixEnabledButtons(self, disableAll=False):
-        """ correctly enable and disable buttons in the MyDrive tab """
-        if disableAll:
-            self.pushButton_previous.setEnabled(False)
-            self.pushButton_next.setEnabled(False)
-            return
-        
-        self.pushButton_previous.setEnabled(True)
-        self.pushButton_next.setEnabled(False)
 
-        if not (self.selected is None):
-            self.pushButton_next.setEnabled(True)
+    def clearListWidget(self, isRoot = False):
+        """ clears list widgets"""
+        for _ in range(self.listWidget_mydrive.count()):
+            self.listWidget_mydrive.takeItem(0)
+        #no parent folder of the root folder, so don't display the ".." directory
+        if  not isRoot:
+            retitem = QListWidgetItem()
+            retitem.setText("..")
+            retitem.setData(QtCore.Qt.UserRole, ListData("return", "..", False))
+            retitem.setIcon(QIcon(FOLDERICON))
+            self.listWidget_mydrive.addItem(retitem)
         
-        if self.level == 0:
-            self.pushButton_previous.setEnabled(False)
-
-    def clearListWidget(self, which=0):
-        """ clears list widgets, 0 = both, 1 = folders, 2 = maps. defaults to both"""
-        # boolean statement could be improved, but I think this is more readable
-        if (which == 0 or which == 1):
-            for _ in range(self.listWidget_mydrive.count()):
-                self.listWidget_mydrive.takeItem(0)
-        
-        if (which == 0 or which == 2):
-            for _ in range(self.listWidget_mydrive_maps.count()):
-                self.listWidget_mydrive_maps.takeItem(0)
+        for _ in range(self.listWidget_mydrive_maps.count()):
+            self.listWidget_mydrive_maps.takeItem(0)
         
 
     def onListWidgetClick(self, item):
         self.selected = item
-        self.fixEnabledButtons()
+        if self.selected.data(QtCore.Qt.UserRole).getType() == "return":
+            self.onPrevious()
+        else:
+            self.onNext()
 
     def logOut(self):
         """ emits the logout signal and removes the login token from the settings """
@@ -522,7 +508,7 @@ class MyDriveLoggedInTab(QDialog):
 
     def populateListWithRoot(self):
         """ Clears the listwidgets and adds the 3 root folders to the folder widget """
-        self.clearListWidget()
+        self.clearListWidget(True)
         myprojects = ListData("rootfolder", "myMaps")
         sharedwithme = ListData("rootfolder", "shared")
         favorites = ListData("rootfolder", "favorites")
