@@ -216,7 +216,17 @@ class MyDriveLoginTab(QDialog):
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
         retval = msg.exec_()
         return retval == QMessageBox.Ok
-    
+
+    def displayLoginError(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+
+        msg.setText("Please enter your correct username and password.")
+        msg.setWindowTitle("Login failed!")
+        msg.setStandardButtons(QMessageBox.Ok)
+        retval = msg.exec_()
+        return
+
     # als de gebruiker 'remember me' niet heeft ingevuld: gewoon inloggen
     # als de gebruiker 'remember me' wel invult: verifiëren
     # Zo ja: inloggen en opslaan
@@ -278,6 +288,7 @@ class MyDriveLoginTab(QDialog):
             self.lineEdit_username.setText("")
             self.lineEdit_password.setText("")
         else:
+            self.displayLoginError()
             log("Login failed")
 
     def onUsernameChange(self, text):
