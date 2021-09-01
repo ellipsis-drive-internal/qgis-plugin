@@ -125,13 +125,19 @@ def getUrl(mode, mapId, token = "empty"):
     else:
         theurl = f"{URL}/{mode}/{mapId}?token={token}"
     log(f"getUrl: {theurl}")
-    pyclip.copy(theurl)
-    msg = QMessageBox()
-    msg.setWindowTitle("Success")
-    msg.setIcon(QMessageBox.Information)
-    msg.setText("Url copied to clipboard!")
-    msg.setStandardButtons(QMessageBox.Ok)
-    msg.exec_()
+    try:
+        pyclip.copy(theurl)
+        msg = QMessageBox()
+        msg.setWindowTitle("Success")
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("Url copied to clipboard!")
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+    except:
+        log("pyclip failed")
+        msg = QMessageBox(QMessageBox.information, "Success", f"Please copy the following url: {theurl}", QMessageBox.Ok)
+        msg.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
+        msg.exec_()
 
 class ListData:
     """ Class used for objects in the QList of the EllipsisConnect plugin """
@@ -663,19 +669,28 @@ class CommunityTab(QDialog):
         self.currentlySelectedId = ""
         self.disableCorrectButtons(True)
 
-        apiurl = f"{URL}/account/maps"
+        apiurl1 = f"{URL}/account/maps"
         apiurl2 = f"{URL}/account/shapes"
         log("Getting community maps")
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         if (not self.loginToken == ""):
             headers["Authorization"] = f"Bearer {self.loginToken}"
-        data = {
+        data1 = {
             "access": ["public"],
-            "name": f"{self.communitySearch}"
+            "name": f"{self.communitySearch}",
+            "disabled": False,
+            "hasTimestamps": True
         }
 
-        j1 = requests.post(apiurl, json=data, headers=headers)
-        j2 = requests.post(apiurl2, json=data, headers=headers)
+        data2= {
+            "access": ["public"],
+            "name": f"{self.communitySearch}",
+            "disabled": False,
+            "hasGeometryLayers": True
+        }
+
+        j1 = requests.post(apiurl1, json=data1, headers=headers)
+        j2 = requests.post(apiurl2, json=data2, headers=headers)
         if not j1 or not j2:
             log("getCommunityList failed!")
             return
