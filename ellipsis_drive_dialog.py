@@ -71,16 +71,13 @@ DEVAPI = 'http://dev.api.ellipsis-drive.com/v1'
 
 DEBUG = True
 
-# api.ellipsis-drive.com/v1/wms/mapId
-# api.ellipsis-drive.com/v1/wmts/mapId
-# api.ellipsis-drive.com/v1/wfs/mapId
-
 # TODO
 # - pagination of folders and maps
 # - Trash folder?
 # - properly allign the 'My Drive' and 'Community Library' tabs (buttons should remain stationary when switching)
 # - create seperate files for the tabs
 # - clean up the file
+# - when the path becomes too long, a part is cut-off: find fix for this
 
 def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False):
     # TODO other object as data, maybe the entire mapdata object?
@@ -388,34 +385,48 @@ class MyDriveLoggedInTab(QDialog):
         """ handler for the Next button, used for navigating the folder structure """
         log("BEGIN")
         log(self.folderstack)
+        success = True
         if (self.level == 0):
-            self.onNextRoot()
+            success = self.onNextRoot()
         else:
-            self.onNextNormal()
-        self.level += 1
-        self.selected = None
-        self.currentlySelectedMap = None
-        self.currentlySelectedId = ""
-        self.disableCorrectButtons()
-        log(self.folderstack)
+            success = self.onNextNormal()
+        if success:
+            self.level += 1
+            self.selected = None
+            self.currentlySelectedMap = None
+            self.currentlySelectedId = ""
+            self.disableCorrectButtons()
+        else:
+            log("cannot open the folder")
+        log(f"level: {self.level} folderstack: {self.folderstack}")
         log("END")
         # TODO using addToPath
 
     def onNextNormal(self):
         """ non-root onNext"""
         pathId = self.selected.data(QtCore.Qt.UserRole).getData()
-        self.getFolder(pathId)
-        self.folderstack.append(pathId)
-        self.addToPath(self.selected.text())
+        if self.getFolder(pathId):
+            self.folderstack.append(pathId)
+            self.addToPath(self.selected.text())
+            return True
+        else:
+            log("Error! onNextNormal: getFolder failed")
+            log(f"pathid: {pathId}")
+            return False
         
         #self.addToPath(pathId = self.selected.get)
 
     def onNextRoot(self):
         """ onNext for root folders """
         root = self.selected.data(QtCore.Qt.UserRole).getData()
-        self.getFolder(root, True)
-        self.folderstack.append(root)
-        self.addToPath(root)
+        if self.getFolder(root, True):
+            self.folderstack.append(root)
+            self.addToPath(root)
+            return True
+        else:
+            log("Error! onNextRoot: getFolder failed")
+            log(f"root: {root}")
+            return False
     
 
     def getFolder(self, id, isRoot=False):
@@ -452,20 +463,24 @@ class MyDriveLoggedInTab(QDialog):
         if not j1 or not j2:
             log("getFolder failed!")
             if not j1:
+                log("Map:")
                 jlog(j1.reason)
             if not j2:
+                log("Folder:")
                 jlog(j2.reason)
+            log(f"Called with arguments id={id}, isRoot={isRoot}")
             return False
         
         self.clearListWidget()
         maps = json.loads(j1.text)
         folders = json.loads(j2.text)
 
-        jlog(maps)
-        jlog(folders)
+        #jlog(maps)
+        #jlog(folders)
 
         [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False)) for mapdata in maps["result"]]
         [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True)) for folderdata in folders["result"]]
+        return True
 
     def onPrevious(self):
         log("onPrevious start")
@@ -486,18 +501,23 @@ class MyDriveLoggedInTab(QDialog):
             return
         
         if self.level == 1:
+            if (self.getFolder(self.folderstack[0], True)):
+                self.folderstack.pop()
+                self.disableCorrectButtons()
+                log(self.folderstack)
+                log("onPrevious level 1 end")
+                return
+            else:
+                log("Error on getFolder!")
+
+        
+        if self.getFolder(self.folderstack[len(self.folderstack) - 2]):
             self.folderstack.pop()
-            self.getFolder(self.folderstack[0], True)
             self.disableCorrectButtons()
             log(self.folderstack)
-            log("onPrevious level 1 end")
-            return
-
-        self.folderstack.pop()
-        self.getFolder(self.folderstack[len(self.folderstack) - 1])
-        self.disableCorrectButtons()
-        log(self.folderstack)
-        log("onPrevious regular end")
+            log("onPrevious regular end")
+        else:
+            log("getFolder failed!")
         
 
     def clearListWidget(self, isRoot = False):
