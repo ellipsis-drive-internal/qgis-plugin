@@ -43,11 +43,14 @@ from PyQt5 import QtCore
 
 from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox, QWidget, QGridLayout, QLabel
 
+from enum import Enum
+
 try:
     import pyclip
     PYCLIP = True
 except ImportError:
     PYCLIP = False
+
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -71,6 +74,13 @@ DEVAPI = 'http://dev.api.ellipsis-drive.com/v1'
 
 DEBUG = True
 
+class ErrorLevel(Enum):
+    NORMAL = 1
+    DISABLED = 2
+    NOLAYERS = 3
+    NOTIMESTAMPS = 4
+    DELETED = 5
+
 # TODO
 # - pagination of folders and maps
 # - Trash folder?
@@ -79,7 +89,7 @@ DEBUG = True
 # - clean up the file
 # - when the path becomes too long, a part is cut-off: find fix for this
 
-def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False):
+def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False, errorLevel = ErrorLevel.NORMAL):
     # TODO other object as data, maybe the entire mapdata object?
     newitem = QListWidgetItem()
     icon = QIcon()
@@ -98,6 +108,21 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
     else:
         icon = QIcon(RASTERICON)
         item = ListData("id", mapdata["id"], mapdata["isShape"])
+
+    # now we handle the errorLevel
+    if not (errorLevel == ErrorLevel.NORMAL):
+        errmsgdict = {
+            ErrorLevel.DELETED: "Project deleted",
+            ErrorLevel.NOTIMESTAMPS: "Map has no timestamps",
+            ErrorLevel.NOLAYERS: "Shape has no layers",
+            ErrorLevel.DISABLED: "Project disabled",
+        }
+        item = ListData("error", errmsgdict[errorLevel])
+        newitem.setText(f'{mapdata["name"]} ERROR')
+        newitem.setData(QtCore.Qt.UserRole, item)
+        newitem.setIcon(icon)
+        return newitem
+     
     newitem.setText(mapdata["name"])
     newitem.setData(QtCore.Qt.UserRole, item)
     newitem.setIcon(icon)
@@ -237,11 +262,6 @@ class MyDriveLoginTab(QDialog):
         retval = msg.exec_()
         return
 
-    # als de gebruiker 'remember me' niet heeft ingevuld: gewoon inloggen
-    # als de gebruiker 'remember me' wel invult: verifiëren
-    # Zo ja: inloggen en opslaan
-    # Zo nee: niet inloggen
-
     def getUserData(self, token):
         log("Getting user data")
         apiurl = f"{URL}/account/info"
@@ -343,6 +363,23 @@ class MyDriveLoggedInTab(QDialog):
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
+    def resetState(self):
+        self.clearListWidget()
+        self.loginToken = ""
+        self.loggedIn = False
+        self.userInfo = {}
+        self.selected = None
+        self.level = 0
+        self.mode = ""
+        self.path = "/"
+        self.folderstack = []
+        self.currentlySelectedMap = None
+        self.currentlySelectedId = ""
+        self.searching = False
+        self.searchText = ""
+        self.disableCorrectButtons(True)
+        self.populateListWithRoot()
+
     def returnToNormal(self):
         if len(self.folderstack) == 0:
             self.populateListWithRoot()
@@ -391,8 +428,8 @@ class MyDriveLoggedInTab(QDialog):
         data = json.loads(j1.text)
         data2 = json.loads(j2.text)
 
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, False, True)) for mapdata in data["result"]]
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, True, False)) for mapdata in data2["result"]]
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, False, True, self.getErrorLevel(mapdata))) for mapdata in data["result"]]
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, True, False, self.getErrorLevel(mapdata))) for mapdata in data2["result"]]
         if len(data["result"]) == 0  and len(data2["result"]) == 0:
             listitem = QListWidgetItem()
             listitem.setText("No results found!")
@@ -430,6 +467,13 @@ class MyDriveLoggedInTab(QDialog):
         #TODO implement logic based on the selected map? or do that when a map is selected
 
     def onMapItemClick(self, item):
+        if item.data((QtCore.Qt.UserRole)).getType() == "error":
+            msg = QMessageBox()
+            msg.setWindowTitle("Error!")
+            msg.setText(item.data((QtCore.Qt.UserRole)).getData())
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+            return
         self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
         self.currentlySelectedMap = item
         log(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
@@ -504,6 +548,19 @@ class MyDriveLoggedInTab(QDialog):
             log(f"root: {root}")
             return False
     
+    def getErrorLevel(self, map):
+        log("is all well?")
+        if "deleted" in map and map["deleted"]:
+                return ErrorLevel.DELETED
+        elif "isShape" in map and "timestamps" in map and (not map["isShape"] and len(map["timestamps"]) == 0):
+            return ErrorLevel.NOTIMESTAMPS
+        elif "isShape" in map and "geometryLayers" and (map["isShape"] and len(map["geometryLayers"]) == 0):
+            return ErrorLevel.NOLAYERS
+        elif "disabled" in map and map["disabled"]:
+            return ErrorLevel.DISABLED
+        else:
+            log("all is well")
+            return ErrorLevel.NORMAL
 
     def getFolder(self, id, isRoot=False):
         """ clears the listwidgets and fills them with the folders and maps in the specified folder """
@@ -553,13 +610,11 @@ class MyDriveLoggedInTab(QDialog):
             return False
         
         self.clearListWidget()
+
         maps = json.loads(j1.text)
         folders = json.loads(j2.text)
 
-        #jlog(maps)
-        #jlog(folders)
-
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False)) for mapdata in maps["result"]]
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, self.getErrorLevel(mapdata))) for mapdata in maps["result"]]
         [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True)) for folderdata in folders["result"]]
         return True
 
@@ -710,6 +765,7 @@ class MyDriveTab(QDialog):
         self.loginToken = ""
         self.loggedInWidget.loggedIn = False
         self.loggedInWidget.loginToken = ""
+        self.loggedInWidget.resetState()
         self.stackedWidget.setCurrentIndex(0)
     
 class CommunityTab(QDialog):
