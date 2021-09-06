@@ -344,17 +344,61 @@ class MyDriveLoggedInTab(QDialog):
         self.populateListWithRoot()
 
     def returnToNormal(self):
-        log(self.folderstack)
         if len(self.folderstack) == 0:
             self.populateListWithRoot()
         else:
             self.getFolder(self.folderstack[len(self.folderstack)-1], len(self.folderstack) == 1)
-        pass
 
+    @debounce(0.5)
     def performSearch(self):
+        if not self.searching:
+            return
         log("performing search")
+
         self.clearListWidget(True)
-        pass
+        self.currentlySelectedId = ""
+        self.disableCorrectButtons(True)
+
+        apiurl1 = f"{URL}/account/maps"
+        apiurl2 = f"{URL}/account/shapes"
+
+        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+        if (not self.loginToken == ""):
+            headers["Authorization"] = f"Bearer {self.loginToken}"
+        data = {
+            "access": ["owned", "subscribed", "favorited"],
+            "name": f"{self.searchText}",
+        }
+
+        j1 = requests.post(apiurl1, json=data, headers=headers)
+        j2 = requests.post(apiurl2, json=data, headers=headers)
+
+        if not j1 or not j2:
+            log("performSearch failed!")
+            log("Data:")
+            log(data)
+            log("Headers:")
+            log(headers)
+            if not j1:
+                log("Maps:")
+                log(apiurl1)
+                log(j1.content)
+            if not j2:
+                log("Shapes:")
+                log(apiurl2)
+                log(j2.content)
+
+        data = json.loads(j1.text)
+        data2 = json.loads(j2.text)
+
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, False, True)) for mapdata in data["result"]]
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, True, False)) for mapdata in data2["result"]]
+        if len(data["result"]) == 0  and len(data2["result"]) == 0:
+            listitem = QListWidgetItem()
+            listitem.setText("No results found!")
+            self.listWidget_mydrive_maps.addItem(listitem)
+            log("no search results")
+
 
     def onSearchChange(self, text):
         if (text == ""):
