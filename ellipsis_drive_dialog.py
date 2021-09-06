@@ -30,7 +30,7 @@ import requests
 from requests import api
 from requests.structures import CaseInsensitiveDict
 
-from threading import Timer
+from threading import ThreadError, Timer
 
 from PyQt5.QtWidgets import QCheckBox, QDialog, QInputDialog, QLineEdit, QMainWindow
 
@@ -323,6 +323,8 @@ class MyDriveLoggedInTab(QDialog):
         self.folderstack = []
         self.currentlySelectedMap = None
         self.currentlySelectedId = ""
+        self.searching = False
+        self.searchText = ""
 
         self.listWidget_mydrive.itemClicked.connect(self.onListWidgetClick)
 
@@ -334,10 +336,35 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_wcs.clicked.connect(lambda:getUrl("wcs", self.currentlySelectedId, self.loginToken))
 
         self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
+
+        self.lineEdit_search.textChanged.connect(self.onSearchChange)
         
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
+
+    def returnToNormal(self):
+        log(self.folderstack)
+        if len(self.folderstack) == 0:
+            self.populateListWithRoot()
+        else:
+            self.getFolder(self.folderstack[len(self.folderstack)-1], len(self.folderstack) == 1)
+        pass
+
+    def performSearch(self):
+        log("performing search")
+        self.clearListWidget(True)
+        pass
+
+    def onSearchChange(self, text):
+        if (text == ""):
+            self.searching = False
+            self.searchText = ""
+            self.returnToNormal()
+        else:
+            self.searching = True
+            self.searchText = text
+            self.performSearch()
 
     def disableCorrectButtons(self, disableAll = False):
         """ helper function to fix the currently enabled buttons """
@@ -379,7 +406,7 @@ class MyDriveLoggedInTab(QDialog):
     def setPath(self, path):
         """ set the displayed path """
         self.path = path
-        self.label_path.setText(f"Path: {path}")
+        self.label_path.setText(f"{path}")
 
     def onNext(self):
         """ handler for the Next button, used for navigating the folder structure """
@@ -397,6 +424,11 @@ class MyDriveLoggedInTab(QDialog):
             self.currentlySelectedId = ""
             self.disableCorrectButtons()
         else:
+            msg = QMessageBox()
+            msg.setWindowTitle("Error!")
+            msg.setText("Cannot open this folder")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
             log("cannot open the folder")
         log(f"level: {self.level} folderstack: {self.folderstack}")
         log("END")
@@ -462,13 +494,18 @@ class MyDriveLoggedInTab(QDialog):
 
         if not j1 or not j2:
             log("getFolder failed!")
+            log("Data:")
+            log(data)
+            log("Headers:")
+            log(headers)
+            log("Url:")
+            log(apiurl)
             if not j1:
                 log("Map:")
-                jlog(j1.reason)
+                log(j1.content)
             if not j2:
                 log("Folder:")
-                jlog(j2.reason)
-            log(f"Called with arguments id={id}, isRoot={isRoot}")
+                log(j2.content)
             return False
         
         self.clearListWidget()
