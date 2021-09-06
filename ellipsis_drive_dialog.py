@@ -32,7 +32,7 @@ from requests.structures import CaseInsensitiveDict
 
 from threading import Timer
 
-from PyQt5.QtWidgets import QCheckBox, QDialog, QLineEdit, QMainWindow
+from PyQt5.QtWidgets import QCheckBox, QDialog, QInputDialog, QLineEdit, QMainWindow
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
@@ -43,7 +43,11 @@ from PyQt5 import QtCore
 
 from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageBox, QWidget, QGridLayout, QLabel
 
-import pyclip
+try:
+    import pyclip
+    PYCLIP = True
+except ImportError:
+    PYCLIP = False
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -75,6 +79,8 @@ DEBUG = True
 # - pagination of folders and maps
 # - Trash folder?
 # - properly allign the 'My Drive' and 'Community Library' tabs (buttons should remain stationary when switching)
+# - create seperate files for the tabs
+# - clean up the file
 
 def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False):
     # TODO other object as data, maybe the entire mapdata object?
@@ -125,7 +131,7 @@ def getUrl(mode, mapId, token = "empty"):
     else:
         theurl = f"{URL}/{mode}/{mapId}?token={token}"
     log(f"getUrl: {theurl}")
-    try:
+    if PYCLIP:
         pyclip.copy(theurl)
         msg = QMessageBox()
         msg.setWindowTitle("Success")
@@ -133,10 +139,11 @@ def getUrl(mode, mapId, token = "empty"):
         msg.setText("Url copied to clipboard!")
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
-    except:
-        log("pyclip failed")
-        msg = QMessageBox(QMessageBox.information, "Success", f"Please copy the following url: {theurl}", QMessageBox.Ok)
-        msg.setTextInteractionFlags(QtCore.Qt.TextSelectableByMouse)
+    else:
+        msg = QInputDialog()
+        msg.setWindowTitle("Success")
+        msg.setLabelText(f"Please copy the following url.")
+        msg.setTextValue(theurl)
         msg.exec_()
 
 class ListData:
