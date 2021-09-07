@@ -64,6 +64,7 @@ ICONSFOLDER = os.path.join(os.path.dirname(__file__), "icons/")
 FOLDERICON = os.path.join(ICONSFOLDER,"folder.svg")
 VECTORICON = os.path.join(ICONSFOLDER,"vector.svg")
 RASTERICON = os.path.join(ICONSFOLDER,"raster.svg")
+ERRORICON = os.path.join(ICONSFOLDER,"error.svg")
 
 URL = 'https://api.ellipsis-drive.com/v1'
 #URL = 'http://dev.api.ellipsis-drive.com/v1'
@@ -110,23 +111,25 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
         item = ListData("id", mapdata["id"], mapdata["isShape"])
 
     # now we handle the errorLevel
-    if not (errorLevel == ErrorLevel.NORMAL):
+    if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL:
+        newitem.setText(mapdata["name"])
+        newitem.setData(QtCore.Qt.UserRole, item)
+        newitem.setIcon(icon)
+        return newitem
+    else:
         errmsgdict = {
             ErrorLevel.DELETED: "Project deleted",
             ErrorLevel.NOTIMESTAMPS: "Map has no timestamps",
             ErrorLevel.NOLAYERS: "Shape has no layers",
             ErrorLevel.DISABLED: "Project disabled",
         }
-        item = ListData("error", errmsgdict[errorLevel])
-        newitem.setText(f'{mapdata["name"]} ERROR')
+        item = ListData("error")
+        newitem.setText(f'{mapdata["name"]} ({errmsgdict[errorLevel]})')
         newitem.setData(QtCore.Qt.UserRole, item)
-        newitem.setIcon(icon)
+        newitem.setIcon(QIcon(ERRORICON))
         return newitem
      
-    newitem.setText(mapdata["name"])
-    newitem.setData(QtCore.Qt.UserRole, item)
-    newitem.setIcon(icon)
-    return newitem
+
 
 def getMetadata(mapid):
     """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
@@ -236,7 +239,7 @@ class MyDriveLoginTab(QDialog):
         self.username = ""
         self.password = ""
         self.userInfo = {}
-        self.rememberMe = False
+        self.rememberMe = self.checkBox_remember.isChecked()
         self.loggedIn = False
     
     def onChangeRemember(self, button):
@@ -346,7 +349,7 @@ class MyDriveLoggedInTab(QDialog):
         self.searching = False
         self.searchText = ""
 
-        self.listWidget_mydrive.itemClicked.connect(self.onListWidgetClick)
+        self.listWidget_mydrive.itemDoubleClicked.connect(self.onListWidgetClick)
 
         self.pushButton_logout.clicked.connect(self.logOut)
 
@@ -358,7 +361,7 @@ class MyDriveLoggedInTab(QDialog):
         self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
 
         self.lineEdit_search.textChanged.connect(self.onSearchChange)
-        
+
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
@@ -468,11 +471,6 @@ class MyDriveLoggedInTab(QDialog):
 
     def onMapItemClick(self, item):
         if item.data((QtCore.Qt.UserRole)).getType() == "error":
-            msg = QMessageBox()
-            msg.setWindowTitle("Error!")
-            msg.setText(item.data((QtCore.Qt.UserRole)).getData())
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec_()
             return
         self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
         self.currentlySelectedMap = item
@@ -549,9 +547,8 @@ class MyDriveLoggedInTab(QDialog):
             return False
     
     def getErrorLevel(self, map):
-        log("is all well?")
         if "deleted" in map and map["deleted"]:
-                return ErrorLevel.DELETED
+            return ErrorLevel.DELETED
         elif "isShape" in map and "timestamps" in map and (not map["isShape"] and len(map["timestamps"]) == 0):
             return ErrorLevel.NOTIMESTAMPS
         elif "isShape" in map and "geometryLayers" and (map["isShape"] and len(map["geometryLayers"]) == 0):
@@ -559,7 +556,6 @@ class MyDriveLoggedInTab(QDialog):
         elif "disabled" in map and map["disabled"]:
             return ErrorLevel.DISABLED
         else:
-            log("all is well")
             return ErrorLevel.NORMAL
 
     def getFolder(self, id, isRoot=False):
@@ -614,7 +610,7 @@ class MyDriveLoggedInTab(QDialog):
         maps = json.loads(j1.text)
         folders = json.loads(j2.text)
 
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, self.getErrorLevel(mapdata))) for mapdata in maps["result"]]
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, errorLevel=self.getErrorLevel(mapdata))) for mapdata in maps["result"]]
         [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True)) for folderdata in folders["result"]]
         return True
 
@@ -755,6 +751,7 @@ class MyDriveTab(QDialog):
         self.loggedInWidget.loginToken = token
         self.loggedInWidget.loggedIn = True
         self.loggedInWidget.userInfo = userInfo
+        self.loggedInWidget.label.setText(f"Welcome {userInfo['username']}!")
         self.userInfo = userInfo
         self.loginSignal.emit(token)
         self.stackedWidget.setCurrentIndex(1)
