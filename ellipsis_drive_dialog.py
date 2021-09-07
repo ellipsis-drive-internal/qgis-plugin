@@ -352,6 +352,7 @@ class MyDriveLoggedInTab(QDialog):
         self.listWidget_mydrive.itemDoubleClicked.connect(self.onListWidgetClick)
 
         self.pushButton_logout.clicked.connect(self.logOut)
+        self.pushButton_stopsearch.clicked.connect(self.stopSearch)
 
         self.pushButton_wms.clicked.connect(lambda:getUrl("wms", self.currentlySelectedId, self.loginToken))
         self.pushButton_wmts.clicked.connect(lambda:getUrl("wmts", self.currentlySelectedId, self.loginToken))
@@ -365,6 +366,12 @@ class MyDriveLoggedInTab(QDialog):
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
+
+    def stopSearch(self):
+        self.searching = False
+        self.searchText = ""
+        self.lineEdit_search.setText("")
+        self.returnToNormal()
 
     def resetState(self):
         self.clearListWidget()
