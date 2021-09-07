@@ -45,6 +45,8 @@ from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageB
 
 from enum import Enum
 
+PYCLIP = False
+
 try:
     import pyclip
     PYCLIP = True
@@ -746,6 +748,19 @@ class MyDriveTab(QDialog):
             self.loggedIn = True
             self.loginToken = self.settings.value("token")
             self.loggedInWidget.loginToken = self.loginToken
+            log("Getting username")
+            apiurl = f"{URL}/account/info"
+            headers = CaseInsensitiveDict()
+            headers["Authorization"] = f"Bearer {self.loginToken}"
+            resp = requests.get(apiurl, headers=headers)
+            data = resp.json()
+            jlog(data)
+            if (resp):
+                log("getting user info success")
+                self.loggedInWidget.userInfo = data
+                self.loggedInWidget.label.setText(f"Welcome {data['username']}!")
+            else:
+                log("getUserData failed")
 
             self.stackedWidget.setCurrentIndex(1)
         else:
