@@ -92,6 +92,18 @@ class ErrorLevel(Enum):
 # - clean up the file
 # - when the path becomes too long, a part is cut-off: find fix for this
 
+def getErrorLevel(map):
+    if "deleted" in map and map["deleted"]:
+        return ErrorLevel.DELETED
+    elif "isShape" in map and "timestamps" in map and (not map["isShape"] and len(map["timestamps"]) == 0):
+        return ErrorLevel.NOTIMESTAMPS
+    elif "isShape" in map and "geometryLayers" and (map["isShape"] and len(map["geometryLayers"]) == 0):
+        return ErrorLevel.NOLAYERS
+    elif "disabled" in map and map["disabled"]:
+        return ErrorLevel.DISABLED
+    else:
+        return ErrorLevel.NORMAL
+
 def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False, errorLevel = ErrorLevel.NORMAL):
     # TODO other object as data, maybe the entire mapdata object?
     newitem = QListWidgetItem()
@@ -441,8 +453,8 @@ class MyDriveLoggedInTab(QDialog):
         data = json.loads(j1.text)
         data2 = json.loads(j2.text)
 
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, False, True, self.getErrorLevel(mapdata))) for mapdata in data["result"]]
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, True, False, self.getErrorLevel(mapdata))) for mapdata in data2["result"]]
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in data["result"]]
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in data2["result"]]
         if len(data["result"]) == 0  and len(data2["result"]) == 0:
             listitem = QListWidgetItem()
             listitem.setText("No results found!")
@@ -555,18 +567,6 @@ class MyDriveLoggedInTab(QDialog):
             log("Error! onNextRoot: getFolder failed")
             log(f"root: {root}")
             return False
-    
-    def getErrorLevel(self, map):
-        if "deleted" in map and map["deleted"]:
-            return ErrorLevel.DELETED
-        elif "isShape" in map and "timestamps" in map and (not map["isShape"] and len(map["timestamps"]) == 0):
-            return ErrorLevel.NOTIMESTAMPS
-        elif "isShape" in map and "geometryLayers" and (map["isShape"] and len(map["geometryLayers"]) == 0):
-            return ErrorLevel.NOLAYERS
-        elif "disabled" in map and map["disabled"]:
-            return ErrorLevel.DISABLED
-        else:
-            return ErrorLevel.NORMAL
 
     def getFolder(self, id, isRoot=False):
         """ clears the listwidgets and fills them with the folders and maps in the specified folder """
@@ -620,7 +620,7 @@ class MyDriveLoggedInTab(QDialog):
         maps = json.loads(j1.text)
         folders = json.loads(j2.text)
 
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, errorLevel=self.getErrorLevel(mapdata))) for mapdata in maps["result"]]
+        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, errorLevel=getErrorLevel(mapdata))) for mapdata in maps["result"]]
         [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True)) for folderdata in folders["result"]]
         return True
 
@@ -881,8 +881,8 @@ class CommunityTab(QDialog):
         data = json.loads(j1.text)
         data2 = json.loads(j2.text)
 
-        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, False, True)) for mapdata in data["result"]]
-        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, True, False)) for mapdata in data2["result"]]
+        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, False, True, errorLevel=getErrorLevel(mapdata))) for mapdata in data["result"]]
+        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, True, False, errorLevel=getErrorLevel(mapdata))) for mapdata in data2["result"]]
         
     def onCommunitySearchChange(self, text):
         """ Change the internal state of the community search string """
