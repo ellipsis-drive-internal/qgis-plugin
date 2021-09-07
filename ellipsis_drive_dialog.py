@@ -171,6 +171,7 @@ def getUrl(mode, mapId, token = "empty"):
         msg.setWindowTitle("Success")
         msg.setLabelText(f"Please copy the following url.")
         msg.setTextValue(theurl)
+        msg.setOption(QInputDialog.NoButtons)
         msg.exec_()
 
 class ListData:
