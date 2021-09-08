@@ -83,6 +83,7 @@ class ErrorLevel(Enum):
     NOLAYERS = 3
     NOTIMESTAMPS = 4
     DELETED = 5
+    WCSACCESS = 6
 
 # TODO
 # - pagination of folders and maps
@@ -101,6 +102,8 @@ def getErrorLevel(map):
         return ErrorLevel.NOLAYERS
     elif "disabled" in map and map["disabled"]:
         return ErrorLevel.DISABLED
+    elif "accessLevel" in map and "isShape" in map and not map["isShape"] and map["accessLevel"] < 200:
+        return ErrorLevel.WCSACCESS
     else:
         return ErrorLevel.NORMAL
 
@@ -125,7 +128,8 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
         item = ListData("id", mapdata["id"], mapdata["isShape"])
 
     # now we handle the errorLevel
-    if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL:
+    if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL or errorLevel == ErrorLevel.WCSACCESS:
+        item.setDisableWCS(errorLevel == ErrorLevel.WCSACCESS)
         newitem.setText(mapdata["name"])
         newitem.setData(QtCore.Qt.UserRole, item)
         newitem.setIcon(icon)
@@ -188,11 +192,18 @@ def getUrl(mode, mapId, token = "empty"):
 
 class ListData:
     """ Class used for objects in the QList of the EllipsisConnect plugin """
-    def __init__(self, type="none", data="", isaShape=None):
+    def __init__(self, type="none", data="", isaShape=None, shouldDisableWCS=False):
         self.type = type
         self.data = data
         self.isaShape = isaShape
+        self.shouldDisableWCS = shouldDisableWCS
     
+    def setDisableWCS(self, val):
+        self.shouldDisableWCS = val
+
+    def getDisableWCS(self):
+        return self.shouldDisableWCS
+
     def setData(self, type, data, isaShape):
         self.type = type
         self.data = data
@@ -472,7 +483,7 @@ class MyDriveLoggedInTab(QDialog):
             self.searchText = text
             self.performSearch()
 
-    def disableCorrectButtons(self, disableAll = False):
+    def disableCorrectButtons(self, disableAll = False, WCSDisabled = False):
         """ helper function to fix the currently enabled buttons """
         self.pushButton_wms.setEnabled(False)
         self.pushButton_wmts.setEnabled(False)
@@ -487,7 +498,8 @@ class MyDriveLoggedInTab(QDialog):
         else:
             self.pushButton_wms.setEnabled(True)
             self.pushButton_wmts.setEnabled(True)
-            self.pushButton_wcs.setEnabled(True)
+            if (not WCSDisabled):
+                self.pushButton_wcs.setEnabled(True)
         
         #TODO implement logic based on the selected map? or do that when a map is selected
 
@@ -497,7 +509,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
         self.currentlySelectedMap = item
         log(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
-        self.disableCorrectButtons()
+        self.disableCorrectButtons(WCSDisabled = (item.data((QtCore.Qt.UserRole)).getDisableWCS()))
 
     def removeFromPath(self):
         """ remove one level from the path, useful when going back in the folder structure """
