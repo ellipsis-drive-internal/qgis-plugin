@@ -172,7 +172,7 @@ def getUrl(mode, mapId, token = "empty"):
     if token == "empty":
         theurl = f"{URL}/{mode}/{mapId}"
     else:
-        theurl = f"{URL}/{mode}/{mapId}?token={token}"
+        theurl = f"{URL}/{mode}/{mapId}/{token}"
     log(f"getUrl: {theurl}")
     try:
         if PYCLIP:
