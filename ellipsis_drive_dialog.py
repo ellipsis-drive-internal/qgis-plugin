@@ -379,6 +379,7 @@ class MyDriveLoggedInTab(QDialog):
 
         self.pushButton_logout.clicked.connect(self.logOut)
         self.pushButton_stopsearch.clicked.connect(self.stopSearch)
+        self.pushButton_stopsearch.setEnabled(False)
 
         self.pushButton_wms.clicked.connect(lambda:getUrl("wms", self.currentlySelectedId, self.loginToken))
         self.pushButton_wmts.clicked.connect(lambda:getUrl("wmts", self.currentlySelectedId, self.loginToken))
@@ -396,6 +397,7 @@ class MyDriveLoggedInTab(QDialog):
     def stopSearch(self):
         self.searching = False
         self.searchText = ""
+        self.pushButton_stopsearch.setEnabled(False)
         self.lineEdit_search.setText("")
         self.returnToNormal()
 
@@ -477,8 +479,10 @@ class MyDriveLoggedInTab(QDialog):
         if (text == ""):
             self.searching = False
             self.searchText = ""
+            self.pushButton_stopsearch.setEnabled(False)
             self.returnToNormal()
         else:
+            self.pushButton_stopsearch.setEnabled(True)
             self.searching = True
             self.searchText = text
             self.performSearch()
