@@ -174,15 +174,23 @@ def getUrl(mode, mapId, token = "empty"):
     else:
         theurl = f"{URL}/{mode}/{mapId}?token={token}"
     log(f"getUrl: {theurl}")
-    if PYCLIP:
-        pyclip.copy(theurl)
-        msg = QMessageBox()
-        msg.setWindowTitle("Success")
-        msg.setIcon(QMessageBox.Information)
-        msg.setText("Url copied to clipboard!")
-        msg.setStandardButtons(QMessageBox.Ok)
-        msg.exec_()
-    else:
+    try:
+        if PYCLIP:
+            pyclip.copy(theurl)
+            msg = QMessageBox()
+            msg.setWindowTitle("Success")
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("Url copied to clipboard!")
+            msg.setStandardButtons(QMessageBox.Ok)
+            msg.exec_()
+        else:
+            msg = QInputDialog()
+            msg.setWindowTitle("Success")
+            msg.setLabelText(f"Please copy the following url.")
+            msg.setTextValue(theurl)
+            msg.setOption(QInputDialog.NoButtons)
+            msg.exec_()
+    except:
         msg = QInputDialog()
         msg.setWindowTitle("Success")
         msg.setLabelText(f"Please copy the following url.")
