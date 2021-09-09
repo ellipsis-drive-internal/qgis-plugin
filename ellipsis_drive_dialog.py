@@ -485,6 +485,7 @@ class MyDriveLoggedInTab(QDialog):
 
 
     def onSearchChange(self, text):
+        self.pushButton_wcs.setText("Get WCS")
         if (text == ""):
             self.searching = False
             self.searchText = ""
@@ -525,7 +526,7 @@ class MyDriveLoggedInTab(QDialog):
         log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}, data value: {item.data(QtCore.Qt.UserRole).getData()}")
         wcs = (item.data(QtCore.Qt.UserRole).getDisableWCS())
         if (wcs):
-            self.pushButton_wcs.setText("Insufficient accesslevel")
+            self.pushButton_wcs.setText("Accesslevel too low")
         else:
             self.pushButton_wcs.setText("Get WCS")
         self.disableCorrectButtons(WCSDisabled = (item.data(QtCore.Qt.UserRole).getDisableWCS()))
@@ -920,6 +921,7 @@ class CommunityTab(QDialog):
     def onCommunitySearchChange(self, text):
         """ Change the internal state of the community search string """
         self.communitySearch = text
+        self.pushButton_wcs.setText("Get WCS")
         self.getCommunityList()
 
     def onCommunityItemClick(self, item):
@@ -928,7 +930,7 @@ class CommunityTab(QDialog):
         log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}, data value: {item.data(QtCore.Qt.UserRole).getData()}")
         wcs = item.data(QtCore.Qt.UserRole).getDisableWCS()
         if (wcs):
-            self.pushButton_wcs.setText("Insufficient accesslevel")
+            self.pushButton_wcs.setText("Accesslevel too low")
         else:
             self.pushButton_wcs.setText("Get WCS")
         self.disableCorrectButtons(disableWCS=wcs)
