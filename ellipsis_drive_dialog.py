@@ -102,7 +102,7 @@ def getErrorLevel(map):
         return ErrorLevel.NOLAYERS
     elif "disabled" in map and map["disabled"]:
         return ErrorLevel.DISABLED
-    elif "accessLevel" in map and "isShape" in map and not map["isShape"] and map["accessLevel"] < 200:
+    elif "accessLevel" in map and map["accessLevel"] < 200:
         return ErrorLevel.WCSACCESS
     else:
         return ErrorLevel.NORMAL
@@ -395,6 +395,7 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_wcs.clicked.connect(lambda:getUrl("wcs", self.currentlySelectedId, self.loginToken))
 
         self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
+        self.listWidget_mydrive_maps.itemSelectionChanged.connect(lambda:self.pushButton_wcs.setText("Get WCS"))
 
         self.lineEdit_search.textChanged.connect(self.onSearchChange)
 
@@ -496,6 +497,7 @@ class MyDriveLoggedInTab(QDialog):
             self.performSearch()
 
     def disableCorrectButtons(self, disableAll = False, WCSDisabled = False):
+        log(WCSDisabled)
         """ helper function to fix the currently enabled buttons """
         self.pushButton_wms.setEnabled(False)
         self.pushButton_wmts.setEnabled(False)
@@ -505,7 +507,7 @@ class MyDriveLoggedInTab(QDialog):
         if disableAll or self.currentlySelectedMap is None:
             return
 
-        if self.currentlySelectedMap.data((QtCore.Qt.UserRole)).isShape():
+        if self.currentlySelectedMap.data(QtCore.Qt.UserRole).isShape():
             self.pushButton_wfs.setEnabled(True)
         else:
             self.pushButton_wms.setEnabled(True)
@@ -520,8 +522,13 @@ class MyDriveLoggedInTab(QDialog):
             return
         self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
         self.currentlySelectedMap = item
-        log(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
-        self.disableCorrectButtons(WCSDisabled = (item.data((QtCore.Qt.UserRole)).getDisableWCS()))
+        log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}, data value: {item.data(QtCore.Qt.UserRole).getData()}")
+        wcs = (item.data(QtCore.Qt.UserRole).getDisableWCS())
+        if (wcs):
+            self.pushButton_wcs.setText("Insufficient accesslevel")
+        else:
+            self.pushButton_wcs.setText("Get WCS")
+        self.disableCorrectButtons(WCSDisabled = (item.data(QtCore.Qt.UserRole).getDisableWCS()))
 
     def removeFromPath(self):
         """ remove one level from the path, useful when going back in the folder structure """
@@ -822,6 +829,7 @@ class CommunityTab(QDialog):
         self.loginToken = ""
 
         self.listWidget_community.itemClicked.connect(self.onCommunityItemClick)
+        self.listWidget_community.itemSelectionChanged.connect(lambda:self.pushButton_wcs.setText("Get WCS"))
         self.lineEdit_communitysearch.textChanged.connect(self.onCommunitySearchChange)
 
         self.pushButton_wms.clicked.connect(lambda:getUrl("wms", self.currentlySelectedId))
@@ -843,7 +851,7 @@ class CommunityTab(QDialog):
     # api.ellipsis-drive.com/v1/wmts/mapId
     # api.ellipsis-drive.com/v1/wfs/mapId
 
-    def disableCorrectButtons(self, disableAll = False):
+    def disableCorrectButtons(self, disableAll = False, disableWCS = False):
         """ enable and disable the correct buttons in the community library tab """
 
         self.pushButton_wms.setEnabled(False)
@@ -859,7 +867,8 @@ class CommunityTab(QDialog):
         else:
             self.pushButton_wms.setEnabled(True)
             self.pushButton_wmts.setEnabled(True)
-            self.pushButton_wcs.setEnabled(True)
+            if not disableWCS:
+                self.pushButton_wcs.setEnabled(True)
 
     
     @debounce(0.5)
@@ -914,10 +923,15 @@ class CommunityTab(QDialog):
         self.getCommunityList()
 
     def onCommunityItemClick(self, item):
-        self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
+        self.currentlySelectedId = item.data(QtCore.Qt.UserRole).getData()
         self.currentlySelectedMap = item
-        log(f"{item.text()}, data type: {item.data((QtCore.Qt.UserRole)).getType()}, data value: {item.data((QtCore.Qt.UserRole)).getData()}")
-        self.disableCorrectButtons()
+        log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}, data value: {item.data(QtCore.Qt.UserRole).getData()}")
+        wcs = item.data(QtCore.Qt.UserRole).getDisableWCS()
+        if (wcs):
+            self.pushButton_wcs.setText("Insufficient accesslevel")
+        else:
+            self.pushButton_wcs.setText("Get WCS")
+        self.disableCorrectButtons(disableWCS=wcs)
 
         
 class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
