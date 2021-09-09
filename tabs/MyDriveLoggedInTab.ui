@@ -26,20 +26,33 @@
     <property name="rightMargin">
      <number>11</number>
     </property>
+    <item row="13" column="1">
+     <widget class="QPushButton" name="pushButton_wfs">
+      <property name="text">
+       <string>Get WFS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="10" column="3">
+     <spacer name="horizontalSpacer">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>5</width>
+        <height>0</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
     <item row="1" column="2">
      <widget class="QPushButton" name="pushButton_logout">
       <property name="text">
        <string>Logout</string>
-      </property>
-     </widget>
-    </item>
-    <item row="8" column="1" colspan="2">
-     <widget class="QListWidget" name="listWidget_mydrive"/>
-    </item>
-    <item row="1" column="1">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Welcome!</string>
       </property>
      </widget>
     </item>
@@ -50,10 +63,17 @@
       </property>
      </widget>
     </item>
-    <item row="13" column="1">
-     <widget class="QPushButton" name="pushButton_wfs">
+    <item row="12" column="2">
+     <widget class="QPushButton" name="pushButton_wmts">
       <property name="text">
-       <string>Get WFS</string>
+       <string>Get WMTS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="1">
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string>Welcome!</string>
       </property>
      </widget>
     </item>
@@ -73,27 +93,57 @@
       </property>
      </spacer>
     </item>
-    <item row="11" column="1" colspan="2">
-     <widget class="QListWidget" name="listWidget_mydrive_maps"/>
+    <item row="8" column="1" colspan="2">
+     <widget class="QListWidget" name="listWidget_mydrive"/>
     </item>
-    <item row="10" column="0">
-     <spacer name="horizontalSpacer_2">
+    <item row="3" column="1">
+     <widget class="QLineEdit" name="lineEdit_search">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="placeholderText">
+       <string>Search for maps and shapes</string>
+      </property>
+     </widget>
+    </item>
+    <item row="16" column="2">
+     <spacer name="verticalSpacer">
       <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+       <enum>Qt::Vertical</enum>
       </property>
       <property name="sizeType">
        <enum>QSizePolicy::Fixed</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>
-        <width>5</width>
-        <height>0</height>
+        <width>0</width>
+        <height>30</height>
        </size>
       </property>
      </spacer>
     </item>
-    <item row="10" column="3">
-     <spacer name="horizontalSpacer">
+    <item row="3" column="2">
+     <widget class="QPushButton" name="pushButton_stopsearch">
+      <property name="text">
+       <string>Stop search</string>
+      </property>
+     </widget>
+    </item>
+    <item row="12" column="1">
+     <widget class="QPushButton" name="pushButton_wcs">
+      <property name="text">
+       <string>Get WCS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="11" column="1" colspan="2">
+     <widget class="QListWidget" name="listWidget_mydrive_maps"/>
+    </item>
+    <item row="10" column="0">
+     <spacer name="horizontalSpacer_2">
       <property name="orientation">
        <enum>Qt::Horizontal</enum>
       </property>
@@ -124,53 +174,10 @@
       </property>
      </widget>
     </item>
-    <item row="12" column="2">
-     <widget class="QPushButton" name="pushButton_wmts">
-      <property name="text">
-       <string>Get WMTS</string>
-      </property>
-     </widget>
-    </item>
-    <item row="16" column="2">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>0</width>
-        <height>30</height>
-       </size>
-      </property>
-     </spacer>
-    </item>
-    <item row="12" column="1">
-     <widget class="QPushButton" name="pushButton_wcs">
-      <property name="text">
-       <string>Get WCS</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="2">
-     <widget class="QPushButton" name="pushButton_stopsearch">
-      <property name="text">
-       <string>Stop search</string>
-      </property>
-     </widget>
-    </item>
-    <item row="3" column="1">
-     <widget class="QLineEdit" name="lineEdit_search">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="placeholderText">
-       <string>Search for maps and shapes</string>
+    <item row="14" column="1" colspan="2">
+     <widget class="QLineEdit" name="lineEdit_theurl">
+      <property name="readOnly">
+       <bool>true</bool>
       </property>
      </widget>
     </item>

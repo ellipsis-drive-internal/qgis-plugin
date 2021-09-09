@@ -174,6 +174,8 @@ def getUrl(mode, mapId, token = "empty"):
     else:
         theurl = f"{URL}/{mode}/{mapId}/{token}"
     log(f"getUrl: {theurl}")
+    return theurl
+    # we no longer have a pop up, but we might use this code sometime in the future
     try:
         if PYCLIP:
             pyclip.copy(theurl)
@@ -389,10 +391,10 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_stopsearch.clicked.connect(self.stopSearch)
         self.pushButton_stopsearch.setEnabled(False)
 
-        self.pushButton_wms.clicked.connect(lambda:getUrl("wms", self.currentlySelectedId, self.loginToken))
-        self.pushButton_wmts.clicked.connect(lambda:getUrl("wmts", self.currentlySelectedId, self.loginToken))
-        self.pushButton_wfs.clicked.connect(lambda:getUrl("wfs", self.currentlySelectedId, self.loginToken))
-        self.pushButton_wcs.clicked.connect(lambda:getUrl("wcs", self.currentlySelectedId, self.loginToken))
+        self.pushButton_wms.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wms", self.currentlySelectedId, self.loginToken)))
+        self.pushButton_wmts.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wmts", self.currentlySelectedId, self.loginToken)))
+        self.pushButton_wfs.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wfs", self.currentlySelectedId, self.loginToken)))
+        self.pushButton_wcs.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wcs", self.currentlySelectedId, self.loginToken)))
 
         self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
         self.listWidget_mydrive_maps.itemSelectionChanged.connect(lambda:self.pushButton_wcs.setText("Get WCS"))
@@ -424,6 +426,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentlySelectedId = ""
         self.searching = False
         self.searchText = ""
+        self.lineEdit_theurl.setText("")
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
@@ -485,6 +488,7 @@ class MyDriveLoggedInTab(QDialog):
 
 
     def onSearchChange(self, text):
+        self.lineEdit_theurl.setText("")
         self.pushButton_wcs.setText("Get WCS")
         if (text == ""):
             self.searching = False
@@ -519,6 +523,7 @@ class MyDriveLoggedInTab(QDialog):
         #TODO implement logic based on the selected map? or do that when a map is selected
 
     def onMapItemClick(self, item):
+        self.lineEdit_theurl.setText("")
         if item.data((QtCore.Qt.UserRole)).getType() == "error":
             return
         self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
@@ -711,6 +716,7 @@ class MyDriveLoggedInTab(QDialog):
         
 
     def onListWidgetClick(self, item):
+        self.lineEdit_theurl.setText("")
         self.selected = item
         if self.selected.data(QtCore.Qt.UserRole).getType() == "return":
             self.onPrevious()
@@ -833,10 +839,10 @@ class CommunityTab(QDialog):
         self.listWidget_community.itemSelectionChanged.connect(lambda:self.pushButton_wcs.setText("Get WCS"))
         self.lineEdit_communitysearch.textChanged.connect(self.onCommunitySearchChange)
 
-        self.pushButton_wms.clicked.connect(lambda:getUrl("wms", self.currentlySelectedId))
-        self.pushButton_wmts.clicked.connect(lambda:getUrl("wmts", self.currentlySelectedId))
-        self.pushButton_wfs.clicked.connect(lambda:getUrl("wfs", self.currentlySelectedId))
-        self.pushButton_wcs.clicked.connect(lambda:getUrl("wcs", self.currentlySelectedId))
+        self.pushButton_wms.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wms", self.currentlySelectedId, self.loginToken)))
+        self.pushButton_wmts.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wmts", self.currentlySelectedId, self.loginToken)))
+        self.pushButton_wfs.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wfs", self.currentlySelectedId, self.loginToken)))
+        self.pushButton_wcs.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wcs", self.currentlySelectedId, self.loginToken)))
         
 
         self.disableCorrectButtons(True)
@@ -880,7 +886,7 @@ class CommunityTab(QDialog):
         # self.listWidget_community.clear()
 
         print(f"getCommunityList called, token = '{self.loginToken}'")
-
+        self.lineEdit_theurl.setText("")
         for _ in range(self.listWidget_community.count()):
             self.listWidget_community.takeItem(0)
         
@@ -925,6 +931,7 @@ class CommunityTab(QDialog):
         self.getCommunityList()
 
     def onCommunityItemClick(self, item):
+        self.lineEdit_theurl.setText("")
         self.currentlySelectedId = item.data(QtCore.Qt.UserRole).getData()
         self.currentlySelectedMap = item
         log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}, data value: {item.data(QtCore.Qt.UserRole).getData()}")

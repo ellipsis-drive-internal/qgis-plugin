@@ -29,33 +29,33 @@
     <property name="rightMargin">
      <number>11</number>
     </property>
-    <item row="3" column="3">
-     <widget class="QPushButton" name="pushButton_wmts">
+    <item row="1" column="1" colspan="2">
+     <widget class="QLabel" name="label">
       <property name="text">
-       <string>Get WMTS</string>
+       <string>Search by name</string>
       </property>
      </widget>
+    </item>
+    <item row="6" column="3">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Fixed</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>0</width>
+        <height>28</height>
+       </size>
+      </property>
+     </spacer>
     </item>
     <item row="4" column="3">
      <widget class="QPushButton" name="pushButton_wms">
       <property name="text">
        <string>Get WMS</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="3">
-     <widget class="QLineEdit" name="lineEdit_communitysearch">
-      <property name="enabled">
-       <bool>true</bool>
-      </property>
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="placeholderText">
-       <string>Enter a name</string>
       </property>
      </widget>
     </item>
@@ -75,43 +75,43 @@
       </property>
      </spacer>
     </item>
-    <item row="1" column="1" colspan="2">
-     <widget class="QLabel" name="label">
-      <property name="text">
-       <string>Search by name</string>
-      </property>
-     </widget>
-    </item>
     <item row="2" column="1" colspan="3">
      <widget class="QListWidget" name="listWidget_community"/>
-    </item>
-    <item row="3" column="1" colspan="2">
-     <widget class="QPushButton" name="pushButton_wcs">
-      <property name="text">
-       <string>Get WCS</string>
-      </property>
-     </widget>
-    </item>
-    <item row="5" column="3">
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeType">
-       <enum>QSizePolicy::Fixed</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>0</width>
-        <height>28</height>
-       </size>
-      </property>
-     </spacer>
     </item>
     <item row="4" column="1" colspan="2">
      <widget class="QPushButton" name="pushButton_wfs">
       <property name="text">
        <string>Get WFS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <widget class="QPushButton" name="pushButton_wmts">
+      <property name="text">
+       <string>Get WMTS</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="3">
+     <widget class="QLineEdit" name="lineEdit_communitysearch">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="placeholderText">
+       <string>Enter a name</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1" colspan="2">
+     <widget class="QPushButton" name="pushButton_wcs">
+      <property name="text">
+       <string>Get WCS</string>
       </property>
      </widget>
     </item>
@@ -146,6 +146,13 @@
        </size>
       </property>
      </spacer>
+    </item>
+    <item row="5" column="1" colspan="3">
+     <widget class="QLineEdit" name="lineEdit_theurl">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
     </item>
    </layout>
   </widget>
