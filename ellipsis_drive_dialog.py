@@ -27,10 +27,9 @@ import os
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
 
-from .util import *
-
-from .CommunityLibrary import CommunityTab
-from .MyDrive import MyDriveTab
+from .connect.util import *
+from .connect.CommunityLibrary import CommunityTab
+from .connect.MyDrive import MyDriveTab
 
 
 PYCLIP = False

@@ -9,8 +9,8 @@ from enum import Enum
 
 from PyQt5.QtGui import QIcon
 
-TABSFOLDER = os.path.join(os.path.dirname(__file__), "tabs/")
-ICONSFOLDER = os.path.join(os.path.dirname(__file__), "icons/")
+TABSFOLDER = os.path.join(os.path.dirname(__file__), "..", "tabs/")
+ICONSFOLDER = os.path.join(os.path.dirname(__file__), "..", "icons/")
 
 FOLDERICON = os.path.join(ICONSFOLDER,"folder.svg")
 VECTORICON = os.path.join(ICONSFOLDER,"vector.svg")
