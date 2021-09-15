@@ -40,10 +40,10 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_stopsearch.clicked.connect(self.stopSearch)
         self.pushButton_stopsearch.setEnabled(False)
 
-        self.pushButton_wms.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wms", self.currentlySelectedId, self.loginToken)))
-        self.pushButton_wmts.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wmts", self.currentlySelectedId, self.loginToken)))
-        self.pushButton_wfs.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wfs", self.currentlySelectedId, self.loginToken)))
-        self.pushButton_wcs.clicked.connect(lambda:self.lineEdit_theurl.setText(getUrl("wcs", self.currentlySelectedId, self.loginToken)))
+        self.pushButton_wms.clicked.connect(lambda:self.onClickGet("wms"))
+        self.pushButton_wmts.clicked.connect(lambda:self.onClickGet("wmts"))
+        self.pushButton_wfs.clicked.connect(lambda:self.onClickGet("wfs"))
+        self.pushButton_wcs.clicked.connect(lambda:self.onClickGet("wcs"))
 
         self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
         self.listWidget_mydrive_maps.itemSelectionChanged.connect(lambda:self.pushButton_wcs.setText("Get WCS"))
@@ -53,6 +53,14 @@ class MyDriveLoggedInTab(QDialog):
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
+
+    def onClickGet(self, mode):
+        self.lineEdit_theurl.setText(getUrl(mode, self.currentlySelectedId, self.loginToken))
+        self.label_instr.setText("Copy the following url:")
+
+    def onRemoveClickGet(self):
+        self.lineEdit_theurl.setText("")
+        self.label_instr.setText("")
 
     def stopSearch(self):
         self.searching = False
@@ -75,7 +83,8 @@ class MyDriveLoggedInTab(QDialog):
         self.currentlySelectedId = ""
         self.searching = False
         self.searchText = ""
-        self.lineEdit_theurl.setText("")
+        self.onRemoveClickGet()
+
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
@@ -137,7 +146,7 @@ class MyDriveLoggedInTab(QDialog):
 
 
     def onSearchChange(self, text):
-        self.lineEdit_theurl.setText("")
+        self.onRemoveClickGet()
         self.pushButton_wcs.setText("Get WCS")
         if (text == ""):
             self.searching = False
@@ -172,7 +181,7 @@ class MyDriveLoggedInTab(QDialog):
         #TODO implement logic based on the selected map? or do that when a map is selected
 
     def onMapItemClick(self, item):
-        self.lineEdit_theurl.setText("")
+        self.onRemoveClickGet()
         if item.data((QtCore.Qt.UserRole)).getType() == "error":
             return
         self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
@@ -365,7 +374,7 @@ class MyDriveLoggedInTab(QDialog):
         
 
     def onListWidgetClick(self, item):
-        self.lineEdit_theurl.setText("")
+        self.onRemoveClickGet()
         self.selected = item
         if self.selected.data(QtCore.Qt.UserRole).getType() == "return":
             self.onPrevious()
