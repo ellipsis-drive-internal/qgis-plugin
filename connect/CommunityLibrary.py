@@ -89,36 +89,42 @@ class CommunityTab(QDialog):
         self.currentlySelectedId = ""
         self.disableCorrectButtons(True)
 
-        apiurl1 = f"{URL}/account/maps"
-        apiurl2 = f"{URL}/account/shapes"
+        apiurl_maps = f"{URL}/account/maps"
+        apiurl_shapes = f"{URL}/account/shapes"
         log("Getting community maps")
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         if (not self.loginToken == ""):
             headers["Authorization"] = f"Bearer {self.loginToken}"
-        data1 = {
+        data_maps = {
             "access": ["public"],
             "name": f"{self.communitySearch}",
             "disabled": False,
             "hasTimestamps": True
         }
 
-        data2= {
+        data_shapes= {
             "access": ["public"],
             "name": f"{self.communitySearch}",
             "disabled": False,
-            "hasGeometryLayers": True
+            "hasGeometryLayers": True,
+            "accessLevel": 100
         }
 
-        j1 = requests.post(apiurl1, json=data1, headers=headers)
-        j2 = requests.post(apiurl2, json=data2, headers=headers)
+        j1 = requests.post(apiurl_maps, json=data_maps, headers=headers)
+        j2 = requests.post(apiurl_shapes, json=data_shapes, headers=headers)
         if not j1 or not j2:
             log("getCommunityList failed!")
-            return
-        data = json.loads(j1.text)
-        data2 = json.loads(j2.text)
+            if not j1:
+                log("Maps:")
+                log(j1.content)
+            if not j2:
+                log("Shapes:")
+                log(j2.content)
+        data_maps = json.loads(j1.text)
+        data_shapes = json.loads(j2.text)
 
-        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, False, True, errorLevel=getErrorLevel(mapdata))) for mapdata in data["result"]]
-        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, True, False, errorLevel=getErrorLevel(mapdata))) for mapdata in data2["result"]]
+        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, False, True, errorLevel=getErrorLevel(mapdata))) for mapdata in data_maps["result"]]
+        [self.listWidget_community.addItem(convertMapdataToListItem(mapdata, False, True, False, errorLevel=getErrorLevel(mapdata))) for mapdata in data_shapes["result"]]
         
     def onCommunitySearchChange(self, text):
         """ Change the internal state of the community search string """
