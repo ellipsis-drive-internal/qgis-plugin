@@ -316,7 +316,7 @@ class MyDriveLoggedInTab(QDialog):
         folders = json.loads(j2.text)
 
         [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, errorLevel=getErrorLevel(mapdata))) for mapdata in maps["result"]]
-        [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True)) for folderdata in folders["result"]]
+        [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders["result"]]
         return True
 
     def onPrevious(self):
@@ -375,6 +375,8 @@ class MyDriveLoggedInTab(QDialog):
 
     def onListWidgetClick(self, item):
         self.onRemoveClickGet()
+        if item.data((QtCore.Qt.UserRole)).getType() == "error":
+            return
         self.selected = item
         if self.selected.data(QtCore.Qt.UserRole).getType() == "return":
             self.onPrevious()

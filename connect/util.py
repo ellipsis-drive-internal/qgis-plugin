@@ -57,7 +57,6 @@ def getErrorLevel(map):
         return ErrorLevel.NORMAL
 
 def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False, errorLevel = ErrorLevel.NORMAL):
-    # TODO other object as data, maybe the entire mapdata object?
     newitem = QListWidgetItem()
     icon = QIcon()
     if isShape:
@@ -90,6 +89,10 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
             ErrorLevel.NOLAYERS: "Shape has no layers",
             ErrorLevel.DISABLED: "Project disabled",
         }
+        if isFolder and errorLevel != ErrorLevel.NORMAL:
+            errmsgdict[ErrorLevel.DELETED] = "Folder deleted"
+            errmsgdict[ErrorLevel.DISABLED] = "Folder disabled"
+
         item = ListData("error")
         newitem.setText(f'{mapdata["name"]} ({errmsgdict[errorLevel]})')
         newitem.setData(QtCore.Qt.UserRole, item)
