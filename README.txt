@@ -1,1 +1,1 @@
-QGIS plugin for Ellipsis Drive
+QGIS plugin for Ellipsis Drive.
