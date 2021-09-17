@@ -10,7 +10,7 @@ version=1.0
 author=Ellipsis Drive
 email=info@ellipsis-drive.com
 
-about=Easily open Ellipsis Drive content
+about=Easily open Ellipsis Drive content in QGIS
 
 tracker=https://github.com/ellipsis-drive-internal/qgis-plugin/issues
 repository=https://github.com/ellipsis-drive-internal/qgis-plugin
@@ -29,7 +29,7 @@ homepage=https://ellipsis-drive.com
 category=Plugins
 icon=icon.png
 # experimental flag
-experimental=True
+experimental=False
 
 # deprecated flag (applies to the whole plugin, not just a single version)
 deprecated=False
