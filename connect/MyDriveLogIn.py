@@ -12,7 +12,7 @@ from qgis.PyQt.QtWidgets import QMessageBox
 from .util import *
 
 class MyDriveLoginTab(QDialog):
-    """ login tab, sends a signal with the token on succesful login """
+    """ login tab, sends a signal with the token on succesful login. Used in combination with the MyDriveLoggedInTab"""
     loginSignal = pyqtSignal(object, object)
     def __init__(self):
         super(MyDriveLoginTab, self).__init__()

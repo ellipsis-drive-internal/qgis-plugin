@@ -16,7 +16,7 @@ from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
 from .util import *
 
 class MyDriveLoggedInTab(QDialog):
-    """ The LoggedIn tab, giving users access to their drive"""
+    """ The LoggedIn tab, giving users access to their drive. Used in combination with the MyDriveTab and the MyDriveLoginTab"""
     logoutSignal = pyqtSignal()
     def __init__(self):
         super(MyDriveLoggedInTab, self).__init__()
@@ -55,14 +55,17 @@ class MyDriveLoggedInTab(QDialog):
         self.populateListWithRoot()
 
     def onClickGet(self, mode):
+        """ function called when 'Get WMS/WMTS/WFS.WCS' is clicked, edits the url textbox and displays instruction """
         self.lineEdit_theurl.setText(getUrl(mode, self.currentlySelectedId, self.loginToken))
         self.label_instr.setText("Copy the following url:")
 
     def onRemoveClickGet(self):
+        """ helper function called when the 'get url' text box should be emptied """
         self.lineEdit_theurl.setText("")
         self.label_instr.setText("")
 
     def stopSearch(self):
+        """ handler for the Stop Search button: does what it says it does """
         self.searching = False
         self.searchText = ""
         self.pushButton_stopsearch.setEnabled(False)
@@ -70,6 +73,7 @@ class MyDriveLoggedInTab(QDialog):
         self.returnToNormal()
 
     def resetState(self):
+        """ helper function to reset our state (used when logging out) """
         self.clearListWidget()
         self.loginToken = ""
         self.loggedIn = False
@@ -89,6 +93,7 @@ class MyDriveLoggedInTab(QDialog):
         self.populateListWithRoot()
 
     def returnToNormal(self):
+        """ return from a search to the state we were in before we started searching """
         if len(self.folderstack) == 0:
             self.populateListWithRoot()
         else:
@@ -96,6 +101,7 @@ class MyDriveLoggedInTab(QDialog):
 
     @debounce(0.5)
     def performSearch(self):
+        """ actually perform the search, using self.searchText as the string """
         if not self.searching:
             return
         log("performing search")
@@ -146,6 +152,7 @@ class MyDriveLoggedInTab(QDialog):
 
 
     def onSearchChange(self, text):
+        """ handle changes of the search string """
         self.onRemoveClickGet()
         self.pushButton_wcs.setText("Get WCS")
         if (text == ""):
@@ -160,7 +167,6 @@ class MyDriveLoggedInTab(QDialog):
             self.performSearch()
 
     def disableCorrectButtons(self, disableAll = False, WCSDisabled = False):
-        log(WCSDisabled)
         """ helper function to fix the currently enabled buttons """
         self.pushButton_wms.setEnabled(False)
         self.pushButton_wmts.setEnabled(False)
@@ -181,6 +187,7 @@ class MyDriveLoggedInTab(QDialog):
         #TODO implement logic based on the selected map? or do that when a map is selected
 
     def onMapItemClick(self, item):
+        """ handler called when an item is clicked in the map/shape listwidget """
         self.onRemoveClickGet()
         if item.data((QtCore.Qt.UserRole)).getType() == "error":
             return
@@ -202,6 +209,7 @@ class MyDriveLoggedInTab(QDialog):
         self.setPath(self.path.rsplit('/',1)[0])
 
     def addToPath(self, foldername):
+        """ extends the current path string """
         if self.path == "/":
             self.path = ""
         self.setPath(f"{self.path}/{foldername}")
@@ -238,7 +246,7 @@ class MyDriveLoggedInTab(QDialog):
         # TODO using addToPath
 
     def onNextNormal(self):
-        """ non-root onNext"""
+        """ non-root onNext """
         pathId = self.selected.data(QtCore.Qt.UserRole).getData()
         if self.getFolder(pathId):
             self.folderstack.append(pathId)
@@ -264,7 +272,7 @@ class MyDriveLoggedInTab(QDialog):
             return False
 
     def getFolder(self, id, isRoot=False):
-        """ clears the listwidgets and fills them with the folders and maps in the specified folder """
+        """ clears the listwidgets and fills them with the folders and maps in the specified folder (by folder id) """
         apiurl = ""
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         headers["Authorization"] = f"Bearer {self.loginToken}"
@@ -320,6 +328,7 @@ class MyDriveLoggedInTab(QDialog):
         return True
 
     def onPrevious(self):
+        """ handles walking back through te folder tree """
         log("onPrevious start")
         log(self.folderstack)
         self.level -= 1
@@ -374,6 +383,7 @@ class MyDriveLoggedInTab(QDialog):
         
 
     def onListWidgetClick(self, item):
+        """ handler for clicks on items in the folder listwidget """
         self.onRemoveClickGet()
         if item.data((QtCore.Qt.UserRole)).getType() == "error":
             return
