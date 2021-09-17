@@ -20,13 +20,8 @@ RASTERICON = os.path.join(ICONSFOLDER,"raster.svg")
 ERRORICON = os.path.join(ICONSFOLDER,"error.svg")
 
 URL = 'https://api.ellipsis-drive.com/v1'
-#URL = 'http://dev.api.ellipsis-drive.com/v1'
 
-# for reference
-# API = 'https://api.ellipsis-drive.com/v1'
-DEVAPI = 'http://dev.api.ellipsis-drive.com/v1'
-
-DEBUG = True
+DEBUG = False
 
 class ErrorLevel(Enum):
     NORMAL = 1
