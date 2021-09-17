@@ -5,12 +5,12 @@
 [general]
 name=Ellipsis Drive Connect
 qgisMinimumVersion=3.0
-description=Easily use your Ellipsis Drive in 
+description=Easily open Ellipsis Drive content in QGIS.
 version=1.0
 author=Ellipsis Drive
 email=info@ellipsis-drive.com
 
-about=Easily open Ellipsis Drive content in QGIS
+about=Easily open Ellipsis Drive content in QGIS.
 
 tracker=https://github.com/ellipsis-drive-internal/qgis-plugin/issues
 repository=https://github.com/ellipsis-drive-internal/qgis-plugin
