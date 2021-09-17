@@ -1,3 +1,5 @@
+""" This file contains functions and constants used by the LogIn/LoggedIn/Community tabs """
+
 import os
 import json
 import requests
@@ -34,15 +36,8 @@ class ErrorLevel(Enum):
     DELETED = 5
     WCSACCESS = 6
 
-# TODO
-# - pagination of folders and maps
-# - Trash folder?
-# - properly allign the 'My Drive' and 'Community Library' tabs (buttons should remain stationary when switching)
-# - create seperate files for the tabs
-# - clean up the file
-# - when the path becomes too long, a part is cut-off: find fix for this
-
 def getErrorLevel(map):
+    """ receives a map object (from the api) and returns whether there is something wrong with it or not """
     if "deleted" in map and map["deleted"]:
         return ErrorLevel.DELETED
     elif "isShape" in map and "timestamps" in map and (not map["isShape"] and len(map["timestamps"]) == 0):
@@ -57,6 +52,7 @@ def getErrorLevel(map):
         return ErrorLevel.NORMAL
 
 def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False, errorLevel = ErrorLevel.NORMAL):
+    """ turns a mapdata object into a listwidgetitem, depending on what type of object it is and its errorlevel """
     newitem = QListWidgetItem()
     icon = QIcon()
     if isShape:

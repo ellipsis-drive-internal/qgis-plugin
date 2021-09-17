@@ -20,6 +20,7 @@ class MyDriveTab(QDialog):
     loginSignal = pyqtSignal(object)
     logoutSignal = pyqtSignal()
     def __init__(self):
+        """ Tab that contains a stacked widget: the login tab and the logged in tab """
         super(MyDriveTab, self).__init__()
         uic.loadUi(os.path.join(TABSFOLDER, "MyDriveStack.ui"), self)
 
