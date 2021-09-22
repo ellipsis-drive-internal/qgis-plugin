@@ -96,7 +96,7 @@ class EllipsisConnect:
         text,
         callback,
         enabled_flag=True,
-        add_to_menu=True,
+        add_to_menu=False,
         add_to_toolbar=True,
         status_tip=None,
         whats_this=None,
