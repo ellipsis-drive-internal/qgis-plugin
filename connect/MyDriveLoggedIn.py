@@ -217,7 +217,22 @@ class MyDriveLoggedInTab(QDialog):
     def setPath(self, path):
         """ set the displayed path """
         self.path = path
-        self.label_path.setText(f"{path}")
+        toolong = False
+        newstr = ""
+        if (len(path) > MAXPATHLEN):
+            toolong = True
+            folders = path.split("/")
+            folders.reverse()
+            newstr = folders.pop()
+            for folder in folders:
+                if len(newstr) + len(folder) < 40:
+                    newstr = f"{folder}/{newstr}"
+                else:
+                    break;
+        if toolong:
+            self.label_path.setText(f"../{newstr}")            
+        else:
+            self.label_path.setText(f"{path}")
 
     def onNext(self):
         """ handler for the Next button, used for navigating the folder structure """

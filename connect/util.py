@@ -21,7 +21,9 @@ ERRORICON = os.path.join(ICONSFOLDER,"error.svg")
 
 URL = 'https://api.ellipsis-drive.com/v1'
 
-DEBUG = False
+MAXPATHLEN = 40
+
+DEBUG = True
 
 class ErrorLevel(Enum):
     NORMAL = 1
