@@ -33,6 +33,9 @@ class MyDriveLoggedInTab(QDialog):
         self.currentlySelectedId = ""
         self.searching = False
         self.searchText = ""
+        self.displayingTimestamps = False
+        self.displayingMapLayers = False
+        self.currentmetadata = None
 
         self.listWidget_mydrive.itemDoubleClicked.connect(self.onListWidgetClick)
 
@@ -46,6 +49,8 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_wcs.clicked.connect(lambda:self.onClickGet("wcs"))
 
         self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
+        self.listWidget_mydrive_maps.itemDoubleClicked.connect(self.onMapItemDoubleClick)
+
         self.listWidget_mydrive_maps.itemSelectionChanged.connect(lambda:self.pushButton_wcs.setText("Get WCS"))
 
         self.lineEdit_search.textChanged.connect(self.onSearchChange)
@@ -54,10 +59,67 @@ class MyDriveLoggedInTab(QDialog):
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
+    def onMapItemDoubleClick(self, item):
+        if not self.displayingTimestamps:
+            return
+        item = item.data((QtCore.Qt.UserRole))
+        if item.getType() == "stoptimestamp":
+            self.displayingTimestamps = False
+            self.currentmetadata = None
+            self.getFolder(self.folderstack[-1])
+            # return to the previous view
+        elif item.getType() == "stopmaplayer":
+            self.displayingMapLayers = False
+            self.displayingTimestamps = True
+            self.displayTimestamps(self.currentmetadata)
+            # TODO restore the displaying timestamps view
+        elif item.getType() == "timestamp":
+            self.clearMapsWidget()
+            self.listWidget_mydrive_maps.addItem(toListItem("stopmaplayer", "..", None))
+            mapLayers = item.getExtra()
+            for mapLayer in mapLayers:
+                self.listWidget_mydrive_maps.addItem(toListItem("mapLayer", mapLayer["name"], mapLayer))
+            # display the mapLayers
+            # we should probably remember some stuff so we can navigate this properly
+            pass
+        elif item.getType() == "mapLayer":
+            log("ja dit is een maplayer")
+
     def onClickGet(self, mode):
-        """ function called when 'Get WMS/WMTS/WFS.WCS' is clicked, edits the url textbox and displays instruction """
+        """ function called when 'Get WMS/WMTS/WFS/WCS' is clicked, edits the url textbox and displays instruction """
         self.lineEdit_theurl.setText(getUrl(mode, self.currentlySelectedId, self.loginToken))
         self.label_instr.setText("Copy the following url:")
+        metadata = getMetadata(self.currentlySelectedId, self.loginToken)
+        if mode == "wms":
+            self.currentmetadata = metadata
+            self.displayTimestamps(metadata)
+        elif mode == "wmts":
+            pass
+        elif mode == "wfs":
+            pass
+        elif mode == "wcs":
+            pass
+
+    def displayTimestamps(self, metadata):
+        # TODO use the toListItem function
+        timestamps = metadata["timestamps"]
+        maplayers = metadata["mapLayers"]
+        self.displayingTimestamps = True
+        log(timestamps)
+        self.clearMapsWidget()
+        
+        data = ListData("stoptimestamp")
+        item = QListWidgetItem()
+        item.setText("..")
+        item.setData(QtCore.Qt.UserRole, data)
+
+        self.listWidget_mydrive_maps.addItem(item)
+        for timestamp in timestamps:
+            data = ListData("timestamp", timestamp["id"], extra=maplayers)
+            item = QListWidgetItem()
+            item.setText(timestamp["id"])
+            item.setData(QtCore.Qt.UserRole, data)
+            self.listWidget_mydrive_maps.addItem(item)
 
     def onRemoveClickGet(self):
         """ helper function called when the 'get url' text box should be emptied """
@@ -97,7 +159,7 @@ class MyDriveLoggedInTab(QDialog):
         if len(self.folderstack) == 0:
             self.populateListWithRoot()
         else:
-            self.getFolder(self.folderstack[len(self.folderstack)-1], len(self.folderstack) == 1)
+            self.getFolder(self.folderstack[-1], len(self.folderstack) == 1)
 
     @debounce(0.5)
     def performSearch(self):
@@ -372,7 +434,7 @@ class MyDriveLoggedInTab(QDialog):
                 log("Error on getFolder!")
 
         
-        if self.getFolder(self.folderstack[len(self.folderstack) - 2]):
+        if self.getFolder(self.folderstack[-2]):
             self.folderstack.pop()
             self.disableCorrectButtons()
             log(self.folderstack)
@@ -380,9 +442,7 @@ class MyDriveLoggedInTab(QDialog):
         else:
             log("getFolder failed!")
         
-
-    def clearListWidget(self, isRoot = False):
-        """ clears list widgets"""
+    def clearFoldersWidget(self, isRoot = False):
         for _ in range(self.listWidget_mydrive.count()):
             self.listWidget_mydrive.takeItem(0)
         #no parent folder of the root folder, so don't display the ".." directory
@@ -392,10 +452,17 @@ class MyDriveLoggedInTab(QDialog):
             retitem.setData(QtCore.Qt.UserRole, ListData("return", "..", False))
             retitem.setIcon(QIcon(FOLDERICON))
             self.listWidget_mydrive.addItem(retitem)
-        
+
+    def clearMapsWidget(self):
         for _ in range(self.listWidget_mydrive_maps.count()):
             self.listWidget_mydrive_maps.takeItem(0)
         
+
+    def clearListWidget(self, isRoot = False):
+        """ clears list widgets"""
+        self.clearFoldersWidget()
+        self.clearMapsWidget()
+
 
     def onListWidgetClick(self, item):
         """ handler for clicks on items in the folder listwidget """

@@ -2,6 +2,7 @@
 
 import os
 import json
+from typing import List
 import requests
 from threading import Timer
 from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
@@ -47,6 +48,15 @@ def getErrorLevel(map):
         return ErrorLevel.WCSACCESS
     else:
         return ErrorLevel.NORMAL
+
+def toListItem(type, text, data):
+    """ same as convertMApdataToListItem, but for timestamps and maplayers. should be refactored sometime """
+    listitem = QListWidgetItem()
+    listdata = ListData(type, data)
+    listitem.setData(QtCore.Qt.UserRole, listdata)
+    listitem.setText(text)
+    return listitem
+
 
 def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False, errorLevel = ErrorLevel.NORMAL):
     """ turns a mapdata object into a listwidgetitem, depending on what type of object it is and its errorlevel """
@@ -94,10 +104,11 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
      
 
 
-def getMetadata(mapid):
+def getMetadata(mapid, token):
     """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
     apiurl = F"{URL}/metadata"
     headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+    headers["Authorization"] = f"Bearer {token}"
     data = {
         "mapId": f"{mapid}",
     }
@@ -147,17 +158,24 @@ def getUrl(mode, mapId, token = "empty"):
 
 class ListData:
     """ Class used for objects in the QList of the EllipsisConnect plugin """
-    def __init__(self, type="none", data="", isaShape=None, shouldDisableWCS=False):
+    def __init__(self, type="none", data="", isaShape=None, shouldDisableWCS=False, extra=None):
         self.type = type
         self.data = data
         self.isaShape = isaShape
         self.shouldDisableWCS = shouldDisableWCS
+        self.extra = extra
     
     def setDisableWCS(self, val):
         self.shouldDisableWCS = val
 
     def getDisableWCS(self):
         return self.shouldDisableWCS
+
+    def setExtra(self, extra):
+        self.extra = extra
+    
+    def getExtra(self):
+        return self.extra
 
     def setData(self, type, data, isaShape):
         self.type = type
