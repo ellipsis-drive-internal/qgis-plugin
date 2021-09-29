@@ -49,10 +49,10 @@ def getErrorLevel(map):
     else:
         return ErrorLevel.NORMAL
 
-def toListItem(type, text, data):
-    """ same as convertMApdataToListItem, but for timestamps and maplayers. should be refactored sometime """
+def toListItem(type, text, data = None, extra = None):
+    """ same as convertMapdataToListItem, but for timestamps and maplayers. should be refactored sometime """
     listitem = QListWidgetItem()
-    listdata = ListData(type, data)
+    listdata = ListData(type, data, extra = extra)
     listitem.setData(QtCore.Qt.UserRole, listdata)
     listitem.setText(text)
     return listitem

@@ -71,7 +71,7 @@ class MyDriveLoggedInTab(QDialog):
         elif item.getType() == "stopmaplayer":
             self.displayingMapLayers = False
             self.displayingTimestamps = True
-            self.displayTimestamps(self.currentmetadata)
+            self.displayTimestampsWMS(self.currentmetadata)
             # TODO restore the displaying timestamps view
         elif item.getType() == "timestamp":
             self.clearMapsWidget()
@@ -92,34 +92,31 @@ class MyDriveLoggedInTab(QDialog):
         metadata = getMetadata(self.currentlySelectedId, self.loginToken)
         if mode == "wms":
             self.currentmetadata = metadata
-            self.displayTimestamps(metadata)
+            self.displayTimestampsWMS(metadata)
         elif mode == "wmts":
+            self.currentmetadata = metadata
+            self.displayTimestampsWMTS(metadata)
             pass
         elif mode == "wfs":
             pass
         elif mode == "wcs":
             pass
 
-    def displayTimestamps(self, metadata):
+    def displayTimestampsWMTS(self, metadata):
+        log("display timestamps wmts")
+        log(metadata)
+
+    def displayTimestampsWMS(self, metadata):
         # TODO use the toListItem function
         timestamps = metadata["timestamps"]
         maplayers = metadata["mapLayers"]
         self.displayingTimestamps = True
         log(timestamps)
         self.clearMapsWidget()
-        
-        data = ListData("stoptimestamp")
-        item = QListWidgetItem()
-        item.setText("..")
-        item.setData(QtCore.Qt.UserRole, data)
 
-        self.listWidget_mydrive_maps.addItem(item)
+        self.listWidget_mydrive_maps.addItem(toListItem("stoptimestamp", ".."))
         for timestamp in timestamps:
-            data = ListData("timestamp", timestamp["id"], extra=maplayers)
-            item = QListWidgetItem()
-            item.setText(timestamp["id"])
-            item.setData(QtCore.Qt.UserRole, data)
-            self.listWidget_mydrive_maps.addItem(item)
+            self.listWidget_mydrive_maps.addItem(toListItem("timestamp", timestamp["id"], extra=maplayers))
 
     def onRemoveClickGet(self):
         """ helper function called when the 'get url' text box should be emptied """
