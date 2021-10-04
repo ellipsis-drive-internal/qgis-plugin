@@ -1,5 +1,7 @@
 import os
 import json
+from enum import Enum, auto
+
 from PyQt5.QtGui import QIcon
 import requests
 
@@ -17,6 +19,23 @@ from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
 from requests import api
 
 from .util import *
+
+class Action(Enum):
+    STOPTIMESTAMP = auto()
+    STOPMAPLAYER = auto()
+
+class ViewMode(Enum):
+    NORMAL = auto()
+    WMS = auto()
+    WMTS = auto()
+    WFS = auto()
+    WCS = auto()
+    WMSTIMESTAMPS = auto()
+    WMSMAPLAYERS = auto()
+    WMTSTIMESTAMPS = auto()
+    WMTSMAPLAYERS = auto()
+
+
 
 class MyDriveLoggedInTab(QDialog):
     """ The LoggedIn tab, giving users access to their drive. Used in combination with the MyDriveTab and the MyDriveLoginTab"""
@@ -41,6 +60,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentmetadata = None
         self.currentTimestampId = ""
         self.currentMapId = ""
+        self.currentMode = "normal"
 
         self.listWidget_mydrive.itemDoubleClicked.connect(self.onListWidgetClick)
 
@@ -68,12 +88,12 @@ class MyDriveLoggedInTab(QDialog):
         if not (self.displayingTimestamps or self.displayingMapLayers):
             return
         item = item.data((QtCore.Qt.UserRole))
-        if item.getType() == "stoptimestamp":
+        if item.getType() == Action.STOPTIMESTAMP:
             self.displayingTimestamps = False
             self.currentmetadata = None
             self.getFolder(self.folderstack[-1])
             # return to the previous view
-        elif item.getType() == "stopmaplayer":
+        elif item.getType() == Action.STOPMAPLAYER:
             self.displayingMapLayers = False
             self.displayingTimestamps = True
             self.displayTimestampsWMS(self.currentmetadata)
@@ -85,7 +105,7 @@ class MyDriveLoggedInTab(QDialog):
             log("--------------------------------------------------------")
             log(item.getData())
             self.currentTimestampId = item.getData()
-            self.listWidget_mydrive_maps.addItem(toListItem("stopmaplayer", "..", None))
+            self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPMAPLAYER, "..", None))
             mapLayers = item.getExtra()
             for mapLayer in mapLayers:
                 self.listWidget_mydrive_maps.addItem(toListItem("mapLayer", mapLayer["name"], mapLayer))
@@ -114,6 +134,7 @@ class MyDriveLoggedInTab(QDialog):
     def onClickGet(self, mode):
         """ function called when 'Get WMS/WMTS/WFS/WCS' is clicked, edits the url textbox and displays instruction """
         self.currentMapId = self.currentlySelectedId
+        self.currenctMode = mode
         self.lineEdit_theurl.setText(getUrl(mode, self.currentlySelectedId, self.loginToken))
         self.label_instr.setText("Copy the following url:")
         metadata = getMetadata(self.currentlySelectedId, self.loginToken)
@@ -141,7 +162,7 @@ class MyDriveLoggedInTab(QDialog):
         log(timestamps)
         self.clearMapsWidget()
 
-        self.listWidget_mydrive_maps.addItem(toListItem("stoptimestamp", ".."))
+        self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPTIMESTAMP, ".."))
         for timestamp in timestamps:
             self.listWidget_mydrive_maps.addItem(toListItem("timestamp", timestamp["id"], data=timestamp["id"], extra=maplayers))
 
