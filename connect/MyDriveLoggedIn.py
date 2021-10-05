@@ -1,5 +1,6 @@
 import os
 import json
+import urllib
 from enum import Enum, auto
 
 from PyQt5.QtGui import QIcon
@@ -23,6 +24,12 @@ from .util import *
 class Action(Enum):
     STOPTIMESTAMP = auto()
     STOPMAPLAYER = auto()
+    STOPGEOMETRYLAYER = auto()
+
+class Type(Enum):
+    TIMESTAMP = auto()
+    MAPLAYER = auto()
+    ACTION = auto()
 
 class ViewMode(Enum):
     NORMAL = auto()
@@ -30,12 +37,22 @@ class ViewMode(Enum):
     WMTS = auto()
     WFS = auto()
     WCS = auto()
-    WMSTIMESTAMPS = auto()
-    WMSMAPLAYERS = auto()
-    WMTSTIMESTAMPS = auto()
-    WMTSMAPLAYERS = auto()
 
+class ViewSubMode(Enum):
+    NONE = auto()
+    TIMESTAMPS = auto()
+    MAPLAYERS = auto()
+    GEOMETRYLAYERS = auto()
 
+def mapViewMode(str):
+    if str == "wms":
+        return ViewMode.WMS
+    if str == "wmts":
+        return ViewMode.WMTS
+    if str == "wfs":
+        return ViewMode.WFS
+    if str == "wcs":
+        return ViewMode.WCS
 
 class MyDriveLoggedInTab(QDialog):
     """ The LoggedIn tab, giving users access to their drive. Used in combination with the MyDriveTab and the MyDriveLoginTab"""
@@ -48,19 +65,18 @@ class MyDriveLoggedInTab(QDialog):
         self.userInfo = {}
         self.selected = None
         self.level = 0
-        self.mode = ""
         self.path = "/"
-        self.folderstack = []
+        self.folderStack = []
         self.currentlySelectedMap = None
         self.currentlySelectedId = ""
         self.searching = False
         self.searchText = ""
-        self.displayingTimestamps = False
-        self.displayingMapLayers = False
-        self.currentmetadata = None
+        self.currentMetaData = None
         self.currentTimestampId = ""
         self.currentMapId = ""
-        self.currentMode = "normal"
+        self.currentMode = ViewMode.NORMAL
+        self.currentSubMode = ViewSubMode.NONE
+        self.currentItem = None
 
         self.listWidget_mydrive.itemDoubleClicked.connect(self.onListWidgetClick)
 
@@ -84,87 +100,150 @@ class MyDriveLoggedInTab(QDialog):
         self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
-    def onMapItemDoubleClick(self, item):
-        if not (self.displayingTimestamps or self.displayingMapLayers):
-            return
+    def fixBottomListWidget(self):
+        log("fixBottomListWidget")
+        log(self.currentMode)
+        log(self.currentSubMode)
+
+        self.clearMapsWidget()
+
+        if (self.currentMode == ViewMode.NORMAL):
+            self.getFolder(self.folderStack[-1])
+
+        elif (self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS):
+            if (self.currentSubMode == ViewSubMode.TIMESTAMPS):
+                timestamps = self.currentMetaData["timestamps"]
+                maplayers = self.currentMetaData["mapLayers"]
+                self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPTIMESTAMP, ".."))
+                for timestamp in timestamps:
+                    self.listWidget_mydrive_maps.addItem(toListItem("timestamp", timestamp["id"], data=timestamp["id"], extra=maplayers))
+
+            elif (self.currentSubMode == ViewSubMode.MAPLAYERS):
+                self.currentTimestampId = self.currentItem.getData()
+                self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPMAPLAYER, "..", None))
+                mapLayers = self.currentItem.getExtra()
+                for mapLayer in mapLayers:
+                    self.listWidget_mydrive_maps.addItem(toListItem("mapLayer", mapLayer["name"], mapLayer))
+                    log("display timestamps wms")
+        elif (self.currentMode == ViewMode.WFS):
+                geometryLayers = self.currentMetaData["geometryLayers"]
+                self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPGEOMETRYLAYER, ".."))
+                for geometryLayer in geometryLayers:
+                    self.listWidget_mydrive_maps.addItem(toListItem("timestamp", geometryLayer["name"], data=geometryLayer["id"]))
+
+        elif (self.currentMode == ViewMode.WCS):
+            log(self.currentMetaData)
+            pass
+        
+
+    def WMSDoubleClick(self, item):
         item = item.data((QtCore.Qt.UserRole))
         if item.getType() == Action.STOPTIMESTAMP:
-            self.displayingTimestamps = False
-            self.currentmetadata = None
-            self.getFolder(self.folderstack[-1])
-            # return to the previous view
+            self.currentMode = ViewMode.NORMAL
+            self.currentSubMode = ViewSubMode.NONE
+
         elif item.getType() == Action.STOPMAPLAYER:
-            self.displayingMapLayers = False
-            self.displayingTimestamps = True
-            self.displayTimestampsWMS(self.currentmetadata)
-            # TODO restore the displaying timestamps view
+            self.currentSubMode = ViewSubMode.TIMESTAMPS
+
         elif item.getType() == "timestamp":
-            self.displayingMapLayers = True
-            self.displayingTimestamps = False
-            self.clearMapsWidget()
-            log("--------------------------------------------------------")
-            log(item.getData())
-            self.currentTimestampId = item.getData()
-            self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPMAPLAYER, "..", None))
-            mapLayers = item.getExtra()
-            for mapLayer in mapLayers:
-                self.listWidget_mydrive_maps.addItem(toListItem("mapLayer", mapLayer["name"], mapLayer))
-            # display the mapLayers
-            # we should probably remember some stuff so we can navigate this properly
+            self.currentSubMode = ViewSubMode.MAPLAYERS
+            self.currentItem = item
+
         elif item.getType() == "mapLayer":
-            print("-------------clickity clack!-------------")
             data = item.getData()
-            log(f"Id of maplayer = {data['id']}")
-            log(f"Id of timestamp = {self.currentTimestampId}")
             ids = f"{self.currentTimestampId}_{data['id']}"
-            mapid = "https://dev.api.ellipsis-drive.com/v1/wms/05cb0d60-616c-414e-899e-96b3d4a9f4d7"
             mapid = self.currentMapId
-            #theurl = f"{URL}/wms//{self.loginToken}?LAYERS={ids}"
-            #theurl = "crs=EPSG:4326&format=image/png&layers=cities&styles&url=https://demo.mapserver.org/cgi-bin/wms"
             theurl = F"{DEVURL}/wms/{mapid}"
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&token={self.loginToken}&url={theurl}"
-            #log(theurl)
             rlayer = QgsRasterLayer(actualurl, "some layer name", 'WMS')
             if not rlayer.isValid():
-                print("Layer failed to load!") 
+                log("Layer failed to load!") 
+            else:
+                QgsProject.instance().addMapLayer(rlayer)
+
+    def WMTSDoubleClick(self, item):
+        item = item.data((QtCore.Qt.UserRole))
+        if item.getType() == Action.STOPTIMESTAMP:
+            self.currentMode = ViewMode.NORMAL
+            self.currentSubMode = ViewSubMode.NONE
+
+        elif item.getType() == Action.STOPMAPLAYER:
+            self.currentSubMode = ViewSubMode.TIMESTAMPS
+
+        elif item.getType() == "timestamp":
+            self.currentSubMode = ViewSubMode.MAPLAYERS
+            self.currentItem = item
+
+        elif item.getType() == "mapLayer":
+            data = item.getData()
+            ids = f"{self.currentTimestampId}_{data['id']}"
+            mapid = self.currentMapId
+            theurl = F"{DEVURL}/wmts/{mapid}"
+            actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&token={self.loginToken}&url={theurl}"
+            rlayer = QgsRasterLayer(actualurl, "some layer name", 'WMTS')
+            if not rlayer.isValid():
+                log("Layer failed to load!") 
             else:
                 QgsProject.instance().addMapLayer(rlayer)
 
 
+    def WFSDoubleClick(self, item):
+        text = item.text()
+        item = item.data((QtCore.Qt.UserRole))
+        
+        if item.getType() == Action.STOPGEOMETRYLAYER:
+            self.currentmode = ViewMode.NORMAL
+            self.currentSubMode = ViewSubMode.NONE
+        else:
+            id = item.getData()
+            mapid = self.currentMapId
+            theurl = F"{DEVURL}/wfs/{mapid}"
+
+            params = {
+                'service': 'WFS',
+                'version': '2.0.0',
+                'request': 'GetFeature',
+                'typename': 'ms:cities',
+                'srsname': "EPSG:4326"
+            }
+            uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
+            rlayer = QgsVectorLayer(uri, text, 'WFS')
+
+            if not rlayer.isValid():
+                log("Layer failed to load!") 
+            else:
+                QgsProject.instance().addMapLayer(rlayer)
+
+    def WCSDoubleClick(self, item):
+        pass
+
+    def onMapItemDoubleClick(self, item):
+        if self.currentMode == ViewMode.NORMAL:
+            return
+        elif self.currentMode == ViewMode.WMS:
+            self.WMSDoubleClick(item)
+        elif self.currentMode == ViewMode.WMTS:
+            self.WMTSDoubleClick(item)
+        elif self.currentMode == ViewMode.WFS:
+            self.WFSDoubleClick(item)
+        elif self.currentMode == ViewMode.WCS:
+            self.WCSDoubleClick(item)
+        self.fixBottomListWidget()
+
     def onClickGet(self, mode):
         """ function called when 'Get WMS/WMTS/WFS/WCS' is clicked, edits the url textbox and displays instruction """
         self.currentMapId = self.currentlySelectedId
-        self.currenctMode = mode
+        self.currentMode = mapViewMode(mode)
+        self.currentSubMode = ViewSubMode.NONE
         self.lineEdit_theurl.setText(getUrl(mode, self.currentlySelectedId, self.loginToken))
         self.label_instr.setText("Copy the following url:")
-        metadata = getMetadata(self.currentlySelectedId, self.loginToken)
-        if mode == "wms":
-            self.currentmetadata = metadata
-            self.displayTimestampsWMS(metadata)
-        elif mode == "wmts":
-            self.currentmetadata = metadata
-            self.displayTimestampsWMTS(metadata)
+        self.currentMetaData = getMetadata(self.currentlySelectedId, self.loginToken)
+        if self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS or self.currentMode == ViewMode.WCS:
+            self.currentSubMode = ViewSubMode.TIMESTAMPS
+        elif self.currentMode == ViewMode.WFS:
+            self.currentSubMode = ViewSubMode.GEOMETRYLAYERS
             pass
-        elif mode == "wfs":
-            pass
-        elif mode == "wcs":
-            pass
-
-    def displayTimestampsWMTS(self, metadata):
-        log("display timestamps wmts")
-        log(metadata)
-
-    def displayTimestampsWMS(self, metadata):
-        # TODO use the toListItem function
-        timestamps = metadata["timestamps"]
-        maplayers = metadata["mapLayers"]
-        self.displayingTimestamps = True
-        log(timestamps)
-        self.clearMapsWidget()
-
-        self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPTIMESTAMP, ".."))
-        for timestamp in timestamps:
-            self.listWidget_mydrive_maps.addItem(toListItem("timestamp", timestamp["id"], data=timestamp["id"], extra=maplayers))
+        self.fixBottomListWidget()
 
     def onRemoveClickGet(self):
         """ helper function called when the 'get url' text box should be emptied """
@@ -187,9 +266,8 @@ class MyDriveLoggedInTab(QDialog):
         self.userInfo = {}
         self.selected = None
         self.level = 0
-        self.mode = ""
         self.path = "/"
-        self.folderstack = []
+        self.folderStack = []
         self.currentlySelectedMap = None
         self.currentlySelectedId = ""
         self.searching = False
@@ -201,10 +279,10 @@ class MyDriveLoggedInTab(QDialog):
 
     def returnToNormal(self):
         """ return from a search to the state we were in before we started searching """
-        if len(self.folderstack) == 0:
+        if len(self.folderStack) == 0:
             self.populateListWithRoot()
         else:
-            self.getFolder(self.folderstack[-1], len(self.folderstack) == 1)
+            self.getFolder(self.folderStack[-1], len(self.folderStack) == 1)
 
     @debounce(0.5)
     def performSearch(self):
@@ -300,7 +378,7 @@ class MyDriveLoggedInTab(QDialog):
             return
         self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
         self.currentlySelectedMap = item
-        log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}")
+        #log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}")
         #log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}, data value: {item.data(QtCore.Qt.UserRole).getData()}")
         wcs = (item.data(QtCore.Qt.UserRole).getDisableWCS())
         if (wcs):
@@ -344,8 +422,8 @@ class MyDriveLoggedInTab(QDialog):
 
     def onNext(self):
         """ handler for the Next button, used for navigating the folder structure """
-        log("BEGIN")
-        log(self.folderstack)
+        #log("BEGIN")
+        #log(self.folderStack)
         success = True
         if (self.level == 0):
             success = self.onNextRoot()
@@ -364,15 +442,15 @@ class MyDriveLoggedInTab(QDialog):
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
             log("cannot open the folder")
-        log(f"level: {self.level} folderstack: {self.folderstack}")
-        log("END")
+        #log(f"level: {self.level} folderstack: {self.folderStack}")
+        #log("END")
         # TODO using addToPath
 
     def onNextNormal(self):
         """ non-root onNext """
         pathId = self.selected.data(QtCore.Qt.UserRole).getData()
         if self.getFolder(pathId):
-            self.folderstack.append(pathId)
+            self.folderStack.append(pathId)
             self.addToPath(self.selected.text())
             return True
         else:
@@ -386,7 +464,7 @@ class MyDriveLoggedInTab(QDialog):
         """ onNext for root folders """
         root = self.selected.data(QtCore.Qt.UserRole).getData()
         if self.getFolder(root, True):
-            self.folderstack.append(root)
+            self.folderStack.append(root)
             self.addToPath(root)
             return True
         else:
@@ -452,8 +530,8 @@ class MyDriveLoggedInTab(QDialog):
 
     def onPrevious(self):
         """ handles walking back through te folder tree """
-        log("onPrevious start")
-        log(self.folderstack)
+        #log("onPrevious start")
+        #log(self.folderStack)
         self.level -= 1
         self.removeFromPath()
         self.selected = None
@@ -463,28 +541,28 @@ class MyDriveLoggedInTab(QDialog):
         if self.level == 0:
             self.populateListWithRoot()
             self.path = "/"
-            self.folderstack = []
+            self.folderStack = []
             self.disableCorrectButtons(True)
-            log(self.folderstack)
-            log("onPrevious level 0 end")
+            #log(self.folderStack)
+            #log("onPrevious level 0 end")
             return
         
         if self.level == 1:
-            if (self.getFolder(self.folderstack[0], True)):
-                self.folderstack.pop()
+            if (self.getFolder(self.folderStack[0], True)):
+                self.folderStack.pop()
                 self.disableCorrectButtons()
-                log(self.folderstack)
-                log("onPrevious level 1 end")
+                #log(self.folderStack)
+                #log("onPrevious level 1 end")
                 return
             else:
                 log("Error on getFolder!")
 
         
-        if self.getFolder(self.folderstack[-2]):
-            self.folderstack.pop()
+        if self.getFolder(self.folderStack[-2]):
+            self.folderStack.pop()
             self.disableCorrectButtons()
-            log(self.folderstack)
-            log("onPrevious regular end")
+            #log(self.folderStack)
+            #log("onPrevious regular end")
         else:
             log("getFolder failed!")
         
