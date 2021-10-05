@@ -110,7 +110,8 @@ class MyDriveLoggedInTab(QDialog):
         if (self.currentMode == ViewMode.NORMAL):
             self.getFolder(self.folderStack[-1])
 
-        elif (self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS):
+        elif (self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS) or ViewMode.WCS:
+            
             if (self.currentSubMode == ViewSubMode.TIMESTAMPS):
                 timestamps = self.currentMetaData["timestamps"]
                 maplayers = self.currentMetaData["mapLayers"]
@@ -125,15 +126,19 @@ class MyDriveLoggedInTab(QDialog):
                 for mapLayer in mapLayers:
                     self.listWidget_mydrive_maps.addItem(toListItem("mapLayer", mapLayer["name"], mapLayer))
                     log("display timestamps wms")
+
         elif (self.currentMode == ViewMode.WFS):
-                geometryLayers = self.currentMetaData["geometryLayers"]
-                self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPGEOMETRYLAYER, ".."))
-                for geometryLayer in geometryLayers:
-                    self.listWidget_mydrive_maps.addItem(toListItem("timestamp", geometryLayer["name"], data=geometryLayer["id"]))
+            geometryLayers = self.currentMetaData["geometryLayers"]
+            self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPGEOMETRYLAYER, ".."))
+            for geometryLayer in geometryLayers:
+                self.listWidget_mydrive_maps.addItem(toListItem("timestamp", geometryLayer["name"], data=geometryLayer["id"]))
 
         elif (self.currentMode == ViewMode.WCS):
-            log(self.currentMetaData)
-            pass
+            timestamps = self.currentMetaData["timestamps"]
+            self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPTIMESTAMP, ".."))
+            for timestamp in geometryLayers:
+                self.listWidget_mydrive_maps.addItem(toListItem("timestamp", timestamp["id"], data=timestamp["id"]))
+
         
 
     def WMSDoubleClick(self, item):
