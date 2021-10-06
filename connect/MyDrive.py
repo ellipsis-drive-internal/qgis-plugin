@@ -1,19 +1,14 @@
 import os
 
 import requests
-
-from requests.structures import CaseInsensitiveDict
-
 from PyQt5.QtWidgets import QDialog
-
 from qgis.PyQt import uic
-
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
-
-from .util import *
+from requests.structures import CaseInsensitiveDict
 
 from .MyDriveLoggedIn import MyDriveLoggedInTab
 from .MyDriveLogIn import MyDriveLoginTab
+from .util import *
 
 
 class MyDriveTab(QDialog):

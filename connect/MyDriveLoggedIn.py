@@ -1,48 +1,19 @@
-import os
 import json
+import os
 import urllib
-from enum import Enum, auto
 
-from PyQt5.QtGui import QIcon
 import requests
-
-from PyQt5.QtWidgets import QDialog
-
-from qgis.PyQt import uic
-
-from qgis.PyQt.QtCore import QSettings, pyqtSignal
-
 from PyQt5 import QtCore
-
-from qgis.core import QgsVectorLayer, QgsRasterLayer, QgsProject
-
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QDialog
+from qgis.core import *
+from qgis.PyQt import uic
+from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
 from requests import api
 
 from .util import *
 
-class Action(Enum):
-    STOPTIMESTAMP = auto()
-    STOPMAPLAYER = auto()
-    STOPGEOMETRYLAYER = auto()
-
-class Type(Enum):
-    TIMESTAMP = auto()
-    MAPLAYER = auto()
-    ACTION = auto()
-
-class ViewMode(Enum):
-    NORMAL = auto()
-    WMS = auto()
-    WMTS = auto()
-    WFS = auto()
-    WCS = auto()
-
-class ViewSubMode(Enum):
-    NONE = auto()
-    TIMESTAMPS = auto()
-    MAPLAYERS = auto()
-    GEOMETRYLAYERS = auto()
 
 def mapViewMode(str):
     if str == "wms":
@@ -63,7 +34,6 @@ class MyDriveLoggedInTab(QDialog):
         self.loginToken = ""
         self.loggedIn = False
         self.userInfo = {}
-        self.selected = None
         self.level = 0
         self.path = "/"
         self.folderStack = []
@@ -74,77 +44,81 @@ class MyDriveLoggedInTab(QDialog):
         self.currentMetaData = None
         self.currentTimestampId = ""
         self.currentMapId = ""
-        self.currentMode = ViewMode.NORMAL
+        self.currentMode = ViewMode.ROOT
         self.currentSubMode = ViewSubMode.NONE
         self.currentItem = None
+        self.currentFolderId = None
 
-        self.listWidget_mydrive.itemDoubleClicked.connect(self.onListWidgetClick)
+        self.listWidget_mydrive.itemDoubleClicked.connect(self.onListWidgetDoubleClick)
+        self.listWidget_mydrive.itemClicked.connect(self.onListWidgetClick)
 
         self.pushButton_logout.clicked.connect(self.logOut)
         self.pushButton_stopsearch.clicked.connect(self.stopSearch)
         self.pushButton_stopsearch.setEnabled(False)
 
-        self.pushButton_wms.clicked.connect(lambda:self.onClickGet("wms"))
-        self.pushButton_wmts.clicked.connect(lambda:self.onClickGet("wmts"))
-        self.pushButton_wfs.clicked.connect(lambda:self.onClickGet("wfs"))
-        self.pushButton_wcs.clicked.connect(lambda:self.onClickGet("wcs"))
+        #self.pushButton_wms.clicked.connect(lambda:self.onClickGet("wms"))
+        #self.pushButton_wmts.clicked.connect(lambda:self.onClickGet("wmts"))
+        #self.pushButton_wfs.clicked.connect(lambda:self.onClickGet("wfs"))
+        #self.pushButton_wcs.clicked.connect(lambda:self.onClickGet("wcs"))
 
-        self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
-        self.listWidget_mydrive_maps.itemDoubleClicked.connect(self.onMapItemDoubleClick)
+        #self.listWidget_mydrive_maps.itemClicked.connect(self.onMapItemClick)
+        #self.listWidget_mydrive_maps.itemDoubleClicked.connect(self.onMapItemDoubleClick)
 
-        self.listWidget_mydrive_maps.itemSelectionChanged.connect(lambda:self.pushButton_wcs.setText("Get WCS"))
+        #self.listWidget_mydrive_maps.itemSelectionChanged.connect(lambda:self.pushButton_wcs.setText("Get WCS"))
 
-        self.lineEdit_search.textChanged.connect(self.onSearchChange)
+        # TODO re-implement search
+        #self.lineEdit_search.textChanged.connect(self.onSearchChange)
 
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
-        self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
-    def fixBottomListWidget(self):
-        log("fixBottomListWidget")
-        log(self.currentMode)
-        log(self.currentSubMode)
+    def addReturnItem(self):
+        self.listWidget_mydrive.addItem(toListItem(Action.RETURN, "..", icon=RETURNICON))
 
-        self.clearMapsWidget()
+    def fillListWidget(self):
+        self.clearListWidget()
 
-        if (self.currentMode == ViewMode.NORMAL):
-            self.getFolder(self.folderStack[-1])
+        if (self.currentMode == ViewMode.ROOT):
+            self.populateListWithRoot()
+            return
 
-        elif (self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS) or ViewMode.WCS:
+        self.addReturnItem()
+        if (self.currentMode == ViewMode.FOLDERS):
+            self.getFolder(self.folderStack[-1], isRoot=(self.level == 1))
+            return
+
+        if (self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS or self.currentMode == ViewMode.WCS):
             
             if (self.currentSubMode == ViewSubMode.TIMESTAMPS):
                 timestamps = self.currentMetaData["timestamps"]
                 maplayers = self.currentMetaData["mapLayers"]
-                self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPTIMESTAMP, ".."))
                 for timestamp in timestamps:
-                    self.listWidget_mydrive_maps.addItem(toListItem("timestamp", timestamp["id"], data=timestamp["id"], extra=maplayers))
+                    self.listWidget_mydrive.addItem(toListItem("timestamp", timestamp["id"], data=timestamp["id"], extra=maplayers))
 
             elif (self.currentSubMode == ViewSubMode.MAPLAYERS):
                 self.currentTimestampId = self.currentItem.getData()
-                self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPMAPLAYER, "..", None))
+                self.listWidget_mydrive.addItem(toListItem(Action.STOPMAPLAYER, "..", None))
                 mapLayers = self.currentItem.getExtra()
                 for mapLayer in mapLayers:
-                    self.listWidget_mydrive_maps.addItem(toListItem("mapLayer", mapLayer["name"], mapLayer))
+                    self.listWidget_mydrive.addItem(toListItem("mapLayer", mapLayer["name"], mapLayer))
                     log("display timestamps wms")
 
         elif (self.currentMode == ViewMode.WFS):
             geometryLayers = self.currentMetaData["geometryLayers"]
-            self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPGEOMETRYLAYER, ".."))
+            self.listWidget_mydrive.addItem(toListItem(Action.STOPGEOMETRYLAYER, ".."))
             for geometryLayer in geometryLayers:
-                self.listWidget_mydrive_maps.addItem(toListItem("timestamp", geometryLayer["name"], data=geometryLayer["id"]))
+                self.listWidget_mydrive.addItem(toListItem("timestamp", geometryLayer["name"], data=geometryLayer["id"]))
 
         elif (self.currentMode == ViewMode.WCS):
             timestamps = self.currentMetaData["timestamps"]
-            self.listWidget_mydrive_maps.addItem(toListItem(Action.STOPTIMESTAMP, ".."))
+            self.listWidget_mydrive.addItem(toListItem(Action.STOPTIMESTAMP, ".."))
             for timestamp in geometryLayers:
-                self.listWidget_mydrive_maps.addItem(toListItem("timestamp", timestamp["id"], data=timestamp["id"]))
-
-        
+                self.listWidget_mydrive.addItem(toListItem("timestamp", timestamp["id"], data=timestamp["id"]))
 
     def WMSDoubleClick(self, item):
         item = item.data((QtCore.Qt.UserRole))
         if item.getType() == Action.STOPTIMESTAMP:
-            self.currentMode = ViewMode.NORMAL
+            self.currentMode = ViewMode.FOLDERS
             self.currentSubMode = ViewSubMode.NONE
 
         elif item.getType() == Action.STOPMAPLAYER:
@@ -158,8 +132,9 @@ class MyDriveLoggedInTab(QDialog):
             data = item.getData()
             ids = f"{self.currentTimestampId}_{data['id']}"
             mapid = self.currentMapId
-            theurl = F"{DEVURL}/wms/{mapid}"
+            theurl = F"{URL}/wms/{mapid}"
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&token={self.loginToken}&url={theurl}"
+            log(actualurl)
             rlayer = QgsRasterLayer(actualurl, "some layer name", 'WMS')
             if not rlayer.isValid():
                 log("Layer failed to load!") 
@@ -169,7 +144,7 @@ class MyDriveLoggedInTab(QDialog):
     def WMTSDoubleClick(self, item):
         item = item.data((QtCore.Qt.UserRole))
         if item.getType() == Action.STOPTIMESTAMP:
-            self.currentMode = ViewMode.NORMAL
+            self.currentMode = ViewMode.FOLDERS
             self.currentSubMode = ViewSubMode.NONE
 
         elif item.getType() == Action.STOPMAPLAYER:
@@ -183,9 +158,12 @@ class MyDriveLoggedInTab(QDialog):
             data = item.getData()
             ids = f"{self.currentTimestampId}_{data['id']}"
             mapid = self.currentMapId
-            theurl = F"{DEVURL}/wmts/{mapid}"
-            actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&token={self.loginToken}&url={theurl}"
-            rlayer = QgsRasterLayer(actualurl, "some layer name", 'WMTS')
+            theurl = F"{URL}/wmts/{mapid}"
+            #maxzoom -> matrix_{maxzoom}
+            actualurl = f"SERVICE=WMTS&VERSION=1.0.0&LAYER={ids}&TILEMATRIXSET=matrix_18&REQUEST=GetTile&url={theurl}"
+            #actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&token={self.loginToken}&url={theurl}"
+            log(actualurl)
+            rlayer = QgsRasterLayer(actualurl, "some layer name", 'WMS')
             if not rlayer.isValid():
                 log("Layer failed to load!") 
             else:
@@ -197,21 +175,23 @@ class MyDriveLoggedInTab(QDialog):
         item = item.data((QtCore.Qt.UserRole))
         
         if item.getType() == Action.STOPGEOMETRYLAYER:
-            self.currentmode = ViewMode.NORMAL
+            self.currentMode = ViewMode.FOLDERS
             self.currentSubMode = ViewSubMode.NONE
         else:
             id = item.getData()
             mapid = self.currentMapId
-            theurl = F"{DEVURL}/wfs/{mapid}"
+            theurl = F"{URL}/wfs/{mapid}?"
 
+            #typename moet dus layerId_{layer ID zijn}
             params = {
                 'service': 'WFS',
                 'version': '2.0.0',
                 'request': 'GetFeature',
-                'typename': 'ms:cities',
+                'typename': 'layerId_45c47c8a-035e-429a-9ace-2dff1956e8d9',
                 'srsname': "EPSG:4326"
             }
             uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
+            log(uri)
             rlayer = QgsVectorLayer(uri, text, 'WFS')
 
             if not rlayer.isValid():
@@ -220,40 +200,39 @@ class MyDriveLoggedInTab(QDialog):
                 QgsProject.instance().addMapLayer(rlayer)
 
     def WCSDoubleClick(self, item):
-        pass
 
-    def onMapItemDoubleClick(self, item):
-        if self.currentMode == ViewMode.NORMAL:
-            return
-        elif self.currentMode == ViewMode.WMS:
-            self.WMSDoubleClick(item)
-        elif self.currentMode == ViewMode.WMTS:
-            self.WMTSDoubleClick(item)
-        elif self.currentMode == ViewMode.WFS:
-            self.WFSDoubleClick(item)
-        elif self.currentMode == ViewMode.WCS:
-            self.WCSDoubleClick(item)
-        self.fixBottomListWidget()
+        def makeWCSuri( url, layer ):
+            params = {  'dpiMode': 7 , 'identifier': layer,'url': url.split('?')[0]  }
+            uri = urllib.parse.unquote( urllib.parse.urlencode(params)  )
+            return uri
+
+        item = item.data((QtCore.Qt.UserRole))
+        
+        timestampid = item.getData()
+
+        mapid = self.currentMapId
+        theurl = F"{URL}/wcs/{mapid}"
+        
+        wcsUri = makeWCSuri(theurl, timestampid )
+        rlayer = QgsRasterLayer(wcsUri, 'DEP3ElevationPrototype', 'wcs')
+        QgsProject.instance().addMapLayer(rlayer)
+
+        if not rlayer.isValid():
+            log("Layer failed to load!") 
+        else:
+            QgsProject.instance().addMapLayer(rlayer)
 
     def onClickGet(self, mode):
         """ function called when 'Get WMS/WMTS/WFS/WCS' is clicked, edits the url textbox and displays instruction """
         self.currentMapId = self.currentlySelectedId
         self.currentMode = mapViewMode(mode)
         self.currentSubMode = ViewSubMode.NONE
-        self.lineEdit_theurl.setText(getUrl(mode, self.currentlySelectedId, self.loginToken))
-        self.label_instr.setText("Copy the following url:")
         self.currentMetaData = getMetadata(self.currentlySelectedId, self.loginToken)
         if self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS or self.currentMode == ViewMode.WCS:
             self.currentSubMode = ViewSubMode.TIMESTAMPS
         elif self.currentMode == ViewMode.WFS:
             self.currentSubMode = ViewSubMode.GEOMETRYLAYERS
             pass
-        self.fixBottomListWidget()
-
-    def onRemoveClickGet(self):
-        """ helper function called when the 'get url' text box should be emptied """
-        self.lineEdit_theurl.setText("")
-        self.label_instr.setText("")
 
     def stopSearch(self):
         """ handler for the Stop Search button: does what it says it does """
@@ -269,7 +248,7 @@ class MyDriveLoggedInTab(QDialog):
         self.loginToken = ""
         self.loggedIn = False
         self.userInfo = {}
-        self.selected = None
+        self.currentItem = None
         self.level = 0
         self.path = "/"
         self.folderStack = []
@@ -277,9 +256,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentlySelectedId = ""
         self.searching = False
         self.searchText = ""
-        self.onRemoveClickGet()
 
-        self.disableCorrectButtons(True)
         self.populateListWithRoot()
 
     def returnToNormal(self):
@@ -296,9 +273,8 @@ class MyDriveLoggedInTab(QDialog):
             return
         log("performing search")
 
-        self.clearListWidget(True)
+        self.clearListWidget()
         self.currentlySelectedId = ""
-        self.disableCorrectButtons(True)
 
         apiurl1 = f"{URL}/account/maps"
         apiurl2 = f"{URL}/account/shapes"
@@ -332,19 +308,18 @@ class MyDriveLoggedInTab(QDialog):
         data = json.loads(j1.text)
         data2 = json.loads(j2.text)
 
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in data["result"]]
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in data2["result"]]
+        [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in data["result"]]
+        [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in data2["result"]]
         if len(data["result"]) == 0  and len(data2["result"]) == 0:
             listitem = QListWidgetItem()
             listitem.setText("No results found!")
-            self.listWidget_mydrive_maps.addItem(listitem)
+            self.listWidget_mydrive.addItem(listitem)
             log("no search results")
 
 
     def onSearchChange(self, text):
         """ handle changes of the search string """
-        self.onRemoveClickGet()
-        self.pushButton_wcs.setText("Get WCS")
+        #self.pushButton_wcs.setText("Get WCS")
         if (text == ""):
             self.searching = False
             self.searchText = ""
@@ -356,41 +331,20 @@ class MyDriveLoggedInTab(QDialog):
             self.searchText = text
             self.performSearch()
 
-    def disableCorrectButtons(self, disableAll = False, WCSDisabled = False):
-        """ helper function to fix the currently enabled buttons """
-        self.pushButton_wms.setEnabled(False)
-        self.pushButton_wmts.setEnabled(False)
-        self.pushButton_wfs.setEnabled(False)
-        self.pushButton_wcs.setEnabled(False)
-        
-        if disableAll or self.currentlySelectedMap is None:
-            return
-
-        if self.currentlySelectedMap.data(QtCore.Qt.UserRole).isShape():
-            self.pushButton_wfs.setEnabled(True)
-        else:
-            self.pushButton_wms.setEnabled(True)
-            self.pushButton_wmts.setEnabled(True)
-            if (not WCSDisabled):
-                self.pushButton_wcs.setEnabled(True)
-        
-        #TODO implement logic based on the selected map? or do that when a map is selected
-
     def onMapItemClick(self, item):
         """ handler called when an item is clicked in the map/shape listwidget """
-        self.onRemoveClickGet()
-        if item.data((QtCore.Qt.UserRole)).getType() == "error":
+        if item.data((QtCore.Qt.UserRole)).getType() == Type.ERROR:
             return
         self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
         self.currentlySelectedMap = item
         #log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}")
         #log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}, data value: {item.data(QtCore.Qt.UserRole).getData()}")
         wcs = (item.data(QtCore.Qt.UserRole).getDisableWCS())
-        if (wcs):
-            self.pushButton_wcs.setText("Accesslevel too low")
-        else:
-            self.pushButton_wcs.setText("Get WCS")
-        self.disableCorrectButtons(WCSDisabled = (item.data(QtCore.Qt.UserRole).getDisableWCS()))
+        #if (wcs):
+        #    self.pushButton_wcs.setText("Accesslevel too low")
+        #else:
+        #    self.pushButton_wcs.setText("Get WCS")
+        #self.disableCorrectButtons(WCSDisabled = (item.data(QtCore.Qt.UserRole).getDisableWCS()))
 
     def removeFromPath(self):
         """ remove one level from the path, useful when going back in the folder structure """
@@ -435,11 +389,11 @@ class MyDriveLoggedInTab(QDialog):
         else:
             success = self.onNextNormal()
         if success:
+            self.currentFolderId = self.currentItem.data(QtCore.Qt.UserRole).getData()
+            self.currentMode = ViewMode.FOLDERS
             self.level += 1
-            self.selected = None
+            self.currentItem = None
             self.currentlySelectedMap = None
-            self.currentlySelectedId = ""
-            self.disableCorrectButtons()
         else:
             msg = QMessageBox()
             msg.setWindowTitle("Error!")
@@ -447,16 +401,13 @@ class MyDriveLoggedInTab(QDialog):
             msg.setStandardButtons(QMessageBox.Ok)
             msg.exec_()
             log("cannot open the folder")
-        #log(f"level: {self.level} folderstack: {self.folderStack}")
-        #log("END")
-        # TODO using addToPath
 
     def onNextNormal(self):
         """ non-root onNext """
-        pathId = self.selected.data(QtCore.Qt.UserRole).getData()
+        pathId = self.currentItem.data(QtCore.Qt.UserRole).getData()
         if self.getFolder(pathId):
             self.folderStack.append(pathId)
-            self.addToPath(self.selected.text())
+            self.addToPath(self.currentItem.text())
             return True
         else:
             log("Error! onNextNormal: getFolder failed")
@@ -467,7 +418,7 @@ class MyDriveLoggedInTab(QDialog):
 
     def onNextRoot(self):
         """ onNext for root folders """
-        root = self.selected.data(QtCore.Qt.UserRole).getData()
+        root = self.currentItem.data(QtCore.Qt.UserRole).getData()
         if self.getFolder(root, True):
             self.folderStack.append(root)
             self.addToPath(root)
@@ -478,7 +429,7 @@ class MyDriveLoggedInTab(QDialog):
             return False
 
     def getFolder(self, id, isRoot=False):
-        """ clears the listwidgets and fills them with the folders and maps in the specified folder (by folder id) """
+        """ clears the listwidgets and flls them with the folders and maps in the specified folder (by folder id) """
         apiurl = ""
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         headers["Authorization"] = f"Bearer {self.loginToken}"
@@ -523,86 +474,60 @@ class MyDriveLoggedInTab(QDialog):
                 log("Folder:")
                 log(j2.content)
             return False
-        
-        self.clearListWidget()
 
         maps = json.loads(j1.text)
         folders = json.loads(j2.text)
 
-        [self.listWidget_mydrive_maps.addItem(convertMapdataToListItem(mapdata, False, errorLevel=getErrorLevel(mapdata))) for mapdata in maps["result"]]
         [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders["result"]]
+        [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, errorLevel=getErrorLevel(mapdata))) for mapdata in maps["result"]]
+
         return True
 
     def onPrevious(self):
         """ handles walking back through te folder tree """
-        #log("onPrevious start")
-        #log(self.folderStack)
         self.level -= 1
         self.removeFromPath()
-        self.selected = None
-        self.currentlySelectedId = ""
-        self.currentlySelectedMap = None
+        self.currentItem = None
+        self.folderStack.pop()
 
         if self.level == 0:
-            self.populateListWithRoot()
             self.path = "/"
             self.folderStack = []
-            self.disableCorrectButtons(True)
-            #log(self.folderStack)
-            #log("onPrevious level 0 end")
+            self.currentMode = ViewMode.ROOT
             return
-        
-        if self.level == 1:
-            if (self.getFolder(self.folderStack[0], True)):
-                self.folderStack.pop()
-                self.disableCorrectButtons()
-                #log(self.folderStack)
-                #log("onPrevious level 1 end")
-                return
-            else:
-                log("Error on getFolder!")
 
-        
-        if self.getFolder(self.folderStack[-2]):
-            self.folderStack.pop()
-            self.disableCorrectButtons()
-            #log(self.folderStack)
-            #log("onPrevious regular end")
-        else:
-            log("getFolder failed!")
-        
-    def clearFoldersWidget(self, isRoot = False):
+    def clearListWidget(self):
         for _ in range(self.listWidget_mydrive.count()):
             self.listWidget_mydrive.takeItem(0)
-        #no parent folder of the root folder, so don't display the ".." directory
-        if  not isRoot:
-            retitem = QListWidgetItem()
-            retitem.setText("..")
-            retitem.setData(QtCore.Qt.UserRole, ListData("return", "..", False))
-            retitem.setIcon(QIcon(FOLDERICON))
-            self.listWidget_mydrive.addItem(retitem)
-
-    def clearMapsWidget(self):
-        for _ in range(self.listWidget_mydrive_maps.count()):
-            self.listWidget_mydrive_maps.takeItem(0)
-        
-
-    def clearListWidget(self, isRoot = False):
-        """ clears list widgets"""
-        self.clearFoldersWidget()
-        self.clearMapsWidget()
-
 
     def onListWidgetClick(self, item):
+        pass
+
+    def onListWidgetDoubleClick(self, item):
+        itemtype = item.data((QtCore.Qt.UserRole)).getType()
         """ handler for clicks on items in the folder listwidget """
-        self.onRemoveClickGet()
-        if item.data((QtCore.Qt.UserRole)).getType() == "error":
+        if itemtype == Type.ERROR:
             return
-        self.selected = item
-        if self.selected.data(QtCore.Qt.UserRole).getType() == "return":
-            self.onPrevious()
-        else:
+
+        self.currentItem = item
+        
+        if self.currentMode == ViewMode.ROOT:
             self.onNext()
+        elif self.currentMode == ViewMode.FOLDERS:
+            if itemtype == Action.RETURN:
+                self.onPrevious()
+            else:
+                self.onNext()
+        elif self.currentMode == ViewMode.WMS:
+            self.WMSDoubleClick(item)
+        elif self.currentMode == ViewMode.WMTS:
+            self.WMTSDoubleClick(item)
+        elif self.currentMode == ViewMode.WFS:
+            self.WFSDoubleClick(item)
+        elif self.currentMode == ViewMode.WCS:
+            self.WCSDoubleClick(item)
+        self.fillListWidget()
+
 
     def logOut(self):
         """ emits the logout signal and removes the login token from the settings """
@@ -612,8 +537,7 @@ class MyDriveLoggedInTab(QDialog):
         self.logoutSignal.emit()
 
     def populateListWithRoot(self):
-        """ Clears the listwidgets and adds the 3 root folders to the folder widget """
-        self.clearListWidget(True)
+        """ Adds the 3 root folders to the widget """
         myprojects = ListData("rootfolder", "myMaps")
         sharedwithme = ListData("rootfolder", "shared")
         favorites = ListData("rootfolder", "favorites")

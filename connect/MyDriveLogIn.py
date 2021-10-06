@@ -1,15 +1,14 @@
 import os
+
 import requests
+from PyQt5.QtWidgets import QDialog
+from qgis.PyQt import uic
+from qgis.PyQt.QtCore import QSettings, pyqtSignal
+from qgis.PyQt.QtWidgets import QMessageBox
 from requests.structures import CaseInsensitiveDict
 
-from PyQt5.QtWidgets import QDialog
-
-from qgis.PyQt import uic
-
-from qgis.PyQt.QtCore import QSettings, pyqtSignal
-
-from qgis.PyQt.QtWidgets import QMessageBox
 from .util import *
+
 
 class MyDriveLoginTab(QDialog):
     """ login tab, sends a signal with the token on succesful login. Used in combination with the MyDriveLoggedInTab"""

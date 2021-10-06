@@ -1,16 +1,15 @@
 """ This file contains functions and constants used by the LogIn/LoggedIn/Community tabs """
 
-import os
 import json
-from typing import List
-import requests
+import os
+from enum import Enum, auto
 from threading import Timer
-from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
+from typing import List
+
+import requests
 from PyQt5 import QtCore
-
-from enum import Enum
-
 from PyQt5.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
 
 TABSFOLDER = os.path.join(os.path.dirname(__file__), "..", "tabs/")
 ICONSFOLDER = os.path.join(os.path.dirname(__file__), "..", "icons/")
@@ -19,6 +18,7 @@ FOLDERICON = os.path.join(ICONSFOLDER,"folder.svg")
 VECTORICON = os.path.join(ICONSFOLDER,"vector.svg")
 RASTERICON = os.path.join(ICONSFOLDER,"raster.svg")
 ERRORICON = os.path.join(ICONSFOLDER,"error.svg")
+RETURNICON = os.path.join(ICONSFOLDER,"return.svg")
 
 URL = 'https://api.ellipsis-drive.com/v1'
 DEVURL = f'https://dev.api.ellipsis-drive.com/v1'
@@ -26,6 +26,36 @@ DEVURL = f'https://dev.api.ellipsis-drive.com/v1'
 MAXPATHLEN = 40
 
 DEBUG = True
+
+class Action(Enum):
+    STOPTIMESTAMP = auto()
+    STOPMAPLAYER = auto()
+    STOPGEOMETRYLAYER = auto()
+    RETURN = auto()
+
+class Type(Enum):
+    ROOT = auto()
+    FOLDER = auto()
+    MAP = auto()
+    SHAPE = auto()
+    TIMESTAMP = auto()
+    MAPLAYER = auto()
+    ACTION = auto()
+    ERROR = auto()
+
+class ViewMode(Enum):
+    ROOT = auto()
+    FOLDERS = auto()
+    WMS = auto()
+    WMTS = auto()
+    WFS = auto()
+    WCS = auto()
+
+class ViewSubMode(Enum):
+    NONE = auto()
+    TIMESTAMPS = auto()
+    MAPLAYERS = auto()
+    GEOMETRYLAYERS = auto()
 
 class ErrorLevel(Enum):
     NORMAL = 1
@@ -50,12 +80,14 @@ def getErrorLevel(map):
     else:
         return ErrorLevel.NORMAL
 
-def toListItem(type, text, data = None, extra = None):
+def toListItem(type, text, data = None, extra = None, icon = None):
     """ same as convertMapdataToListItem, but for timestamps and maplayers. should be refactored sometime """
     listitem = QListWidgetItem()
     listdata = ListData(type, data, extra = extra)
     listitem.setData(QtCore.Qt.UserRole, listdata)
     listitem.setText(text)
+    if not icon is None:
+        listitem.setIcon(QIcon(icon))
     return listitem
 
 
@@ -65,19 +97,19 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
     icon = QIcon()
     if isShape:
         icon = QIcon(VECTORICON)
-        item = ListData("id", mapdata["id"], True)
+        item = ListData(Type.SHAPE, mapdata["id"], True)
     elif isMap:
         icon= QIcon(RASTERICON)
-        item = ListData("id", mapdata["id"], False)
+        item = ListData(Type.MAP, mapdata["id"], False)
     elif isFolder:
         icon = QIcon(FOLDERICON)
-        item = ListData("id", mapdata["id"])
+        item = ListData(Type.FOLDER, mapdata["id"])
     elif mapdata["isShape"]:
         icon = QIcon(VECTORICON)
-        item = ListData("id", mapdata["id"], mapdata["isShape"])
+        item = ListData(Type.SHAPE, mapdata["id"], mapdata["isShape"])
     else:
         icon = QIcon(RASTERICON)
-        item = ListData("id", mapdata["id"], mapdata["isShape"])
+        item = ListData(Type.MAP, mapdata["id"], mapdata["isShape"])
 
     # now we handle the errorLevel
     if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL or errorLevel == ErrorLevel.WCSACCESS:
@@ -97,7 +129,7 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
             errmsgdict[ErrorLevel.DELETED] = "Folder deleted"
             errmsgdict[ErrorLevel.DISABLED] = "Folder disabled"
 
-        item = ListData("error")
+        item = ListData(Type.ERROR)
         newitem.setText(f'{mapdata["name"]} ({errmsgdict[errorLevel]})')
         newitem.setData(QtCore.Qt.UserRole, item)
         newitem.setIcon(QIcon(ERRORICON))
@@ -132,30 +164,6 @@ def getUrl(mode, mapId, token = "empty"):
         theurl = f"{URL}/{mode}/{mapId}/{token}"
     log(f"getUrl: {theurl}")
     return theurl
-    # we no longer have a pop up, but we might use this code sometime in the future
-    try:
-        if PYCLIP:
-            pyclip.copy(theurl)
-            msg = QMessageBox()
-            msg.setWindowTitle("Success")
-            msg.setIcon(QMessageBox.Information)
-            msg.setText("Url copied to clipboard!")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec_()
-        else:
-            msg = QInputDialog()
-            msg.setWindowTitle("Success")
-            msg.setLabelText(f"Please copy the following url.")
-            msg.setTextValue(theurl)
-            msg.setOption(QInputDialog.NoButtons)
-            msg.exec_()
-    except:
-        msg = QInputDialog()
-        msg.setWindowTitle("Success")
-        msg.setLabelText(f"Please copy the following url.")
-        msg.setTextValue(theurl)
-        msg.setOption(QInputDialog.NoButtons)
-        msg.exec_()
 
 class ListData:
     """ Class used for objects in the QList of the EllipsisConnect plugin """
