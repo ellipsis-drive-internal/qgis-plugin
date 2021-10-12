@@ -13,6 +13,7 @@ from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
 from requests import api
+from qgis.utils import iface
 
 from .util import *
 
@@ -264,11 +265,14 @@ class MyDriveLoggedInTab(QDialog):
             theurl = F"{URL}/wmts/{mapid}/{self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&token={self.loginToken}&url={theurl}"
             log(actualurl)
-            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
-            if not rlayer.isValid():
-                log("Layer failed to load!") 
-            else:
-                QgsProject.instance().addMapLayer(rlayer)
+            #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
+            
+            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
+
+            #if not rlayer.isValid():
+            #    log("Layer failed to load!") 
+            #else:
+            #    QgsProject.instance().addMapLayer(rlayer)
             # same as above
             self.currentItem = self.previousItem
 
