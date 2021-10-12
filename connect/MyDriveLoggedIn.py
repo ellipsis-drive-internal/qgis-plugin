@@ -264,7 +264,7 @@ class MyDriveLoggedInTab(QDialog):
             theurl = F"{URL}/wmts/{mapid}/{self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&token={self.loginToken}&url={theurl}"
             log(actualurl)
-            rlayer = QgsRasterLayer(actualurl, f"{mapid}_{ids}", 'WMS')
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
             if not rlayer.isValid():
                 log("Layer failed to load!") 
             else:
