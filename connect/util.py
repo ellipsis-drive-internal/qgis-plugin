@@ -26,7 +26,7 @@ DEVURL = f'https://dev.api.ellipsis-drive.com/v1'
 MAXPATHLEN = 40
 
 DEBUG = True
-DISABLESEARCH = True
+DISABLESEARCH = False
 
 class Type(Enum):
     ROOT = auto()

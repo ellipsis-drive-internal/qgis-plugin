@@ -77,6 +77,7 @@ class MyDriveLoggedInTab(QDialog):
         log("getPathInfo")
         roots = ["myMaps", "shared", "favorites"]
         data1 = None
+        theroot = None
         for root in roots:
             apiurl = f"{URL}/path/info"
 
@@ -92,10 +93,12 @@ class MyDriveLoggedInTab(QDialog):
 
             if j1:
                 data1 = json.loads(j1.text)
+                theroot = root
         if data1 is None:
             log("getPathInfo failed")
         else:
             jlog(data1)
+            return [theroot, data1["path"]]
 
     def onListWidgetDoubleClick(self, item):
         itemdata = item.data((QtCore.Qt.UserRole)).getData()
@@ -106,17 +109,21 @@ class MyDriveLoggedInTab(QDialog):
         # if we're searching, the regular rules don't apply
         if self.currentMode == ViewMode.SEARCH:
             if itemtype == Type.FOLDER:
-                if self.currentSubMode == ViewSubMode.INFOLDER:
-                    self.currentItem = item
-                    self.onNext()
-                    pass
-                else:# not infolder, so 'regular' search
-                    self.currentSubMode = ViewSubMode.INFOLDER
-                    self.currentItem = item
-                    self.setPath("search")
-                    self.onNext()
-            else:
-                pass
+                root, folderpath = self.getPathInfo(itemdata)
+                jlog(folderpath)
+                folderpath.reverse()
+                self.setPath(f"/{root}")
+                self.folderStack = [root]
+                self.level = 1
+                for folder in folderpath:
+                    self.folderStack.append(folder["id"])
+                    self.addToPath(folder["name"])
+                    self.level += 1
+                self.currentMode = ViewMode.FOLDERS
+                self.currentSubMode = ViewSubMode.NONE
+                #self.lineEdit_search.clear()
+                #self.pushButton_stopsearch.setEnabled(False)
+                self.fillListWidget()
             return
 
         if itemtype == Type.ERROR:
@@ -232,7 +239,7 @@ class MyDriveLoggedInTab(QDialog):
             ids = f"{self.currentTimestamp['id']}_{layerid}"
             mapid = self.currentMetaData["id"]
             theurl = F"{URL}/wms/{mapid}/{self.loginToken}"
-            actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&token={self.loginToken}&url={theurl}"
+            actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&url={theurl}"
             log("WMS")
             log(actualurl)
             #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
@@ -265,7 +272,7 @@ class MyDriveLoggedInTab(QDialog):
             ids = f"{self.currentTimestamp['id']}_{data['id']}"
             mapid = self.currentMetaData["id"]
             theurl = F"{URL}/wmts/{mapid}/{self.loginToken}"
-            actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&token={self.loginToken}&url={theurl}"
+            actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
             #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
             
