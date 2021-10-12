@@ -46,7 +46,7 @@ class MyDriveLoggedInTab(QDialog):
         #self.searching = False
         self.searchText = ""
         self.currentMetaData = None
-        self.currentTimestampId = ""
+        self.currentTimestamp = None
         self.currentMode = ViewMode.ROOT
         self.previousMode = None
         self.currentSubMode = ViewSubMode.NONE
@@ -197,10 +197,10 @@ class MyDriveLoggedInTab(QDialog):
                 timestamps = self.currentMetaData["timestamps"]
                 maplayers = self.currentMetaData["mapLayers"]
                 for timestamp in timestamps:
-                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["id"], data=timestamp, extra=maplayers))
+                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp, extra=maplayers))
 
             elif (self.currentSubMode == ViewSubMode.MAPLAYERS):
-                self.currentTimestampId = item.getData()["id"]
+                self.currentTimestamp = item.getData()
                 mapLayers = item.getExtra()
                 for mapLayer in mapLayers:
                     self.listWidget_mydrive.addItem(toListItem(Type.MAPLAYER, mapLayer["name"], mapLayer))
@@ -228,13 +228,14 @@ class MyDriveLoggedInTab(QDialog):
 
         elif itemtype == Type.MAPLAYER:
             data = itemdata
-            ids = f"{self.currentTimestampId}_{data['id']}"
+            ids = f"{self.currentTimestamp['id']}_{data['id']}"
             mapid = self.currentMetaData["id"]
-            theurl = F"{URL}/wms/{mapid}"
+            theurl = F"{URL}/wms/{mapid}/{self.loginToken}"
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&token={self.loginToken}&url={theurl}"
             log("WMS")
             log(actualurl)
-            rlayer = QgsRasterLayer(actualurl, f"{mapid}_{ids}", 'WMS')
+            log(data)
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_TODO_layernaam", 'WMS')
             if not rlayer.isValid():
                 log("Layer failed to load!") 
             else:
@@ -259,10 +260,10 @@ class MyDriveLoggedInTab(QDialog):
             jlog(self.currentMetaData)
             jlog(itemdata)
             data = itemdata
-            ids = f"{self.currentTimestampId}_{data['id']}"
+            ids = f"{self.currentTimestamp['id']}_{data['id']}"
             mapid = self.currentMetaData["id"]
-            theurl = F"{URL}/wmts/{mapid}"
-            actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
+            theurl = F"{URL}/wmts/{mapid}/{self.loginToken}"
+            actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&token={self.loginToken}&url={theurl}"
             log(actualurl)
             rlayer = QgsRasterLayer(actualurl, f"{mapid}_{ids}", 'WMS')
             if not rlayer.isValid():
@@ -411,7 +412,7 @@ class MyDriveLoggedInTab(QDialog):
                 "currentlySelectedMap": copy(self.currentlySelectedMap),
                 "currentlySelectedId": copy(self.currentlySelectedId),
                 "currentMetaData": copy(self.currentMetaData),
-                "currentTimestampId": copy(self.currentTimestampId),
+                "currentTimestamp": copy(self.currentTimestamp),
                 "currentMode": copy(self.currentMode),
                 "previousMode": copy(self.previousMode),
                 "currentSubMode": copy(self.currentSubMode),
@@ -429,7 +430,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentlySelectedMap = copy(state["currentlySelectedMap"])
         self.currentlySelectedId = copy(state["currentlySelectedId"])
         self.currentMetaData = copy(state["currentMetaData"])
-        self.currentTimestampId = copy(state["currentTimestampId"])
+        self.currentTimestamp = copy(state["currentTimestamp"])
         self.currentMode = copy(state["currentMode"])
         self.previousMode = copy(state["previousMode"])
         self.currentSubMode = copy(state["currentSubMode"])
