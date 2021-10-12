@@ -210,12 +210,12 @@ class MyDriveLoggedInTab(QDialog):
         elif (self.currentMode == ViewMode.WFS):
             geometryLayers = self.currentMetaData["geometryLayers"]
             for geometryLayer in geometryLayers:
-                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, geometryLayer["name"], data=geometryLayer["id"]))
+                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, geometryLayer["name"], data=geometryLayer))
 
         elif (self.currentMode == ViewMode.WCS):
             timestamps = self.currentMetaData["timestamps"]
             for timestamp in timestamps:
-                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp["id"]))
+                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp))
 
     def WMSDoubleClick(self, item):
         itemtype = item.data((QtCore.Qt.UserRole)).getType()
@@ -227,15 +227,14 @@ class MyDriveLoggedInTab(QDialog):
             self.currentItem = item
 
         elif itemtype == Type.MAPLAYER:
-            data = itemdata
-            ids = f"{self.currentTimestamp['id']}_{data['id']}"
+            layerid = itemdata["id"]
+            ids = f"{self.currentTimestamp['id']}_{layerid}"
             mapid = self.currentMetaData["id"]
             theurl = F"{URL}/wms/{mapid}/{self.loginToken}"
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&token={self.loginToken}&url={theurl}"
             log("WMS")
             log(actualurl)
-            log(data)
-            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_TODO_layernaam", 'WMS')
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
             if not rlayer.isValid():
                 log("Layer failed to load!") 
             else:
