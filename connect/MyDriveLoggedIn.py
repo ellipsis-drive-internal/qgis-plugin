@@ -236,7 +236,7 @@ class MyDriveLoggedInTab(QDialog):
             log("WMS")
             log(actualurl)
             #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
-            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
+            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
             
             #if not rlayer.isValid():
             #    log("Layer failed to load!") 
@@ -269,7 +269,7 @@ class MyDriveLoggedInTab(QDialog):
             log(actualurl)
             #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
             
-            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
+            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
 
             #if not rlayer.isValid():
             #    log("Layer failed to load!") 
