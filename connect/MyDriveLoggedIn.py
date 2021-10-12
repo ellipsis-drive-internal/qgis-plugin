@@ -235,11 +235,13 @@ class MyDriveLoggedInTab(QDialog):
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&token={self.loginToken}&url={theurl}"
             log("WMS")
             log(actualurl)
-            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
-            if not rlayer.isValid():
-                log("Layer failed to load!") 
-            else:
-                QgsProject.instance().addMapLayer(rlayer)
+            #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
+            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
+            
+            #if not rlayer.isValid():
+            #    log("Layer failed to load!") 
+            #else:
+            #    QgsProject.instance().addMapLayer(rlayer)
             # we have to restore the previous item as the current item, to maintain the view (instead of 'opening' the layer)
             self.currentItem = self.previousItem
 
@@ -289,7 +291,7 @@ class MyDriveLoggedInTab(QDialog):
             'service': 'WFS',
             'version': '2.0.0',
             'request': 'GetFeature',
-            'typename': f'layerId_{itemdata.getData()}',
+            'typename': f'layerId_{itemdata.getData()["id"]}',
             'srsname': "EPSG:4326"
         }
         uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
