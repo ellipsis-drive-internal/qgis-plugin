@@ -215,7 +215,7 @@ class MyDriveLoggedInTab(QDialog):
         elif (self.currentMode == ViewMode.WCS):
             timestamps = self.currentMetaData["timestamps"]
             for timestamp in timestamps:
-                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["id"], data=timestamp["id"]))
+                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp["id"]))
 
     def WMSDoubleClick(self, item):
         itemtype = item.data((QtCore.Qt.UserRole)).getType()
@@ -313,7 +313,7 @@ class MyDriveLoggedInTab(QDialog):
         theurl = F"{URL}/wcs/{mapid}"
         
         wcsUri = makeWCSuri(theurl, timestampid )
-        rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}_{timestampid}', 'wcs')
+        rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'wcs')
         if not rlayer.isValid():
             log("Layer failed to load!") 
         else:
