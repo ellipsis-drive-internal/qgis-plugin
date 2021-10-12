@@ -26,36 +26,37 @@ DEVURL = f'https://dev.api.ellipsis-drive.com/v1'
 MAXPATHLEN = 40
 
 DEBUG = True
-
-class Action(Enum):
-    STOPTIMESTAMP = auto()
-    STOPMAPLAYER = auto()
-    STOPGEOMETRYLAYER = auto()
-    RETURN = auto()
+DISABLESEARCH = True
 
 class Type(Enum):
     ROOT = auto()
     FOLDER = auto()
     MAP = auto()
     SHAPE = auto()
+    PROTOCOL = auto()
     TIMESTAMP = auto()
     MAPLAYER = auto()
     ACTION = auto()
+    RETURN = auto()
     ERROR = auto()
 
 class ViewMode(Enum):
     ROOT = auto()
     FOLDERS = auto()
+    SHAPE = auto()
+    MAP = auto()
     WMS = auto()
     WMTS = auto()
     WFS = auto()
     WCS = auto()
+    SEARCH = auto()
 
 class ViewSubMode(Enum):
     NONE = auto()
     TIMESTAMPS = auto()
     MAPLAYERS = auto()
     GEOMETRYLAYERS = auto()
+    INFOLDER = auto()
 
 class ErrorLevel(Enum):
     NORMAL = 1

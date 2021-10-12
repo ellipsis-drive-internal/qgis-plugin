@@ -50,8 +50,11 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="text">
+       <string/>
+      </property>
       <property name="placeholderText">
-       <string>Search for maps and shapes</string>
+       <string>Search..</string>
       </property>
      </widget>
     </item>
