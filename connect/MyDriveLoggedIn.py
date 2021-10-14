@@ -68,7 +68,7 @@ class MyDriveLoggedInTab(QDialog):
             self.lineEdit_search.textEdited.connect(self.onSearchChange)
 
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
-        self.populateListWithRoot()
+        self.fillListWidget()
 
     def addReturnItem(self):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
