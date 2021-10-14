@@ -23,7 +23,7 @@ RETURNICON = os.path.join(ICONSFOLDER,"return.svg")
 URL = 'https://api.ellipsis-drive.com/v1'
 DEVURL = f'https://dev.api.ellipsis-drive.com/v1'
 
-MAXPATHLEN = 40
+MAXPATHLEN = 38
 
 DEBUG = True
 DISABLESEARCH = False

@@ -434,38 +434,38 @@ class MyDriveLoggedInTab(QDialog):
 
     def getCurrentState(self):
         state = {
-                "level" : copy(self.level),
-                "path": copy(self.path),
-                "folderStack": copy(self.folderStack),
-                "currentlySelectedMap": copy(self.currentlySelectedMap),
-                "currentlySelectedId": copy(self.currentlySelectedId),
-                "currentMetaData": copy(self.currentMetaData),
-                "currentTimestamp": copy(self.currentTimestamp),
-                "currentMode": copy(self.currentMode),
-                "previousMode": copy(self.previousMode),
-                "currentSubMode": copy(self.currentSubMode),
-                "currentItem": copy(self.currentItem),
-                "previousItem": copy(self.previousItem),
-                "currentFolderId": copy(self.currentFolderId),
-                "currentZoom": copy(self.currentZoom),
+                "level" : (self.level),
+                "path": (self.path),
+                "folderStack": (self.folderStack),
+                "currentlySelectedMap": (self.currentlySelectedMap),
+                "currentlySelectedId": (self.currentlySelectedId),
+                "currentMetaData": (self.currentMetaData),
+                "currentTimestamp": (self.currentTimestamp),
+                "currentMode": (self.currentMode),
+                "previousMode": (self.previousMode),
+                "currentSubMode": (self.currentSubMode),
+                "currentItem": (self.currentItem),
+                "previousItem": (self.previousItem),
+                "currentFolderId": (self.currentFolderId),
+                "currentZoom": (self.currentZoom),
         }
         return state
 
     def setCurrentState(self, state):
         """ reset to a certain state, and call fillListWidget to redraw the plugin """
-        self.level = copy(state["level"])
-        self.folderStack = copy(state["folderStack"])
-        self.currentlySelectedMap = copy(state["currentlySelectedMap"])
-        self.currentlySelectedId = copy(state["currentlySelectedId"])
-        self.currentMetaData = copy(state["currentMetaData"])
-        self.currentTimestamp = copy(state["currentTimestamp"])
-        self.currentMode = copy(state["currentMode"])
-        self.previousMode = copy(state["previousMode"])
-        self.currentSubMode = copy(state["currentSubMode"])
-        self.currentItem = copy(state["currentItem"] )
-        self.previousItem = copy(state["previousItem"])
-        self.currentFolderId = copy(state["currentFolderId"])
-        self.currentZoom = copy(state["currentZoom"])
+        self.level = (state["level"])
+        self.folderStack = (state["folderStack"])
+        self.currentlySelectedMap = (state["currentlySelectedMap"])
+        self.currentlySelectedId = (state["currentlySelectedId"])
+        self.currentMetaData = (state["currentMetaData"])
+        self.currentTimestamp = (state["currentTimestamp"])
+        self.currentMode = (state["currentMode"])
+        self.previousMode = (state["previousMode"])
+        self.currentSubMode = (state["currentSubMode"])
+        self.currentItem = (state["currentItem"] )
+        self.previousItem = (state["previousItem"])
+        self.currentFolderId = (state["currentFolderId"])
+        self.currentZoom = (state["currentZoom"])
         self.setPath(state["path"])
         self.fillListWidget()
 
@@ -515,6 +515,7 @@ class MyDriveLoggedInTab(QDialog):
 
     def setPath(self, path):
         """ set the displayed path """
+        print(f"length of path right now = {len(self.path)}")
         self.path = path
         toolong = False
         newstr = ""
