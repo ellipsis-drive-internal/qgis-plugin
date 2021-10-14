@@ -34,6 +34,11 @@ class MyDriveTab(QDialog):
 
         self.stackedWidget.addWidget(self.loginWidget)
         self.stackedWidget.addWidget(self.loggedInWidget)
+
+        self.isOnline = connected_to_internet()
+
+        self.loginWidget.isOnline = self.isOnline
+        self.loggedInWidget.isOnline = self.isOnline
         
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
 

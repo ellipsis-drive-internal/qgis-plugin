@@ -139,14 +139,17 @@ class MyDriveLoggedInTab(QDialog):
 
             elif self.currentMode == ViewMode.MAP or self.currentMode == ViewMode.SHAPE:
                 self.currentMode = ViewMode.FOLDERS
+                self.removeFromPath()
 
             elif self.currentMode == ViewMode.WFS:
                 self.currentMode = ViewMode.SHAPE
                 self.currentSubMode = ViewSubMode.NONE
+                self.removeFromPath()
 
             elif self.currentMode == ViewMode.WCS or self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS:
                 self.currentMode = ViewMode.MAP
                 self.currentSubMode = ViewSubMode.NONE
+                self.removeFromPath()
         
         elif self.currentMode == ViewMode.ROOT:
             self.onNext()
@@ -157,16 +160,20 @@ class MyDriveLoggedInTab(QDialog):
                 self.onNext()
 
             elif itemtype == Type.SHAPE:
+                # TODO simplify these two elifs into 1
                 self.currentMetaData = getMetadata(itemdata, self.loginToken)
                 self.currentMode = ViewMode.SHAPE
+                self.addToPath(self.currentMetaData["name"])
 
             elif itemtype == Type.MAP:
                 self.currentMetaData = getMetadata(itemdata, self.loginToken)
                 self.currentMode = ViewMode.MAP
+                self.addToPath(self.currentMetaData["name"])
 
         elif self.currentMode == ViewMode.SHAPE or self.currentMode == ViewMode.MAP:
             self.currentMode = mapViewMode(itemdata)
             self.currentSubMode = initialSubMode(itemdata)
+            self.addToPath(itemdata)
 
         elif self.currentMode == ViewMode.WMS:
             self.WMSDoubleClick(item)

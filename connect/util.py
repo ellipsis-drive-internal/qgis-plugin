@@ -66,6 +66,14 @@ class ErrorLevel(Enum):
     DELETED = 5
     WCSACCESS = 6
 
+def connected_to_internet(url='http://www.google.com/', timeout=5):
+    try:
+        _ = requests.head(url, timeout=timeout)
+        return True
+    except requests.ConnectionError:
+        print("No internet connection available.")
+    return False
+
 def getErrorLevel(map):
     """ receives a map object (from the api) and returns whether there is something wrong with it or not """
     if "deleted" in map and map["deleted"]:
