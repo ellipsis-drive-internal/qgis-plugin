@@ -32,10 +32,10 @@ from qgis.PyQt.QtWidgets import QAction, QListWidgetItem, QListWidget, QMessageB
 
 from PyQt5 import QtCore
 
+from .connect.MyDrive import MyDriveTab
+
 # Initialize Qt resources from file resources.py
 from .resources import *
-# Import the code for the dialog
-from .ellipsis_drive_dialog import EllipsisConnectDialog
 import os.path
 
 class EllipsisConnect:
@@ -182,7 +182,7 @@ class EllipsisConnect:
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
             self.iface.removePluginMenu(
-                self.tr(u'&Ellipsis Drive Connect'),
+                self.tr(u'&Ellipsis Drive'),
                 action)
             self.iface.removeToolBarIcon(action)
 
@@ -194,7 +194,7 @@ class EllipsisConnect:
         if self.first_start == True:
             print("first run of run()")
             self.first_start = False
-            self.dlg = EllipsisConnectDialog()
+            self.dlg = MyDriveTab()
 
         # show the dialog
         self.dlg.show()
