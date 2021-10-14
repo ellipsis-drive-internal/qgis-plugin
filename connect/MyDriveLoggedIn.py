@@ -319,7 +319,7 @@ class MyDriveLoggedInTab(QDialog):
         }
         uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
         log(uri)
-        rlayer = QgsVectorLayer(uri, text, 'WFS')
+        rlayer = QgsVectorLayer(uri, text, 'wfs')
 
         if not rlayer.isValid():
             log("Layer failed to load!") 
@@ -515,7 +515,6 @@ class MyDriveLoggedInTab(QDialog):
 
     def setPath(self, path):
         """ set the displayed path """
-        print(f"length of path right now = {len(self.path)}")
         self.path = path
         toolong = False
         newstr = ""
