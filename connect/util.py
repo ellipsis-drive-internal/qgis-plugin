@@ -159,9 +159,9 @@ def getMetadata(mapid, token):
         log("getMetadata failed!")
         return {}
     data = json.loads(j1.text)
-    log(f"metadata of map with id {mapid}")
-    jlog(data)
-    log("end of metadata")
+    #log(f"metadata of map with id {mapid}")
+    #jlog(data)
+    #log("end of metadata")
     return data
 
 def getUrl(mode, mapId, token = "empty"):

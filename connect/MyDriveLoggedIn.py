@@ -65,7 +65,7 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_stopsearch.setEnabled(False)
 
         if not DISABLESEARCH:
-            self.lineEdit_search.textChanged.connect(self.onSearchChange)
+            self.lineEdit_search.textEdited.connect(self.onSearchChange)
 
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         self.populateListWithRoot()
@@ -74,7 +74,6 @@ class MyDriveLoggedInTab(QDialog):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
 
     def getPathInfo(self, id):
-        log("getPathInfo")
         roots = ["myMaps", "shared", "favorites"]
         data1 = None
         theroot = None
@@ -97,7 +96,6 @@ class MyDriveLoggedInTab(QDialog):
         if data1 is None:
             log("getPathInfo failed")
         else:
-            jlog(data1)
             return [theroot, data1["path"]]
 
     def onListWidgetDoubleClick(self, item):
@@ -107,7 +105,7 @@ class MyDriveLoggedInTab(QDialog):
         log(f"Clicked on type {itemtype}, current modi: {self.currentMode}, {self.currentSubMode}")
 
         # if we're searching, the regular rules don't apply
-        if self.currentMode == ViewMode.SEARCH:            
+        if self.currentMode == ViewMode.SEARCH:
             root, folderpath = self.getPathInfo(itemdata)
             jlog(folderpath)
             folderpath.reverse()
@@ -124,20 +122,20 @@ class MyDriveLoggedInTab(QDialog):
                 self.addToPath(folder["name"])
                 self.level += 1
                 first = False    
-            #self.lineEdit_search.clear()
-            #self.pushButton_stopsearch.setEnabled(False)
 
             if itemtype == Type.FOLDER:
                 self.currentMode = ViewMode.FOLDERS
                 self.currentSubMode = ViewSubMode.NONE
             else:
-                # TODO simplify these two elifs into 1
                 self.currentMetaData = getMetadata(itemdata, self.loginToken)
                 self.currentMode = ViewMode.SHAPE
                 self.currentSubMode = ViewSubMode.NONE
                 if itemtype == Type.MAP:
                     self.currentMode = ViewMode.MAP
                 self.currentItem = item
+
+            self.lineEdit_search.clear()
+            self.pushButton_stopsearch.setEnabled(False)
             self.fillListWidget()
             return
 
@@ -174,16 +172,13 @@ class MyDriveLoggedInTab(QDialog):
             if  itemtype == Type.FOLDER:
                 self.onNext()
 
-            elif itemtype == Type.SHAPE:
-                # TODO simplify these two elifs into 1
+            elif itemtype == Type.SHAPE or itemtype == Type.MAP:
                 self.currentMetaData = getMetadata(itemdata, self.loginToken)
-                self.currentMode = ViewMode.SHAPE
                 self.addToPath(self.currentMetaData["name"])
-
-            elif itemtype == Type.MAP:
-                self.currentMetaData = getMetadata(itemdata, self.loginToken)
-                self.currentMode = ViewMode.MAP
-                self.addToPath(self.currentMetaData["name"])
+                if itemtype == Type.SHAPE:
+                    self.currentMode = ViewMode.SHAPE
+                else:
+                    self.currentMode = ViewMode.MAP
 
         elif self.currentMode == ViewMode.SHAPE or self.currentMode == ViewMode.MAP:
             self.currentMode = mapViewMode(itemdata)
@@ -205,8 +200,7 @@ class MyDriveLoggedInTab(QDialog):
         self.fillListWidget()
 
     def fillListWidget(self):
-        log(self.currentMode)
-        log(self.currentSubMode)
+        log(f"fillListWidget called with modi: {self.currentMode} and {self.currentSubMode}")
         self.clearListWidget()
 
         if (self.currentMode == ViewMode.ROOT):
