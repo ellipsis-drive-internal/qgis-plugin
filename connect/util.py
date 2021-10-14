@@ -20,12 +20,14 @@ RASTERICON = os.path.join(ICONSFOLDER,"raster.svg")
 ERRORICON = os.path.join(ICONSFOLDER,"error.svg")
 RETURNICON = os.path.join(ICONSFOLDER,"return.svg")
 
-URL = 'https://api.ellipsis-drive.com/v1'
-DEVURL = f'https://dev.api.ellipsis-drive.com/v1'
+PRODUCTIONURL = 'https://api.ellipsis-drive.com/v1'
+DEVURL = 'https://dev.api.ellipsis-drive.com/v1'
+
+URL = PRODUCTIONURL
 
 MAXPATHLEN = 38
 
-DEBUG = True
+DEBUG = False
 DISABLESEARCH = False
 
 class Type(Enum):
