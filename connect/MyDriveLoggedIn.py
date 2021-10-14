@@ -107,23 +107,38 @@ class MyDriveLoggedInTab(QDialog):
         log(f"Clicked on type {itemtype}, current modi: {self.currentMode}, {self.currentSubMode}")
 
         # if we're searching, the regular rules don't apply
-        if self.currentMode == ViewMode.SEARCH:
-            if itemtype == Type.FOLDER:
-                root, folderpath = self.getPathInfo(itemdata)
-                jlog(folderpath)
-                folderpath.reverse()
-                self.setPath(f"/{root}")
-                self.folderStack = [root]
-                self.level = 1
-                for folder in folderpath:
-                    self.folderStack.append(folder["id"])
+        if self.currentMode == ViewMode.SEARCH:            
+            root, folderpath = self.getPathInfo(itemdata)
+            jlog(folderpath)
+            folderpath.reverse()
+            self.setPath(f"/{root}")
+            self.folderStack = [root]
+            self.level = 1
+            
+            first = True
+            for folder in folderpath:
+                if first and not itemtype == Type.FOLDER:
                     self.addToPath(folder["name"])
-                    self.level += 1
+                    continue
+                self.folderStack.append(folder["id"])
+                self.addToPath(folder["name"])
+                self.level += 1
+                first = False    
+            #self.lineEdit_search.clear()
+            #self.pushButton_stopsearch.setEnabled(False)
+
+            if itemtype == Type.FOLDER:
                 self.currentMode = ViewMode.FOLDERS
                 self.currentSubMode = ViewSubMode.NONE
-                #self.lineEdit_search.clear()
-                #self.pushButton_stopsearch.setEnabled(False)
-                self.fillListWidget()
+            else:
+                # TODO simplify these two elifs into 1
+                self.currentMetaData = getMetadata(itemdata, self.loginToken)
+                self.currentMode = ViewMode.SHAPE
+                self.currentSubMode = ViewSubMode.NONE
+                if itemtype == Type.MAP:
+                    self.currentMode = ViewMode.MAP
+                self.currentItem = item
+            self.fillListWidget()
             return
 
         if itemtype == Type.ERROR:
