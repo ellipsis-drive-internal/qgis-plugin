@@ -362,14 +362,23 @@ class MyDriveLoggedInTab(QDialog):
         self.loginToken = ""
         self.loggedIn = False
         self.userInfo = {}
-        self.currentItem = None
         self.level = 0
         self.path = "/"
         self.folderStack = []
-        self.currentItem = None
-        #self.searching = False
+        self.currentlySelectedMap = None
+        self.currentlySelectedId = ""
         self.searchText = ""
+        self.currentMetaData = None
+        self.currentTimestamp = None
         self.currentMode = ViewMode.ROOT
+        self.previousMode = None
+        self.currentSubMode = ViewSubMode.NONE
+        self.currentItem = None
+        self.previousItem = None
+        self.currentFolderId = None
+        self.currentZoom = None
+        self.stateBeforeSearch = {}
+        self.setPath(self.path)
 
     @debounce(0.5)
     def performSearch(self):

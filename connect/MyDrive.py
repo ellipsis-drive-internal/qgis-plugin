@@ -75,6 +75,7 @@ class MyDriveTab(QDialog):
         self.loggedInWidget.label.setText(f"Welcome {userInfo['username']}!")
         self.userInfo = userInfo
         self.loginSignal.emit(token)
+        self.loggedInWidget.fillListWidget()
         self.stackedWidget.setCurrentIndex(1)
     
     def handleLogoutSignal(self):
