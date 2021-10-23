@@ -26,26 +26,19 @@ import os
 
 from qgis.PyQt import uic
 from qgis.PyQt import QtWidgets
+from qgis.PyQt import QtGui, QtWidgets, uic
+from qgis.PyQt.QtCore import pyqtSignal
+from qgis.PyQt.QtWidgets import QDockWidget
 
 from .connect.util import *
 from .connect.CommunityLibrary import CommunityTab
 from .connect.MyDrive import MyDriveTab
 
-
-PYCLIP = False
-
-try:
-    import pyclip
-    PYCLIP = True
-except ImportError:
-    PYCLIP = False
-
-
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'ellipsis_drive_dialog_base.ui'))
 
-class EllipsisConnectDialog(QtWidgets.QDialog, FORM_CLASS):
+class EllipsisConnectDialog(QDockWidget, FORM_CLASS):
     def __init__(self, parent=None):
         """Constructor."""
         super(EllipsisConnectDialog, self).__init__(parent)

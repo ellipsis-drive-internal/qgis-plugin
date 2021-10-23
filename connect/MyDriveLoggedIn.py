@@ -7,7 +7,7 @@ from copy import copy
 import requests
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDockWidget
 from qgis.core import *
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
@@ -30,7 +30,7 @@ def mapViewMode(str):
     if str == "WCS":
         return ViewMode.WCS
 
-class MyDriveLoggedInTab(QDialog):
+class MyDriveLoggedInTab(QDockWidget):
     """ The LoggedIn tab, giving users access to their drive. Used in combination with the MyDriveTab and the MyDriveLoginTab"""
     logoutSignal = pyqtSignal()
     def __init__(self):

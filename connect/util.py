@@ -27,7 +27,7 @@ URL = PRODUCTIONURL
 
 MAXPATHLEN = 38
 
-DEBUG = False
+DEBUG = True
 DISABLESEARCH = False
 
 class Type(Enum):

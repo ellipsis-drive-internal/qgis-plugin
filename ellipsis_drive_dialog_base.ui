@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>EllipsisConnectDialogBase</class>
- <widget class="QDialog" name="EllipsisConnectDialogBase">
+ <widget class="QDockWidget" name="EllipsisConnectDialogBase">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,18 +11,9 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Ellipsis Drive Connect</string>
+   <string>Ellipsis Drive</string>
   </property>
-  <widget class="QStackedWidget" name="stackedWidget">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>20</y>
-     <width>309</width>
-     <height>539</height>
-    </rect>
-   </property>
-  </widget>
+  <widget class="QStackedWidget" name="stackedWidget"/>
  </widget>
  <resources/>
  <connections/>
