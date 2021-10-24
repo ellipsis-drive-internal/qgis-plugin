@@ -7,7 +7,7 @@ from copy import copy
 import requests
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDockWidget
+from PyQt5.QtWidgets import QDial, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QListWidget, QPushButton
 from qgis.core import *
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
@@ -30,12 +30,12 @@ def mapViewMode(str):
     if str == "WCS":
         return ViewMode.WCS
 
-class MyDriveLoggedInTab(QDockWidget):
+class MyDriveLoggedInTab(QDialog):
     """ The LoggedIn tab, giving users access to their drive. Used in combination with the MyDriveTab and the MyDriveLoginTab"""
     logoutSignal = pyqtSignal()
     def __init__(self):
         super(MyDriveLoggedInTab, self).__init__()
-        uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoggedInTab.ui"), self)
+        #uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoggedInTab.ui"), self)
         self.loginToken = ""
         self.loggedIn = False
         self.userInfo = {}
@@ -57,6 +57,27 @@ class MyDriveLoggedInTab(QDockWidget):
         self.currentZoom = None
         self.stateBeforeSearch = {}
 
+        self.constructUI()
+
+        self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
+        self.fillListWidget()
+
+    def constructUI(self):
+
+        self.gridLayout = QGridLayout()
+
+        self.label = QLabel()
+        self.label_path = QLabel()
+        self.lineEdit_search = QLineEdit()
+        self.listWidget_mydrive = QListWidget()
+        self.pushButton_logout = QPushButton()
+        self.pushButton_logout.setText("Logout")
+        self.pushButton_stopsearch = QPushButton()
+        self.pushButton_stopsearch.setText("Stop search")
+
+        self.label.setText("Welcome!")
+        self.lineEdit_search.setPlaceholderText("Search..")
+
         self.listWidget_mydrive.itemDoubleClicked.connect(self.onListWidgetDoubleClick)
         self.listWidget_mydrive.itemClicked.connect(self.onListWidgetClick)
 
@@ -67,8 +88,16 @@ class MyDriveLoggedInTab(QDockWidget):
         if not DISABLESEARCH:
             self.lineEdit_search.textEdited.connect(self.onSearchChange)
 
-        self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
-        self.fillListWidget()
+        self.gridLayout.addWidget(self.label, 0, 0)
+        self.gridLayout.addWidget(self.pushButton_logout, 0, 1)
+        self.gridLayout.addWidget(self.lineEdit_search, 1, 0)
+        self.gridLayout.addWidget(self.pushButton_stopsearch, 1, 1)
+        self.gridLayout.addWidget(self.label_path, 2, 0)
+        self.gridLayout.addWidget(self.listWidget_mydrive, 3, 0, 1, 2)
+        
+        self.setLayout(self.gridLayout)
+
+
 
     def addReturnItem(self):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))

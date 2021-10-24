@@ -1,7 +1,8 @@
 import os
+from PyQt5.QtCore import QLine
 
 import requests
-from PyQt5.QtWidgets import QDockWidget
+from PyQt5.QtWidgets import QCheckBox, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QPushButton
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from qgis.PyQt.QtWidgets import QMessageBox
@@ -10,25 +11,56 @@ from requests.structures import CaseInsensitiveDict
 from .util import *
 
 
-class MyDriveLoginTab(QDockWidget):
+class MyDriveLoginTab(QDialog):
     """ login tab, sends a signal with the token on succesful login. Used in combination with the MyDriveLoggedInTab"""
     loginSignal = pyqtSignal(object, object)
     def __init__(self):
         super(MyDriveLoginTab, self).__init__()
-        uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoginTab.ui"), self)
-        self.pushButton_login.clicked.connect(self.loginButton)
-        self.lineEdit_username.textChanged.connect(self.onUsernameChange)
-        self.lineEdit_password.textChanged.connect(self.onPasswordChange)
-        self.checkBox_remember.stateChanged.connect(lambda:self.onChangeRemember(self.checkBox_remember))
-        
+        #uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoginTab.ui"), self)
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
+
+        self.constructUI()
 
         self.username = ""
         self.password = ""
         self.userInfo = {}
         self.rememberMe = self.checkBox_remember.isChecked()
         self.loggedIn = False
+
     
+    def constructUI(self):
+        self.gridLayout = QGridLayout()
+        
+        self.label_username = QLabel()
+        self.label_username.setText("Username")
+
+        self.label_password = QLabel()
+        self.label_password.setText("Password")
+
+        self.checkBox_remember = QCheckBox()
+        self.checkBox_remember.setChecked(True)
+        self.checkBox_remember.setText("Remember me")
+
+        self.lineEdit_password = QLineEdit()
+        self.lineEdit_username = QLineEdit()
+        self.pushButton_login = QPushButton()
+        self.pushButton_login.setText("Login")
+
+        self.pushButton_login.clicked.connect(self.loginButton)
+        self.lineEdit_username.textChanged.connect(self.onUsernameChange)
+        self.lineEdit_password.textChanged.connect(self.onPasswordChange)
+        self.checkBox_remember.stateChanged.connect(lambda:self.onChangeRemember(self.checkBox_remember))
+        
+
+        self.gridLayout.addWidget(self.label_username, 0, 0)
+        self.gridLayout.addWidget(self.lineEdit_username, 1, 0, 1, 2)
+        self.gridLayout.addWidget(self.label_password, 2, 0)
+        self.gridLayout.addWidget(self.lineEdit_password, 3, 0, 1, 2)
+        self.gridLayout.addWidget(self.checkBox_remember, 4, 0)
+        self.gridLayout.addWidget(self.pushButton_login, 4, 1)
+        
+        self.setLayout(self.gridLayout)
+
     def onChangeRemember(self, button):
         self.rememberMe = button.isChecked()
 

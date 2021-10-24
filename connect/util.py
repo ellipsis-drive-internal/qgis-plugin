@@ -68,7 +68,7 @@ class ErrorLevel(Enum):
     DELETED = 5
     WCSACCESS = 6
 
-def connected_to_internet(url='http://www.google.com/', timeout=5):
+def connected_to_internet(url=URL, timeout=5):
     try:
         _ = requests.head(url, timeout=timeout)
         return True
