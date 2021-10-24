@@ -49,6 +49,7 @@ class MyDriveLoginTab(QDialog):
         self.pushButton_login.clicked.connect(self.loginButton)
         self.lineEdit_username.textChanged.connect(self.onUsernameChange)
         self.lineEdit_password.textChanged.connect(self.onPasswordChange)
+        self.lineEdit_password.setEchoMode(QLineEdit.Password)
         self.checkBox_remember.stateChanged.connect(lambda:self.onChangeRemember(self.checkBox_remember))
         
 
