@@ -1,21 +1,23 @@
 import json
 import os
 import urllib
-
+import webbrowser
 from copy import copy
 
 import requests
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDial, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QListWidget, QPushButton
+from PyQt5.QtWidgets import (QDial, QDialog, QDockWidget, QGridLayout, QLabel,
+                             QLineEdit, QListWidget, QPushButton)
 from qgis.core import *
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
-from requests import api
 from qgis.utils import iface
+from requests import api
 
 from .util import *
+
 
 def initialSubMode(str):
     return ViewSubMode.GEOMETRYLAYERS if str == "WFS" else ViewSubMode.TIMESTAMPS
@@ -42,9 +44,6 @@ class MyDriveLoggedInTab(QDialog):
         self.level = 0
         self.path = "/"
         self.folderStack = []
-        self.currentlySelectedMap = None
-        self.currentlySelectedId = ""
-        #self.searching = False
         self.searchText = ""
         self.currentMetaData = None
         self.currentTimestamp = None
@@ -55,6 +54,7 @@ class MyDriveLoggedInTab(QDialog):
         self.previousItem = None
         self.currentFolderId = None
         self.currentZoom = None
+        self.highlightedID = ""
         self.stateBeforeSearch = {}
 
         self.constructUI()
@@ -75,6 +75,11 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_stopsearch = QPushButton()
         self.pushButton_stopsearch.setText("Stop search")
 
+        self.pushButton_openBrowser = QPushButton()
+        self.pushButton_openBrowser.setText("Open in browser")
+        self.pushButton_openBrowser.clicked.connect(self.onOpenBrowser)
+        self.pushButton_openBrowser.setEnabled(False)
+
         self.label.setText("Welcome!")
         self.lineEdit_search.setPlaceholderText("Search..")
 
@@ -94,10 +99,12 @@ class MyDriveLoggedInTab(QDialog):
         self.gridLayout.addWidget(self.pushButton_stopsearch, 1, 1)
         self.gridLayout.addWidget(self.label_path, 2, 0)
         self.gridLayout.addWidget(self.listWidget_mydrive, 3, 0, 1, 2)
+        self.gridLayout.addWidget(self.pushButton_openBrowser, 4,0, 1, 2)
         
         self.setLayout(self.gridLayout)
 
-
+    def onOpenBrowser(self):
+        webbrowser.open(f"https://app.ellipsis-drive.com/view?mapId={self.highlightedID}") 
 
     def addReturnItem(self):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
@@ -128,6 +135,7 @@ class MyDriveLoggedInTab(QDialog):
             return [theroot, data1["path"]]
 
     def onListWidgetDoubleClick(self, item):
+        self.pushButton_openBrowser.setEnabled(False)
         itemdata = item.data((QtCore.Qt.UserRole)).getData()
         itemtype = item.data((QtCore.Qt.UserRole)).getType()
         """ handler for clicks on items in the folder listwidget """
@@ -394,8 +402,6 @@ class MyDriveLoggedInTab(QDialog):
         self.level = 0
         self.path = "/"
         self.folderStack = []
-        self.currentlySelectedMap = None
-        self.currentlySelectedId = ""
         self.searchText = ""
         self.currentMetaData = None
         self.currentTimestamp = None
@@ -406,6 +412,7 @@ class MyDriveLoggedInTab(QDialog):
         self.previousItem = None
         self.currentFolderId = None
         self.currentZoom = None
+        self.highlightedID = ""
         self.stateBeforeSearch = {}
         self.setPath(self.path)
 
@@ -417,7 +424,6 @@ class MyDriveLoggedInTab(QDialog):
         log("performing search")
 
         self.clearListWidget()
-        #self.currentlySelectedId = ""
 
         apiurl1 = f"{URL}/account/maps"
         apiurl2 = f"{URL}/account/shapes"
@@ -475,8 +481,6 @@ class MyDriveLoggedInTab(QDialog):
                 "level" : (self.level),
                 "path": (self.path),
                 "folderStack": (self.folderStack),
-                "currentlySelectedMap": (self.currentlySelectedMap),
-                "currentlySelectedId": (self.currentlySelectedId),
                 "currentMetaData": (self.currentMetaData),
                 "currentTimestamp": (self.currentTimestamp),
                 "currentMode": (self.currentMode),
@@ -486,6 +490,7 @@ class MyDriveLoggedInTab(QDialog):
                 "previousItem": (self.previousItem),
                 "currentFolderId": (self.currentFolderId),
                 "currentZoom": (self.currentZoom),
+                "highlightedID": (self.highlightedID),
         }
         return state
 
@@ -493,8 +498,6 @@ class MyDriveLoggedInTab(QDialog):
         """ reset to a certain state, and call fillListWidget to redraw the plugin """
         self.level = (state["level"])
         self.folderStack = (state["folderStack"])
-        self.currentlySelectedMap = (state["currentlySelectedMap"])
-        self.currentlySelectedId = (state["currentlySelectedId"])
         self.currentMetaData = (state["currentMetaData"])
         self.currentTimestamp = (state["currentTimestamp"])
         self.currentMode = (state["currentMode"])
@@ -504,6 +507,8 @@ class MyDriveLoggedInTab(QDialog):
         self.previousItem = (state["previousItem"])
         self.currentFolderId = (state["currentFolderId"])
         self.currentZoom = (state["currentZoom"])
+        self.highlightedID = (state["highlightedID"])
+        self.pushButton_openBrowser.setEnabled(self.highlightedID != "")
         self.setPath(state["path"])
         self.fillListWidget()
 
@@ -522,21 +527,6 @@ class MyDriveLoggedInTab(QDialog):
             self.searchText = text
             self.setPath("Searching..")
             self.performSearch()
-
-    def onMapItemClick(self, item):
-        """ handler called when an item is clicked in the map/shape listwidget """
-        if item.data((QtCore.Qt.UserRole)).getType() == Type.ERROR:
-            return
-        self.currentlySelectedId = item.data((QtCore.Qt.UserRole)).getData()
-        self.currentlySelectedMap = item
-        #log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}")
-        #log(f"{item.text()}, data type: {item.data(QtCore.Qt.UserRole).getType()}, data value: {item.data(QtCore.Qt.UserRole).getData()}")
-        wcs = (item.data(QtCore.Qt.UserRole).getDisableWCS())
-        #if (wcs):
-        #    self.pushButton_wcs.setText("Accesslevel too low")
-        #else:
-        #    self.pushButton_wcs.setText("Get WCS")
-        #self.disableCorrectButtons(WCSDisabled = (item.data(QtCore.Qt.UserRole).getDisableWCS()))
 
     def removeFromPath(self):
         """ remove one level from the path, useful when going back in the folder structure """
@@ -585,7 +575,6 @@ class MyDriveLoggedInTab(QDialog):
             self.currentMode = ViewMode.FOLDERS
             self.level += 1
             self.currentItem = None
-            self.currentlySelectedMap = None
         else:
             msg = QMessageBox()
             msg.setWindowTitle("Error!")
@@ -699,7 +688,14 @@ class MyDriveLoggedInTab(QDialog):
             self.listWidget_mydrive.takeItem(0)
 
     def onListWidgetClick(self, item):
-        pass
+        item = item.data((QtCore.Qt.UserRole))
+        itemtype = item.getType()
+        itemdata = item.getData()
+        self.highlightedID = itemdata
+        if (itemtype == Type.SHAPE or itemtype == Type.MAP):
+            self.pushButton_openBrowser.setEnabled(True)
+        else:
+            self.pushButton_openBrowser.setEnabled(False)
 
     def logOut(self):
         """ emits the logout signal and removes the login token from the settings """
