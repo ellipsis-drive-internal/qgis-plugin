@@ -465,6 +465,7 @@ class MyDriveLoggedInTab(QDialog):
         data3 = json.loads(j3.text)
 
         #folders first
+        #should apply pagination !!
 
         [self.listWidget_mydrive.addItem(convertMapdataToListItem(folder, True, errorLevel=getErrorLevel(folder))) for folder in data3["result"]]
 
@@ -609,59 +610,54 @@ class MyDriveLoggedInTab(QDialog):
             log(f"root: {root}")
             return False
 
+    def request(self, url, data):
+        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+        headers["Authorization"] = f"Bearer {self.loginToken}"
+        j1 = requests.post(f"{URL}{url}", json=data, headers=headers)
+        if not j1:
+            log("Request failed!")
+            log(url)
+            log(data)
+            log(headers)
+        return json.loads(j1.text)
+
     def getFolder(self, id, isRoot=False):
         """ clears the listwidgets and flls them with the folders and maps in the specified folder (by folder id) """
         apiurl = ""
-        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-        headers["Authorization"] = f"Bearer {self.loginToken}"
-        data = {}
-        data2= {}
+        datamap = {}
+        datafolder= {}
         if (isRoot):
-            apiurl = f"{URL}/path/listRoot"
-            data = {
+            apiurl = f"/path/listRoot"
+        else:
+            apiurl = f"/path/listFolder"
+
+        datamap = {
             "root": f"{id}",
             "type": "map"
-            }
-            data2 = {
-                "root": f"{id}",
-                "type": "folder"
-            }
-        else:
-            apiurl = f"{URL}/path/listFolder"
-            data = {
-                "pathId": f"{id}",
-                "type": "map"
-            }
-            data2 = {
-                "pathId": f"{id}",
-                "type": "folder"
-            }
+        }
+        datafolder = {
+            "root": f"{id}",
+            "type": "folder"
+        }
 
-        j1 = requests.post(apiurl, json=data, headers=headers)
-        j2 = requests.post(apiurl, json=data2, headers=headers)
+        resmaps = self.request(apiurl, datamap)
+        resfolders = self.request(apiurl, datafolder)
 
-        if not j1 or not j2:
-            log("getFolder failed!")
-            log("Data:")
-            log(data)
-            log("Headers:")
-            log(headers)
-            log("Url:")
-            log(apiurl)
-            if not j1:
-                log("Map:")
-                log(j1.content)
-            if not j2:
-                log("Folder:")
-                log(j2.content)
-            return False
+        maps = resmaps["result"]
+        folders = resfolders["result"]
 
-        maps = json.loads(j1.text)
-        folders = json.loads(j2.text)
+        while not resfolders["nextPageStart"] is None:
+            datafolder["pageStart"] = resfolders["nextPageStart"]
+            resfolders = self.request(apiurl, datafolder)
+            folders.append(resfolders["result"])
 
-        [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders["result"]]
-        [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, errorLevel=getErrorLevel(mapdata))) for mapdata in maps["result"]]
+        while not resmaps["nextPageStart"] is None:
+            datamap["pageStart"] = resmaps["nextPageStart"]
+            resmaps = self.request(apiurl, datamap)
+            maps.append(resmaps["result"])
 
+        [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders]
+        [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, errorLevel=getErrorLevel(mapdata))) for mapdata in maps]
         return True
 
     def onPrevious(self):
