@@ -2,7 +2,7 @@ import os
 from PyQt5.QtCore import QLine
 
 import requests
-from PyQt5.QtWidgets import QCheckBox, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QPushButton
+from PyQt5.QtWidgets import QCheckBox, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QSpacerItem
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from qgis.PyQt.QtWidgets import QMessageBox
@@ -45,6 +45,7 @@ class MyDriveLoginTab(QDialog):
         self.lineEdit_username = QLineEdit()
         self.pushButton_login = QPushButton()
         self.pushButton_login.setText("Login")
+        self.spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.pushButton_login.clicked.connect(self.loginButton)
         self.lineEdit_username.textChanged.connect(self.onUsernameChange)
@@ -59,6 +60,7 @@ class MyDriveLoginTab(QDialog):
         self.gridLayout.addWidget(self.lineEdit_password, 3, 0, 1, 2)
         self.gridLayout.addWidget(self.checkBox_remember, 4, 0)
         self.gridLayout.addWidget(self.pushButton_login, 4, 1)
+        self.gridLayout.addItem(self.spacer, 5, 0, 1, 2)
         
         self.setLayout(self.gridLayout)
 
