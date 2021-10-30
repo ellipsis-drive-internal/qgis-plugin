@@ -417,67 +417,6 @@ class MyDriveLoggedInTab(QDialog):
         self.stateBeforeSearch = {}
         self.setPath(self.path)
 
-    @debounce(0.5)
-    def performSearch(self):
-        """ actually perform the search, using self.searchText as the string """
-        if not self.currentMode == ViewMode.SEARCH:
-            return
-        log("performing search")
-
-        self.clearListWidget()
-
-        apiurl1 = f"{URL}/account/maps"
-        apiurl2 = f"{URL}/account/shapes"
-        apiurl3 = f"{URL}/account/folders"
-
-        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-        if (not self.loginToken == ""):
-            headers["Authorization"] = f"Bearer {self.loginToken}"
-        data = {
-            "access": ["owned", "subscribed", "favorited"],
-            "name": f"{self.searchText}",
-        }
-
-        j1 = requests.post(apiurl1, json=data, headers=headers)
-        j2 = requests.post(apiurl2, json=data, headers=headers)
-        j3 = requests.post(apiurl3, json=data, headers=headers)
-
-        if not j1 or not j2 or not j3:
-            log("performSearch failed!")
-            log("Data:")
-            log(data)
-            log("Headers:")
-            log(headers)
-            if not j1:
-                log("Maps:")
-                log(apiurl1)
-                log(j1.content)
-            if not j2:
-                log("Shapes:")
-                log(apiurl2)
-                log(j2.content)
-            if not j3:
-                log("Folders:")
-                log(apiurl3)
-                log(j3.content)
-
-        data1 = json.loads(j1.text)
-        data2 = json.loads(j2.text)
-        data3 = json.loads(j3.text)
-
-        #folders first
-        #should apply pagination !!
-
-        [self.listWidget_mydrive.addItem(convertMapdataToListItem(folder, True, errorLevel=getErrorLevel(folder))) for folder in data3["result"]]
-
-        [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in data1["result"]]
-        [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in data2["result"]]
-        if len(data1["result"]) == 0  and len(data2["result"]) == 0 and len(data3["result"]) == 0:
-            listitem = QListWidgetItem()
-            listitem.setText("No results found!")
-            self.listWidget_mydrive.addItem(listitem)
-            log("no search results")
-
     def getCurrentState(self):
         state = {
                 "level" : (self.level),
@@ -622,6 +561,78 @@ class MyDriveLoggedInTab(QDialog):
             log(headers)
         return json.loads(j1.text)
 
+    @debounce(0.5)
+    def performSearch(self):
+        """ actually perform the search, using self.searchText as the string """
+        if not self.currentMode == ViewMode.SEARCH:
+            return
+        log("performing search")
+
+        self.clearListWidget()
+
+        apiurlmaps = f"{URL}/account/maps"
+        apiurlshapes = f"{URL}/account/shapes"
+        apiurlfolders = f"{URL}/account/folders"
+
+        data = {
+            "access": ["owned", "subscribed", "favorited"],
+            "name": f"{self.searchText}",
+        }
+
+        resmaps = self.request(apiurlmaps, data)
+        resshapes = self.request(apiurlshapes, data)
+        resfolders = self.request(apiurlfolders, data)
+        
+        havefolders = False
+        haveshapes = False
+        havemaps = False
+
+        if "result" in resmaps:
+            maps = resmaps["result"]
+            havemaps = True
+
+        if "result" in resshapes:
+            shapes = resshapes["result"]
+            haveshapes = True
+
+        if "result" in resfolders:
+            havefolders = True
+            folders = resfolders["result"]
+
+        # "pagination", not yet tested actually
+
+        while havefolders and not resfolders["nextPageStart"] is None:
+            data["pageStart"] = resfolders["nextPageStart"]
+            resfolders = self.request(apiurlfolders, data)
+            folders.append(resfolders["result"])
+
+        while havemaps and not resmaps["nextPageStart"] is None:
+            data["pageStart"] = resmaps["nextPageStart"]
+            resmaps = self.request(apiurlmaps, data)
+            maps.append(resmaps["result"])
+        
+        while haveshapes and not resshapes["nextPageStart"] is None:
+            data["pageStart"] = resshapes["nextPageStart"]
+            resshapes = self.request(apiurlshapes, data)
+            shapes.append(resshapes["result"])
+
+
+        #folders first
+        if havefolders:
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(folder, True, errorLevel=getErrorLevel(folder))) for folder in folders]
+
+        if havemaps:
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in maps]
+        
+        if haveshapes:
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in shapes]
+
+        if len(folders) == 0  and len(maps) == 0 and len(shapes) == 0:
+            listitem = QListWidgetItem()
+            listitem.setText("No results found!")
+            self.listWidget_mydrive.addItem(listitem)
+            log("no search results")
+
     def getFolder(self, id, isRoot=False):
         """ clears the listwidgets and flls them with the folders and maps in the specified folder (by folder id) """
         apiurl = ""
@@ -644,21 +655,34 @@ class MyDriveLoggedInTab(QDialog):
         resmaps = self.request(apiurl, datamap)
         resfolders = self.request(apiurl, datafolder)
 
-        maps = resmaps["result"]
-        folders = resfolders["result"]
+        havefolders = False
+        havemaps = False
 
-        while not resfolders["nextPageStart"] is None:
+        if "result" in resmaps:
+            maps = resmaps["result"]
+            havemaps = True
+
+        if "result" in resfolders:
+            havefolders = True
+            folders = resfolders["result"]
+
+        # "pagination", not yet tested actually
+
+        while havefolders and not resfolders["nextPageStart"] is None:
             datafolder["pageStart"] = resfolders["nextPageStart"]
             resfolders = self.request(apiurl, datafolder)
             folders.append(resfolders["result"])
 
-        while not resmaps["nextPageStart"] is None:
+        while havemaps and not resmaps["nextPageStart"] is None:
             datamap["pageStart"] = resmaps["nextPageStart"]
             resmaps = self.request(apiurl, datamap)
             maps.append(resmaps["result"])
 
-        [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders]
-        [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, errorLevel=getErrorLevel(mapdata))) for mapdata in maps]
+        if havefolders:
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders]
+        
+        if havemaps:
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, errorLevel=getErrorLevel(mapdata))) for mapdata in maps]
         return True
 
     def onPrevious(self):
