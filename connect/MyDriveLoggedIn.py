@@ -390,6 +390,7 @@ class MyDriveLoggedInTab(QDialog):
         """ handler for the Stop Search button: does what it says it does """
         self.pushButton_stopsearch.setEnabled(False)
         self.lineEdit_search.clear()
+        self.pushButton_openBrowser.setEnabled(False)
         self.setCurrentState(self.stateBeforeSearch)
         self.searchText = ""
 
