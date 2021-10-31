@@ -8,7 +8,7 @@ import requests
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QDial, QDialog, QDockWidget, QGridLayout, QLabel,
-                             QLineEdit, QListWidget, QPushButton)
+                             QLineEdit, QListWidget, QPushButton, QSizePolicy)
 from qgis.core import *
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
@@ -65,6 +65,8 @@ class MyDriveLoggedInTab(QDialog):
     def constructUI(self):
 
         self.gridLayout = QGridLayout()
+
+        
 
         self.label = QLabel()
         self.label_path = QLabel()
@@ -551,14 +553,22 @@ class MyDriveLoggedInTab(QDialog):
             return False
 
     def request(self, url, data):
+        log(f"Requesting {url}")
         headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
         headers["Authorization"] = f"Bearer {self.loginToken}"
         j1 = requests.post(f"{URL}{url}", json=data, headers=headers)
         if not j1:
             log("Request failed!")
-            log(url)
+            log(f"{URL}{url}")
             log(data)
             log(headers)
+            log(j1)
+        else:
+            log("Request successful")
+            log(f"{URL}{url}")
+            log(data)
+            log(headers)
+            log(j1)
         return json.loads(j1.text)
 
     @debounce(0.5)
@@ -570,9 +580,9 @@ class MyDriveLoggedInTab(QDialog):
 
         self.clearListWidget()
 
-        apiurlmaps = f"{URL}/account/maps"
-        apiurlshapes = f"{URL}/account/shapes"
-        apiurlfolders = f"{URL}/account/folders"
+        apiurlmaps = f"/account/maps"
+        apiurlshapes = f"/account/shapes"
+        apiurlfolders = f"/account/folders"
 
         data = {
             "access": ["owned", "subscribed", "favorited"],
@@ -599,23 +609,24 @@ class MyDriveLoggedInTab(QDialog):
             havefolders = True
             folders = resfolders["result"]
 
-        # "pagination", not yet tested actually
-
-        while havefolders and not resfolders["nextPageStart"] is None:
+        # "pagination"
+        while havefolders and (not resfolders["nextPageStart"] is None):
+            log("pagination on folders in search")
             data["pageStart"] = resfolders["nextPageStart"]
             resfolders = self.request(apiurlfolders, data)
-            folders.append(resfolders["result"])
+            folders += resfolders["result"]
 
-        while havemaps and not resmaps["nextPageStart"] is None:
+        while havemaps and (not resmaps["nextPageStart"] is None):
+            log("pagination on maps in search")
             data["pageStart"] = resmaps["nextPageStart"]
             resmaps = self.request(apiurlmaps, data)
-            maps.append(resmaps["result"])
+            maps += resmaps["result"]
         
-        while haveshapes and not resshapes["nextPageStart"] is None:
+        while haveshapes and (not resshapes["nextPageStart"] is None):
+            log("pagination on shapes in search")
             data["pageStart"] = resshapes["nextPageStart"]
             resshapes = self.request(apiurlshapes, data)
-            shapes.append(resshapes["result"])
-
+            shapes += resshapes["result"]
 
         #folders first
         if havefolders:
@@ -627,7 +638,7 @@ class MyDriveLoggedInTab(QDialog):
         if haveshapes:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in shapes]
 
-        if len(folders) == 0  and len(maps) == 0 and len(shapes) == 0:
+        if not havefolders and not havemaps and not haveshapes:
             listitem = QListWidgetItem()
             listitem.setText("No results found!")
             self.listWidget_mydrive.addItem(listitem)
@@ -640,17 +651,24 @@ class MyDriveLoggedInTab(QDialog):
         datafolder= {}
         if (isRoot):
             apiurl = f"/path/listRoot"
+            datamap = {
+                "root": f"{id}",
+                "type": "map"
+            }
+            datafolder = {
+                "root": f"{id}",
+                "type": "folder"
+            }
         else:
             apiurl = f"/path/listFolder"
-
-        datamap = {
-            "root": f"{id}",
-            "type": "map"
-        }
-        datafolder = {
-            "root": f"{id}",
-            "type": "folder"
-        }
+            datamap = {
+                "pathId": f"{id}",
+                "type": "map"
+            }
+            datafolder = {
+                "pathId": f"{id}",
+                "type": "folder"
+            }
 
         resmaps = self.request(apiurl, datamap)
         resfolders = self.request(apiurl, datafolder)
@@ -666,18 +684,20 @@ class MyDriveLoggedInTab(QDialog):
             havefolders = True
             folders = resfolders["result"]
 
-        # "pagination", not yet tested actually
-
-        while havefolders and not resfolders["nextPageStart"] is None:
+        # "pagination"
+        
+        while havefolders and (not resfolders["nextPageStart"] is None):
+            log("Pagination on folders in getFolder")
             datafolder["pageStart"] = resfolders["nextPageStart"]
             resfolders = self.request(apiurl, datafolder)
-            folders.append(resfolders["result"])
+            folders += resfolders["result"]
 
-        while havemaps and not resmaps["nextPageStart"] is None:
+        while havemaps and (not resmaps["nextPageStart"] is None):
+            log("Pagination on maps in getFolder")
             datamap["pageStart"] = resmaps["nextPageStart"]
             resmaps = self.request(apiurl, datamap)
-            maps.append(resmaps["result"])
-
+            maps += resmaps["result"]
+        
         if havefolders:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders]
         
