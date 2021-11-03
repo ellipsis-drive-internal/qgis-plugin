@@ -346,7 +346,7 @@ class MyDriveLoggedInTab(QDialog):
         itemdata = item.data((QtCore.Qt.UserRole))
         #id = item.data((QtCore.Qt.UserRole)).getData()
         mapid = self.currentMetaData["id"]
-        theurl = F"{URL}/wfs/{mapid}?"
+        theurl = F"{URL}/wfs/{mapid}/{self.loginToken}?"
 
         #typename moet dus layerId_{layer ID zijn}
         params = {
@@ -377,7 +377,7 @@ class MyDriveLoggedInTab(QDialog):
         timestampid = itemdata.getData()["id"]
 
         mapid = self.currentMetaData["id"]
-        theurl = F"{URL}/wcs/{mapid}"
+        theurl = F"{URL}/wcs/{mapid}/{self.loginToken}"
         
         wcsUri = makeWCSuri(theurl, timestampid )
         rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'wcs')
