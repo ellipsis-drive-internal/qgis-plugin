@@ -81,7 +81,7 @@ class CommunityTab(QDialog):
         # reset the list before updating it
         # self.listWidget_community.clear()
 
-        print(f"getCommunityList called, token = '{self.loginToken}'")
+        log(f"getCommunityList called, token = '{self.loginToken}'")
         self.onRemoveClickGet()
         for _ in range(self.listWidget_community.count()):
             self.listWidget_community.takeItem(0)

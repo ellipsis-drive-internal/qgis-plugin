@@ -23,9 +23,12 @@ RETURNICON = os.path.join(ICONSFOLDER,"return.svg")
 PRODUCTIONURL = 'https://api.ellipsis-drive.com/v1'
 DEVURL = 'https://dev.api.ellipsis-drive.com/v1'
 
+SIZEW = 0
+SIZEH = 500
+
 URL = PRODUCTIONURL
 
-MAXPATHLEN = 38
+MAXPATHLEN = 45
 
 DEBUG = True
 DISABLESEARCH = False
@@ -73,7 +76,7 @@ def connected_to_internet(url=URL, timeout=5):
         _ = requests.head(url, timeout=timeout)
         return True
     except requests.ConnectionError:
-        print("No internet connection available.")
+        log("No internet connection available.")
     return False
 
 def getErrorLevel(map):

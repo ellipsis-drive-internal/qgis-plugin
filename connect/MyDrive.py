@@ -1,7 +1,8 @@
 import os
+from PyQt5.QtCore import QSize
 
 import requests
-from PyQt5.QtWidgets import QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QSizePolicy, QSpacerItem, QStackedWidget
+from PyQt5.QtWidgets import QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QWidget
 from qgis.PyQt import uic, QtGui, QtWidgets, uic
 
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
@@ -23,13 +24,17 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         uic.loadUi(os.path.join(TABSFOLDER, "MyDriveStack.ui"), self)
         log("__init__ of MyDriveTab")
 
-        # idea: use QStacketWidget to switch between logged in and logged out
+        #self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        self.setMinimumSize(QSize(0,0))
 
         self.loginWidget = MyDriveLoginTab()
         self.loggedInWidget = MyDriveLoggedInTab()
         self.noconnectionWidget = NoConnectionTab()
 
         self.stackedWidget = QStackedWidget()
+
+        self.stackedWidget.setMinimumSize(QSize(0,0))
 
         self.layout.addWidget(self.stackedWidget)
         self.setLayout(self.layout)
@@ -76,42 +81,14 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
                 log("getUserData failed")
 
             self.stackedWidget.setCurrentIndex(1)
-        else:
+        else: 
             log("No login data found")
 
-    def loadLoginUI(self):
-        # mydrive_gridLayout
-        log("loading login UI")
-
-        usernameLabel = QLabel()
-        passwordLabel = QLabel()
-        usernameLineEdit = QLineEdit()
-        passwordLineEdit = QLineEdit()
-
-        rememberMeCheckBox = QCheckBox()
-        rememberMeLabel = QLabel()
-
-        loginButton = QPushButton()
-
-        spacer = QSpacerItem(0, 40, hPolicy=QSizePolicy.Minimum, vPolicy=QSizePolicy.Expanding)
-
-        usernameLabel.setText("Username:")
-        passwordLabel.setText("Password:")
-        rememberMeLabel.setText("Remember me")
-
-        passwordLineEdit.setEchoMode(QLineEdit.Password)
-
-        loginButton.setText("Log in")
-        loginButton.clicked.connect(self.onLogin)
-
-        self.layout.addWidget(usernameLabel, 0,0)
-        self.layout.addWidget(usernameLineEdit, 1,0)
-        self.layout.addWidget(passwordLabel, 2,0)
-        self.layout.addWidget(passwordLineEdit, 3,0)
-        self.layout.addWidget(rememberMeCheckBox, 4,0)
-        self.layout.addWidget(rememberMeLabel, 4,1)
-        self.layout.addWidget(loginButton, 5,1)
-        self.layout.addWidget(spacer, 6,0)
+    def sizeHint(self):
+        a = QWidget.sizeHint(self)
+        a.setHeight(SIZEH)
+        a.setWidth(SIZEW)
+        return a
         
     def handleConnectedSignal(self):
         self.stackedWidget.setCurrentIndex(0 if not self.loggedIn else 1)

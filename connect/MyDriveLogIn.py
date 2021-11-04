@@ -1,8 +1,8 @@
 import os
-from PyQt5.QtCore import QLine
+from PyQt5.QtCore import QLine, QSize
 
 import requests
-from PyQt5.QtWidgets import QCheckBox, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QSpacerItem
+from PyQt5.QtWidgets import QCheckBox, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QSpacerItem, QWidget
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from qgis.PyQt.QtWidgets import QMessageBox
@@ -27,7 +27,12 @@ class MyDriveLoginTab(QDialog):
         self.rememberMe = self.checkBox_remember.isChecked()
         self.loggedIn = False
 
-    
+    def sizeHint(self):
+        a = QWidget.sizeHint(self)
+        a.setHeight(SIZEH)
+        a.setWidth(SIZEW)
+        return a
+
     def constructUI(self):
         self.gridLayout = QGridLayout()
         

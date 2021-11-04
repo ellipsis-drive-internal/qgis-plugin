@@ -3,12 +3,13 @@ import os
 import urllib
 import webbrowser
 from copy import copy
+from PyQt5.uic.uiparser import QtWidgets
 
 import requests
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import (QDial, QDialog, QDockWidget, QGridLayout, QLabel,
-                             QLineEdit, QListWidget, QPushButton, QSizePolicy)
+                             QLineEdit, QListWidget, QPushButton, QSizePolicy, QWidget)
 from qgis.core import *
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
@@ -57,16 +58,23 @@ class MyDriveLoggedInTab(QDialog):
         self.highlightedID = ""
         self.stateBeforeSearch = {}
 
+        self.setMinimumHeight(0)
+        self.setMinimumWidth(0)
+
         self.constructUI()
 
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
         self.fillListWidget()
 
+    def sizeHint(self):
+        a = QWidget.sizeHint(self)
+        a.setHeight(SIZEH)
+        a.setWidth(SIZEW)
+        return a
+
     def constructUI(self):
 
         self.gridLayout = QGridLayout()
-
-        
 
         self.label = QLabel()
         self.label_path = QLabel()
@@ -99,7 +107,7 @@ class MyDriveLoggedInTab(QDialog):
         self.gridLayout.addWidget(self.pushButton_logout, 0, 1)
         self.gridLayout.addWidget(self.lineEdit_search, 1, 0)
         self.gridLayout.addWidget(self.pushButton_stopsearch, 1, 1)
-        self.gridLayout.addWidget(self.label_path, 2, 0)
+        self.gridLayout.addWidget(self.label_path, 2, 0, 1, 2)
         self.gridLayout.addWidget(self.listWidget_mydrive, 3, 0, 1, 2)
         self.gridLayout.addWidget(self.pushButton_openBrowser, 4,0, 1, 2)
         
@@ -486,6 +494,7 @@ class MyDriveLoggedInTab(QDialog):
 
     def setPath(self, path):
         """ set the displayed path """
+        log(f"Size of label: {self.label_path.frameWidth()}")
         self.path = path
         toolong = False
         newstr = ""

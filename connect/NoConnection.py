@@ -7,7 +7,7 @@ from copy import copy
 import requests
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDial, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QListWidget, QPushButton
+from PyQt5.QtWidgets import QDial, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QListWidget, QPushButton, QWidget
 from qgis.core import *
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
@@ -23,11 +23,23 @@ class NoConnectionTab(QDialog):
     connectedSignal = pyqtSignal()
     def __init__(self):
         super(NoConnectionTab, self).__init__()
+        self.waittime = 2
+        self.setMinimumHeight(0)
+        self.setMinimumWidth(0)
+
         self.constructUI()
 
+    def sizeHint(self):
+        a = QWidget.sizeHint(self)
+        a.setHeight(SIZEH)
+        a.setWidth(SIZEW)
+        return a
+
     def retry(self):
-        if (connected_to_internet()):
+        if (connected_to_internet(timeout=self.waittime)):
             self.connectedSignal.emit()
+        else:
+            self.waittime += 1
         
     def constructUI(self):
         self.gridLayout = QGridLayout()
