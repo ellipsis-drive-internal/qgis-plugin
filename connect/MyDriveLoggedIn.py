@@ -39,6 +39,9 @@ class MyDriveLoggedInTab(QDialog):
     def __init__(self):
         super(MyDriveLoggedInTab, self).__init__()
         #uic.loadUi(os.path.join(TABSFOLDER, "MyDriveLoggedInTab.ui"), self)
+
+        QgsProject.instance().layersAdded.connect(self.zoomHandler)
+
         self.loginToken = ""
         self.loggedIn = False
         self.userInfo = {}
@@ -57,6 +60,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentZoom = None
         self.highlightedID = ""
         self.stateBeforeSearch = {}
+        self.loading = False
 
         self.setMinimumHeight(0)
         self.setMinimumWidth(0)
@@ -254,6 +258,12 @@ class MyDriveLoggedInTab(QDialog):
             self.populateListWithRoot()
             return
 
+        if (self.loading):
+            listitem = QListWidgetItem()
+            listitem.setText("Loading...")
+            self.listWidget_mydrive.addItem(listitem)
+            return
+
         self.addReturnItem()
         if (self.currentMode == ViewMode.FOLDERS):
             self.getFolder(self.folderStack[-1], isRoot=(self.level == 1))
@@ -349,6 +359,12 @@ class MyDriveLoggedInTab(QDialog):
             self.currentItem = self.previousItem
 
 
+    def zoomHandler(self, layers):
+        log("Zooming to layers")
+        log(layers)
+        iface.setActiveLayer(layers[0])
+        QtCore.QTimer.singleShot(500, lambda:iface.zoomToActiveLayer())
+
     def WFSDoubleClick(self, item):
         text = item.text()
         itemdata = item.data((QtCore.Qt.UserRole))
@@ -366,12 +382,15 @@ class MyDriveLoggedInTab(QDialog):
         }
         uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
         log(uri)
+        
         rlayer = QgsVectorLayer(uri, text, 'wfs')
 
         if not rlayer.isValid():
             log("Layer failed to load!") 
         else:
             QgsProject.instance().addMapLayer(rlayer)
+        
+        self.currentItem = self.previousItem
 
     def WCSDoubleClick(self, item):
         itemdata = item.data((QtCore.Qt.UserRole))
@@ -388,11 +407,17 @@ class MyDriveLoggedInTab(QDialog):
         theurl = F"{URL}/wcs/{mapid}/{self.loginToken}"
         
         wcsUri = makeWCSuri(theurl, timestampid )
+
+        self.loading = True
+        self.fillListWidget()
         rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'wcs')
+
         if not rlayer.isValid():
             log("Layer failed to load!") 
         else:
             QgsProject.instance().addMapLayer(rlayer)
+        
+        self.loading = False
         # same as above
         self.currentItem = self.previousItem
 
@@ -527,6 +552,7 @@ class MyDriveLoggedInTab(QDialog):
             self.currentMode = ViewMode.FOLDERS
             self.level += 1
             self.currentItem = None
+            # TODO this is probably where the error starts
         else:
             msg = QMessageBox()
             msg.setWindowTitle("Error!")
@@ -606,15 +632,18 @@ class MyDriveLoggedInTab(QDialog):
         haveshapes = False
         havemaps = False
 
-        if "result" in resmaps:
+        if "result" in resmaps and resmaps["result"]:
+            log("Have maps")
             maps = resmaps["result"]
             havemaps = True
 
-        if "result" in resshapes:
+        if "result" in resshapes and resshapes["result"]:
+            log("Have shapes")
+            log(resshapes["result"])
             shapes = resshapes["result"]
             haveshapes = True
 
-        if "result" in resfolders:
+        if "result" in resfolders and resfolders["result"]:
             havefolders = True
             folders = resfolders["result"]
 
@@ -734,8 +763,10 @@ class MyDriveLoggedInTab(QDialog):
             return
 
     def clearListWidget(self):
+        log("list is being cleared")
         for _ in range(self.listWidget_mydrive.count()):
             self.listWidget_mydrive.takeItem(0)
+        log(f"Done, size is now {self.listWidget_mydrive.count()}")
 
     def onListWidgetClick(self, item):
         item = item.data((QtCore.Qt.UserRole))

@@ -1,19 +1,6 @@
-import json
-import os
-import urllib
-
-from copy import copy
-
-import requests
-from PyQt5 import QtCore
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDial, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QListWidget, QPushButton, QWidget
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QWidget
 from qgis.core import *
-from qgis.PyQt import uic
-from qgis.PyQt.QtCore import QSettings, pyqtSignal
-from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
-from requests import api
-from qgis.utils import iface
+from qgis.PyQt.QtCore import pyqtSignal
 
 from .util import *
 

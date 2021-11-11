@@ -68,9 +68,11 @@ class EllipsisConnect:
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&Ellipsis Drive Connect')
-
+        
         self.pluginIsActive = False
         self.dockwidget = None
+
+        
         
 
     # noinspection PyMethodMayBeStatic
