@@ -60,7 +60,6 @@ class MyDriveLoggedInTab(QDialog):
         self.currentZoom = None
         self.highlightedID = ""
         self.stateBeforeSearch = {}
-        self.loading = False
 
         self.setMinimumHeight(0)
         self.setMinimumWidth(0)
@@ -258,12 +257,6 @@ class MyDriveLoggedInTab(QDialog):
             self.populateListWithRoot()
             return
 
-        if (self.loading):
-            listitem = QListWidgetItem()
-            listitem.setText("Loading...")
-            self.listWidget_mydrive.addItem(listitem)
-            return
-
         self.addReturnItem()
         if (self.currentMode == ViewMode.FOLDERS):
             self.getFolder(self.folderStack[-1], isRoot=(self.level == 1))
@@ -408,8 +401,12 @@ class MyDriveLoggedInTab(QDialog):
         
         wcsUri = makeWCSuri(theurl, timestampid )
 
-        self.loading = True
-        self.fillListWidget()
+        # display loading item while the layer is loading
+        self.clearListWidget()
+        listitem = QListWidgetItem()
+        listitem.setText("Loading...")
+        self.listWidget_mydrive.addItem(listitem)
+
         rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'wcs')
 
         if not rlayer.isValid():
@@ -417,7 +414,6 @@ class MyDriveLoggedInTab(QDialog):
         else:
             QgsProject.instance().addMapLayer(rlayer)
         
-        self.loading = False
         # same as above
         self.currentItem = self.previousItem
 
