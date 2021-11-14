@@ -44,6 +44,7 @@ class Type(Enum):
     ACTION = auto()
     RETURN = auto()
     ERROR = auto()
+    MESSAGE = auto()
 
 class ViewMode(Enum):
     ROOT = auto()

@@ -154,6 +154,10 @@ class MyDriveLoggedInTab(QDialog):
         """ handler for clicks on items in the folder listwidget """
         log(f"Clicked on type {itemtype}, current modi: {self.currentMode}, {self.currentSubMode}")
 
+        if itemtype == Type.MESSAGE:
+            #don't do anything when a message is clicked
+            return
+
         # if we're searching, the regular rules don't apply
         if self.currentMode == ViewMode.SEARCH:
             root, folderpath = self.getPathInfo(itemdata)
@@ -403,9 +407,7 @@ class MyDriveLoggedInTab(QDialog):
 
         # display loading item while the layer is loading
         self.clearListWidget()
-        listitem = QListWidgetItem()
-        listitem.setText("Loading...")
-        self.listWidget_mydrive.addItem(listitem)
+        self.listWidget_mydrive.addItem(toListItem(Type.MESSAGE, "Loading..."))
 
         rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'wcs')
 
@@ -673,9 +675,7 @@ class MyDriveLoggedInTab(QDialog):
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in shapes]
 
         if not havefolders and not havemaps and not haveshapes:
-            listitem = QListWidgetItem()
-            listitem.setText("No results found!")
-            self.listWidget_mydrive.addItem(listitem)
+            self.listWidget_mydrive.addItem(toListItem(Type.MESSAGE, "No results found!"))
             log("no search results")
 
     def getFolder(self, id, isRoot=False):
@@ -768,6 +768,11 @@ class MyDriveLoggedInTab(QDialog):
         item = item.data((QtCore.Qt.UserRole))
         itemtype = item.getType()
         itemdata = item.getData()
+
+        if itemtype == Type.MESSAGE:
+            # don't do anything when a message is clicked
+            return
+
         self.highlightedID = itemdata
         if (itemtype == Type.SHAPE or itemtype == Type.MAP):
             self.pushButton_openBrowser.setEnabled(True)
