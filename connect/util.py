@@ -72,6 +72,37 @@ class ErrorLevel(Enum):
     DELETED = 5
     WCSACCESS = 6
 
+def makeRequest(url, headers, data=None):
+        log(f"Requesting {url}")
+        success = True
+        try:
+            j1 = requests.post(f"{URL}{url}", json=data, headers=headers)
+            if not j1:
+                log("Request failed!")
+                log(f"{URL}{url}")
+                log(data)
+                log(headers)
+                log(j1)
+                success = False
+            else:
+                log("Request successful")
+                log(f"{URL}{url}")
+                log(data)
+                log(headers)
+                log(j1)
+                success = True
+            return success, json.loads(j1.text)
+        except requests.ConnectionError:
+            displayMessageBox("Request failed", "Please check your internet connection")
+            return False, None
+
+def displayMessageBox(title, text):
+    msg = QMessageBox()
+    msg.setWindowTitle(title)
+    msg.setText(text)
+    msg.setStandardButtons(QMessageBox.Ok)
+    msg.exec_()
+
 def connected_to_internet(url=URL, timeout=5):
     try:
         _ = requests.head(url, timeout=timeout)

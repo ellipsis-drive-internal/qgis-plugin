@@ -127,7 +127,11 @@ class MyDriveLoginTab(QDialog):
         data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 3155760000)
 
         log(data)
-        resp = requests.post(apiurl, headers=headers, data=data)
+        try:
+            resp = requests.post(apiurl, headers=headers, data=data)
+        except:
+            displayMessageBox("Request failed", "Please check your internet connection")
+            return
         data = resp.json()
         jlog(data)
         if resp:
