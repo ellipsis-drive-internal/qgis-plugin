@@ -171,7 +171,7 @@ class EllipsisConnect:
         icon_path = ':/plugins/ellipsis_drive/icon.png'
         self.add_action(
             icon_path,
-            text=self.tr(u''),
+            text=self.tr(u'Ellipsis Drive Connect'),
             callback=self.run,
             parent=self.iface.mainWindow())
 
