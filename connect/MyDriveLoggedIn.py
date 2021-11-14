@@ -448,6 +448,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentZoom = None
         self.highlightedID = ""
         self.stateBeforeSearch = {}
+        self.lineEdit_search.clear()
         self.setPath(self.path)
 
     def getCurrentState(self):
@@ -492,7 +493,7 @@ class MyDriveLoggedInTab(QDialog):
         if (text == ""):
             self.stopSearch()
         elif (self.currentMode == ViewMode.SEARCH):
-            self.setPath("Searching..")
+            self.label_path.setText("Searching..")
             self.searchText = text
             self.performSearch()
         else:
@@ -500,7 +501,7 @@ class MyDriveLoggedInTab(QDialog):
             self.stateBeforeSearch = self.getCurrentState()
             self.currentMode = ViewMode.SEARCH
             self.searchText = text
-            self.setPath("Searching..")
+            self.label_path.setText("Searching..")
             self.performSearch()
 
     def removeFromPath(self):
@@ -518,7 +519,6 @@ class MyDriveLoggedInTab(QDialog):
 
     def setPath(self, path):
         """ set the displayed path """
-        log(f"Size of label: {self.label_path.frameWidth()}")
         self.path = path
         toolong = False
         newstr = ""
@@ -666,19 +666,22 @@ class MyDriveLoggedInTab(QDialog):
             shapes += resshapes["result"]
 
         #folders first
-        if havefolders:
+        if havefolders and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(folder, True, errorLevel=getErrorLevel(folder))) for folder in folders]
 
-        if havemaps:
+        if havemaps and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in maps]
         
-        if haveshapes:
+        if haveshapes and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in shapes]
 
         if not havefolders and not havemaps and not haveshapes:
-            self.listWidget_mydrive.addItem(toListItem(Type.MESSAGE, "No results found!"))
-            log("no search results")
-        self.setPath("Search done")
+            # users may stop the search
+            if (self.currentMode == ViewMode.SEARCH):
+                self.clearListWidget()
+                self.listWidget_mydrive.addItem(toListItem(Type.MESSAGE, "No results found!"))
+                log("no search results")
+        self.label_path.setText("Search done")
 
     def getFolder(self, id, isRoot=False):
         """ clears the listwidgets and flls them with the folders and maps in the specified folder (by folder id) """
