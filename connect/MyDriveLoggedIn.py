@@ -492,6 +492,7 @@ class MyDriveLoggedInTab(QDialog):
         if (text == ""):
             self.stopSearch()
         elif (self.currentMode == ViewMode.SEARCH):
+            self.setPath("Searching..")
             self.searchText = text
             self.performSearch()
         else:
@@ -677,6 +678,7 @@ class MyDriveLoggedInTab(QDialog):
         if not havefolders and not havemaps and not haveshapes:
             self.listWidget_mydrive.addItem(toListItem(Type.MESSAGE, "No results found!"))
             log("no search results")
+        self.setPath("Search done")
 
     def getFolder(self, id, isRoot=False):
         """ clears the listwidgets and flls them with the folders and maps in the specified folder (by folder id) """
