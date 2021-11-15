@@ -123,31 +123,40 @@ class MyDriveLoggedInTab(QDialog):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
 
     def getPathInfo(self, id):
-        roots = ["myMaps", "shared", "favorites"]
+        metadata = getMetadata(id, self.loginToken)
+
+        favorite = metadata["favorite"]
+        shared = metadata["sharedWithMe"]
+
+        root = "myMaps"
+
+        if favorite:
+            root = "favorites"
+        elif shared:
+            root = "shared"
+
         data1 = None
-        theroot = None
-        for root in roots:
-            apiurl = f"{URL}/path/info"
 
-            headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-            if (not self.loginToken == ""):
-                headers["Authorization"] = f"Bearer {self.loginToken}"
-            data = {
-                "pathId": id,
-                "root": root
-            }
-            _, j1 = request(apiurl, data=data, headers=headers)
+        log(f"Root is {root}")
 
-            if j1:
-                data1 = json.loads(j1.text)
-                theroot = root
-        if data1 is None:
+        apiurl = f"/path/info"
+
+        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+        if (not self.loginToken == ""):
+            headers["Authorization"] = f"Bearer {self.loginToken}"
+        data = {
+            "pathId": id,
+            "root": root
+        }
+        success, output = self.request(apiurl, data=data, headers=headers)
+
+        if not success:
             log("getPathInfo failed")
+            return [root, None]
         else:
             log("PATH FOUND")
-            log(theroot)
-            log(data1["path"])
-            return [theroot, data1["path"]]
+            log(output["path"])
+            return [root, output["path"]]
 
     def onListWidgetDoubleClick(self, item):
         self.pushButton_openBrowser.setEnabled(False)
