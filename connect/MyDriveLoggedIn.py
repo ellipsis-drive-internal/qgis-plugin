@@ -136,8 +136,7 @@ class MyDriveLoggedInTab(QDialog):
                 "pathId": id,
                 "root": root
             }
-
-            j1 = requests.post(apiurl, json=data, headers=headers)
+            _, j1 = request(apiurl, data=data, headers=headers)
 
             if j1:
                 data1 = json.loads(j1.text)
@@ -156,6 +155,10 @@ class MyDriveLoggedInTab(QDialog):
         itemtype = item.data((QtCore.Qt.UserRole)).getType()
         """ handler for clicks on items in the folder listwidget """
         log(f"Clicked on type {itemtype}, current modi: {self.currentMode}, {self.currentSubMode}")
+
+        if itemtype == Type.MESSAGE:
+            #don't do anything when a message is clicked
+            return
 
         # if we're searching, the regular rules don't apply
         if self.currentMode == ViewMode.SEARCH:
@@ -416,9 +419,7 @@ class MyDriveLoggedInTab(QDialog):
 
         # display loading item while the layer is loading
         self.clearListWidget()
-        listitem = QListWidgetItem()
-        listitem.setText("Loading...")
-        self.listWidget_mydrive.addItem(listitem)
+        self.listWidget_mydrive.addItem(toListItem(Type.MESSAGE, "Loading..."))
 
         rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'wcs')
 
@@ -459,6 +460,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentZoom = None
         self.highlightedID = ""
         self.stateBeforeSearch = {}
+        self.lineEdit_search.clear()
         self.setPath(self.path)
 
     def getCurrentState(self):
@@ -503,6 +505,7 @@ class MyDriveLoggedInTab(QDialog):
         if (text == ""):
             self.stopSearch()
         elif (self.currentMode == ViewMode.SEARCH):
+            self.label_path.setText("Searching..")
             self.searchText = text
             self.performSearch()
         else:
@@ -510,7 +513,7 @@ class MyDriveLoggedInTab(QDialog):
             self.stateBeforeSearch = self.getCurrentState()
             self.currentMode = ViewMode.SEARCH
             self.searchText = text
-            self.setPath("Searching..")
+            self.label_path.setText("Searching..")
             self.performSearch()
 
     def removeFromPath(self):
@@ -528,7 +531,6 @@ class MyDriveLoggedInTab(QDialog):
 
     def setPath(self, path):
         """ set the displayed path """
-        log(f"Size of label: {self.label_path.frameWidth()}")
         self.path = path
         toolong = False
         newstr = ""
@@ -562,12 +564,7 @@ class MyDriveLoggedInTab(QDialog):
             self.level += 1
             self.currentItem = None
         else:
-            msg = QMessageBox()
-            msg.setWindowTitle("Error!")
-            msg.setText("Cannot open this folder")
-            msg.setStandardButtons(QMessageBox.Ok)
-            msg.exec_()
-            log("cannot open the folder")
+            displayMessageBox("Error!", "Cannot open this folder")
 
     def onNextNormal(self):
         """ non-root onNext """
@@ -595,24 +592,11 @@ class MyDriveLoggedInTab(QDialog):
             log(f"root: {root}")
             return False
 
-    def request(self, url, data):
-        log(f"Requesting {url}")
-        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-        headers["Authorization"] = f"Bearer {self.loginToken}"
-        j1 = requests.post(f"{URL}{url}", json=data, headers=headers)
-        if not j1:
-            log("Request failed!")
-            log(f"{URL}{url}")
-            log(data)
-            log(headers)
-            log(j1)
-        else:
-            log("Request successful")
-            log(f"{URL}{url}")
-            log(data)
-            log(headers)
-            log(j1)
-        return json.loads(j1.text)
+    def request(self, url, data, headers=None,):
+        if headers is None:
+            headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+            headers["Authorization"] = f"Bearer {self.loginToken}"
+        return makeRequest(url, headers, data)
 
     @debounce(0.5)
     def performSearch(self):
@@ -632,26 +616,26 @@ class MyDriveLoggedInTab(QDialog):
             "name": f"{self.searchText}",
         }
 
-        resmaps = self.request(apiurlmaps, data)
-        resshapes = self.request(apiurlshapes, data)
-        resfolders = self.request(apiurlfolders, data)
+        sucm, resmaps = self.request(apiurlmaps, data)
+        sucs, resshapes = self.request(apiurlshapes, data)
+        sucf, resfolders = self.request(apiurlfolders, data)
         
         havefolders = False
         haveshapes = False
         havemaps = False
 
-        if "result" in resmaps and resmaps["result"]:
+        if sucm and "result" in resmaps and resmaps["result"]:
             log("Have maps")
             maps = resmaps["result"]
             havemaps = True
 
-        if "result" in resshapes and resshapes["result"]:
+        if sucs and "result" in resshapes and resshapes["result"]:
             log("Have shapes")
             log(resshapes["result"])
             shapes = resshapes["result"]
             haveshapes = True
 
-        if "result" in resfolders and resfolders["result"]:
+        if sucf and "result" in resfolders and resfolders["result"]:
             havefolders = True
             folders = resfolders["result"]
 
@@ -659,36 +643,38 @@ class MyDriveLoggedInTab(QDialog):
         while havefolders and (not resfolders["nextPageStart"] is None):
             log("pagination on folders in search")
             data["pageStart"] = resfolders["nextPageStart"]
-            resfolders = self.request(apiurlfolders, data)
+            _, resfolders = self.request(apiurlfolders, data)
             folders += resfolders["result"]
 
         while havemaps and (not resmaps["nextPageStart"] is None):
             log("pagination on maps in search")
             data["pageStart"] = resmaps["nextPageStart"]
-            resmaps = self.request(apiurlmaps, data)
+            _, resmaps = self.request(apiurlmaps, data)
             maps += resmaps["result"]
         
         while haveshapes and (not resshapes["nextPageStart"] is None):
             log("pagination on shapes in search")
             data["pageStart"] = resshapes["nextPageStart"]
-            resshapes = self.request(apiurlshapes, data)
+            _, resshapes = self.request(apiurlshapes, data)
             shapes += resshapes["result"]
 
         #folders first
-        if havefolders:
+        if havefolders and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(folder, True, errorLevel=getErrorLevel(folder))) for folder in folders]
 
-        if havemaps:
+        if havemaps and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in maps]
         
-        if haveshapes:
+        if haveshapes and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in shapes]
 
         if not havefolders and not havemaps and not haveshapes:
-            listitem = QListWidgetItem()
-            listitem.setText("No results found!")
-            self.listWidget_mydrive.addItem(listitem)
-            log("no search results")
+            # users may stop the search
+            if (self.currentMode == ViewMode.SEARCH):
+                self.clearListWidget()
+                self.listWidget_mydrive.addItem(toListItem(Type.MESSAGE, "No results found!"))
+                log("no search results")
+        self.label_path.setText("Search done")
 
     def getFolder(self, id, isRoot=False):
         """ clears the listwidgets and flls them with the folders and maps in the specified folder (by folder id) """
@@ -716,8 +702,8 @@ class MyDriveLoggedInTab(QDialog):
                 "type": "folder"
             }
 
-        resmaps = self.request(apiurl, datamap)
-        resfolders = self.request(apiurl, datafolder)
+        _, resmaps = self.request(apiurl, datamap)
+        _, resfolders = self.request(apiurl, datafolder)
 
         havefolders = False
         havemaps = False
@@ -735,13 +721,13 @@ class MyDriveLoggedInTab(QDialog):
         while havefolders and (not resfolders["nextPageStart"] is None):
             log("Pagination on folders in getFolder")
             datafolder["pageStart"] = resfolders["nextPageStart"]
-            resfolders = self.request(apiurl, datafolder)
+            _, resfolders = self.request(apiurl, datafolder)
             folders += resfolders["result"]
 
         while havemaps and (not resmaps["nextPageStart"] is None):
             log("Pagination on maps in getFolder")
             datamap["pageStart"] = resmaps["nextPageStart"]
-            resmaps = self.request(apiurl, datamap)
+            _, resmaps = self.request(apiurl, datamap)
             maps += resmaps["result"]
         
         if havefolders:
@@ -782,6 +768,11 @@ class MyDriveLoggedInTab(QDialog):
         item = item.data((QtCore.Qt.UserRole))
         itemtype = item.getType()
         itemdata = item.getData()
+
+        if itemtype == Type.MESSAGE:
+            # don't do anything when a message is clicked
+            return
+
         self.highlightedID = itemdata
         if (itemtype == Type.SHAPE or itemtype == Type.MAP):
             self.pushButton_openBrowser.setEnabled(True)
