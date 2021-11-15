@@ -59,6 +59,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentFolderId = None
         self.currentZoom = None
         self.highlightedID = ""
+        self.highlightedType = None
         self.stateBeforeSearch = {}
 
         self.setMinimumHeight(0)
@@ -117,13 +118,25 @@ class MyDriveLoggedInTab(QDialog):
         self.setLayout(self.gridLayout)
 
     def onOpenBrowser(self):
-        webbrowser.open(f"https://app.ellipsis-drive.com/view?mapId={self.highlightedID}") 
+        if "id" in self.currentMetaData:
+            webbrowser.open(f"https://app.ellipsis-drive.com/view?mapId={self.currentMetaData['id']}")
+        else:
+            webbrowser.open(f"https://app.ellipsis-drive.com/view?mapId={self.highlightedID}")
+        return
+
+        if self.highlightedType == Type.SHAPE or self.highlightedType == Type.MAP:
+            webbrowser.open(f"https://app.ellipsis-drive.com/view?mapId={self.highlightedID}") 
+        elif self.highlightedType == Type.FOLDER and False:
+            root, _ = self.getPathInfo(self.highlightedID)
+            webbrowser.openf(f"https://app.ellipsis-drive.com/drive/{root}?pathId={self.highlightedID}")
 
     def addReturnItem(self):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
 
     def getPathInfo(self, id):
         metadata = getMetadata(id, self.loginToken)
+
+        jlog(metadata)
 
         favorite = metadata["favorite"]
         shared = metadata["sharedWithMe"]
@@ -134,8 +147,6 @@ class MyDriveLoggedInTab(QDialog):
             root = "favorites"
         elif shared:
             root = "shared"
-
-        data1 = None
 
         log(f"Root is {root}")
 
@@ -288,7 +299,12 @@ class MyDriveLoggedInTab(QDialog):
             return
 
         item = self.currentItem.data((QtCore.Qt.UserRole))
-        log(self.currentItem)
+
+
+        # when we're 'inside' a block, we also enable the openBrowser button
+        self.highlightedID = item.getData()
+        self.highlightedType = item.getType()
+        self.pushButton_openBrowser.setEnabled(True)
 
         if (self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS or self.currentMode == ViewMode.WCS):
             
@@ -487,6 +503,7 @@ class MyDriveLoggedInTab(QDialog):
                 "currentFolderId": (self.currentFolderId),
                 "currentZoom": (self.currentZoom),
                 "highlightedID": (self.highlightedID),
+                "highlightedType": (self.highlightedType),
         }
         return state
 
@@ -504,6 +521,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentFolderId = (state["currentFolderId"])
         self.currentZoom = (state["currentZoom"])
         self.highlightedID = (state["highlightedID"])
+        self.highlightedType = (state["highlightedType"])
         self.pushButton_openBrowser.setEnabled(self.highlightedID != "")
         self.setPath(state["path"])
         self.fillListWidget()
@@ -783,7 +801,8 @@ class MyDriveLoggedInTab(QDialog):
             return
 
         self.highlightedID = itemdata
-        if (itemtype == Type.SHAPE or itemtype == Type.MAP):
+        self.highlightedType = itemtype
+        if (itemtype == Type.SHAPE or itemtype == Type.MAP or (itemtype == Type.FOLDER and False)):
             self.pushButton_openBrowser.setEnabled(True)
         else:
             self.pushButton_openBrowser.setEnabled(False)
