@@ -145,6 +145,9 @@ class MyDriveLoggedInTab(QDialog):
         if data1 is None:
             log("getPathInfo failed")
         else:
+            log("PATH FOUND")
+            log(theroot)
+            log(data1["path"])
             return [theroot, data1["path"]]
 
     def onListWidgetDoubleClick(self, item):
@@ -159,19 +162,24 @@ class MyDriveLoggedInTab(QDialog):
             root, folderpath = self.getPathInfo(itemdata)
             jlog(folderpath)
             folderpath.reverse()
-            self.setPath(f"/{root}")
+            self.setPath(f"/{rootName[root]}")
             self.folderStack = [root]
             self.level = 1
-            
+            log("================start=============================")
             first = True
             for folder in folderpath:
                 if first and not itemtype == Type.FOLDER:
+                    log("Adding 'first' folder")
+                    log(folder)
                     self.addToPath(folder["name"])
+                    first = False
                     continue
+                log("Adding 'regular' folder")
+                log(folder)
                 self.folderStack.append(folder["id"])
                 self.addToPath(folder["name"])
                 self.level += 1
-                first = False    
+                first = False
 
             if itemtype == Type.FOLDER:
                 self.currentMode = ViewMode.FOLDERS
@@ -183,6 +191,11 @@ class MyDriveLoggedInTab(QDialog):
                 if itemtype == Type.MAP:
                     self.currentMode = ViewMode.MAP
                 self.currentItem = item
+
+            log("====================result========================")
+            log(self.folderStack)
+            log(folderpath)
+            log("====================result========================")
 
             self.lineEdit_search.clear()
             self.pushButton_stopsearch.setEnabled(False)
@@ -548,7 +561,6 @@ class MyDriveLoggedInTab(QDialog):
             self.currentMode = ViewMode.FOLDERS
             self.level += 1
             self.currentItem = None
-            # TODO this is probably where the error starts
         else:
             msg = QMessageBox()
             msg.setWindowTitle("Error!")
@@ -576,7 +588,7 @@ class MyDriveLoggedInTab(QDialog):
         root = self.currentItem.data(QtCore.Qt.UserRole).getData()
         if self.getFolder(root, True):
             self.folderStack.append(root)
-            self.addToPath(root)
+            self.addToPath(rootName[root])
             return True
         else:
             log("Error! onNextRoot: getFolder failed")
@@ -747,6 +759,10 @@ class MyDriveLoggedInTab(QDialog):
             self.folderStack.pop()
             return
         
+        log("folderStack before popping:")
+        log(self.folderStack)
+        log(self.level)
+
         self.level -= 1
         self.removeFromPath()
         self.currentItem = None
@@ -759,10 +775,8 @@ class MyDriveLoggedInTab(QDialog):
             return
 
     def clearListWidget(self):
-        log("list is being cleared")
         for _ in range(self.listWidget_mydrive.count()):
             self.listWidget_mydrive.takeItem(0)
-        log(f"Done, size is now {self.listWidget_mydrive.count()}")
 
     def onListWidgetClick(self, item):
         item = item.data((QtCore.Qt.UserRole))

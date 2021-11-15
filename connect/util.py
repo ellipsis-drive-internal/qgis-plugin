@@ -71,6 +71,21 @@ class ErrorLevel(Enum):
     DELETED = 5
     WCSACCESS = 6
 
+rootName = {
+    "myMaps": "My Drive",
+    "shared": "Shared",
+    "favorites": "Favorites",
+}
+
+nameRoot = {
+    "My Drive": "myMaps",
+    "Shared": "shared",
+    "Favorites": "favorites",
+}
+
+def getRootName(root):
+    return rootName[root]
+
 def connected_to_internet(url=URL, timeout=5):
     try:
         _ = requests.head(url, timeout=timeout)
