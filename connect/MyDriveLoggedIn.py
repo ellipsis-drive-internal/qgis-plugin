@@ -134,44 +134,16 @@ class MyDriveLoggedInTab(QDialog):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
 
     def getPathInfo(self, id):
-        notfolder, metadata = getMetadata(id, self.loginToken)
-        isfolder = not notfolder
+        for root in ["myMaps", "shared", "shared"]:
+            data = {
+                "pathId": id,
+                "root": root
+            }
+            success, output = self.request("/path/info", data=data)
+            if success:
+                return [root, output["path"]]
+        return [None, None]
 
-        jlog(metadata)
-
-
-        # if it is a folder, we need to do the request slightly differently
-
-        favorite = metadata["favorite"]
-        shared = metadata["sharedWithMe"]
-
-        root = "myMaps"
-
-        if favorite:
-            root = "favorites"
-        elif shared:
-            root = "shared"
-
-        log(f"Root is {root}")
-
-        apiurl = f"/path/info"
-
-        headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-        if (not self.loginToken == ""):
-            headers["Authorization"] = f"Bearer {self.loginToken}"
-        data = {
-            "pathId": id,
-            "root": root
-        }
-        success, output = self.request(apiurl, data=data, headers=headers)
-
-        if not success:
-            log("getPathInfo failed")
-            return [root, None]
-        else:
-            log("PATH FOUND")
-            log(output["path"])
-            return [root, output["path"]]
 
     def onListWidgetDoubleClick(self, item):
         self.pushButton_openBrowser.setEnabled(False)
