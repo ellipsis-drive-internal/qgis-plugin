@@ -738,17 +738,20 @@ class MyDriveLoggedInTab(QDialog):
                 "type": "folder"
             }
 
-        _, resmaps = self.request(apiurl, datamap)
-        _, resfolders = self.request(apiurl, datafolder)
+        success1, resmaps = self.request(apiurl, datamap)
+        success2, resfolders = self.request(apiurl, datafolder)
+
+        if not success1 and not success2:
+            return
 
         havefolders = False
         havemaps = False
 
-        if "result" in resmaps:
+        if success1 and "result" in resmaps:
             maps = resmaps["result"]
             havemaps = True
 
-        if "result" in resfolders:
+        if success2 and "result" in resfolders:
             havefolders = True
             folders = resfolders["result"]
 
