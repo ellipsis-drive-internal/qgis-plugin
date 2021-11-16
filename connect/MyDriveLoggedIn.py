@@ -174,7 +174,7 @@ class MyDriveLoggedInTab(QDialog):
                 self.currentSubMode = ViewSubMode.NONE
             else:
                 self.folderStack.pop()
-                self.currentMetaData = getMetadata(itemdata, self.loginToken)
+                self.currentMetaData = getMetadata(itemdata, self.loginToken)[1]
                 self.currentMode = ViewMode.SHAPE
                 self.currentSubMode = ViewSubMode.NONE
                 if itemtype == Type.MAP:
@@ -223,7 +223,7 @@ class MyDriveLoggedInTab(QDialog):
                 self.onNext()
 
             elif itemtype == Type.SHAPE or itemtype == Type.MAP:
-                self.currentMetaData = getMetadata(itemdata, self.loginToken)
+                self.currentMetaData = getMetadata(itemdata, self.loginToken)[1]
                 #self.addToPath(self.currentMetaData["name"])
                 if itemtype == Type.SHAPE:
                     self.currentMode = ViewMode.SHAPE
@@ -519,16 +519,12 @@ class MyDriveLoggedInTab(QDialog):
         if len(self.folderStack) == 1:
             return "/"
 
-        if self.currentMode == ViewMode.WCS:
-            path = "/WCS"
-        elif self.currentMode == ViewMode.WMS:
-            path = "/WMS"
-        elif self.currentMode == ViewMode.WMTS:
-            path = "/WMTS"
-        elif self.currentMode == ViewMode.WFS:
-            path = "/WFS"
-        else:
-            path = ""
+        path = ""
+        if self.currentMode in [ViewMode.MAP, ViewMode.SHAPE]:
+            log(self.currentMetaData)
+            path = self.currentMetaData["name"]
+        elif self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WCS, ViewMode.WFS]:
+            path = f"{self.currentMetaData['name']}/{protToString[self.currentMode]}"
 
         for folder in revfolders:
             if folder[0] == "base" and folder[1] == "base":

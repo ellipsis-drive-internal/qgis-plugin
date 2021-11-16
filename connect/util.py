@@ -85,6 +85,20 @@ nameRoot = {
     "Favorites": "favorites",
 }
 
+protToString = {
+    ViewMode.WMS: "WMS",
+    ViewMode.WMTS: "WMTS",
+    ViewMode.WCS: "WCS",
+    ViewMode.WFS: "WFS",
+}
+
+stringToProt = {
+    "WMS": ViewMode.WMS,
+    "WMTS": ViewMode.WMTS,
+    "WCS": ViewMode.WCS,
+    "WFS": ViewMode.WFS,
+}
+
 def getRootName(root):
     if root in rootName:
         return rootName[root]
