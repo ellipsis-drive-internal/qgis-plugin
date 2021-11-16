@@ -27,6 +27,12 @@ class MyDriveLoginTab(QDialog):
         self.rememberMe = self.checkBox_remember.isChecked()
         self.loggedIn = False
 
+    def keyPressEvent(self, qKeyEvent):
+        if qKeyEvent.key() == QtCore.Qt.Key_Return: 
+            self.loginButton()
+        else:
+            super().keyPressEvent(qKeyEvent)
+
     def sizeHint(self):
         a = QWidget.sizeHint(self)
         a.setHeight(SIZEH)
@@ -79,6 +85,7 @@ class MyDriveLoginTab(QDialog):
         msg.setText("Remembering your login data should only be done on devices you trust.")
         msg.setWindowTitle("Are you sure?")
         msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        msg.setDefaultButton(QMessageBox.Ok)
         retval = msg.exec_()
         return retval == QMessageBox.Ok
 
