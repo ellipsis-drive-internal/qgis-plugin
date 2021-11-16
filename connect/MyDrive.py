@@ -81,7 +81,7 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
                 log("getUserData failed")
 
             self.stackedWidget.setCurrentIndex(1)
-        else: 
+        else:
             log("No login data found")
 
     def sizeHint(self):
@@ -93,7 +93,6 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
     def handleConnectedSignal(self):
         self.stackedWidget.setCurrentIndex(0 if not self.loggedIn else 1)
         
-
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()

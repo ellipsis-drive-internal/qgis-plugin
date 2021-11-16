@@ -45,13 +45,12 @@ class MyDriveLoggedInTab(QDialog):
         self.loginToken = ""
         self.loggedIn = False
         self.userInfo = {}
-        self.level = 0
         self.path = "/"
-        self.folderStack = []
+        self.folderStack = [["base", "base"]]
         self.searchText = ""
         self.currentMetaData = None
         self.currentTimestamp = None
-        self.currentMode = ViewMode.ROOT
+        self.currentMode = ViewMode.FOLDERS
         self.previousMode = None
         self.currentSubMode = ViewSubMode.NONE
         self.currentItem = None
@@ -68,6 +67,7 @@ class MyDriveLoggedInTab(QDialog):
         self.constructUI()
 
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
+        self.setPath()
         self.fillListWidget()
 
     def sizeHint(self):
@@ -134,9 +134,13 @@ class MyDriveLoggedInTab(QDialog):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
 
     def getPathInfo(self, id):
-        metadata = getMetadata(id, self.loginToken)
+        notfolder, metadata = getMetadata(id, self.loginToken)
+        isfolder = not notfolder
 
         jlog(metadata)
+
+
+        # if it is a folder, we need to do the request slightly differently
 
         favorite = metadata["favorite"]
         shared = metadata["sharedWithMe"]
@@ -185,29 +189,19 @@ class MyDriveLoggedInTab(QDialog):
             root, folderpath = self.getPathInfo(itemdata)
             jlog(folderpath)
             folderpath.reverse()
-            self.setPath(f"/{rootName[root]}")
-            self.folderStack = [root]
-            self.level = 1
+            self.folderStack = [[ "base", "base"], ["root", root]]
             log("================start=============================")
             first = True
             for folder in folderpath:
-                if first and not itemtype == Type.FOLDER:
-                    log("Adding 'first' folder")
-                    log(folder)
-                    self.addToPath(folder["name"])
-                    first = False
-                    continue
                 log("Adding 'regular' folder")
                 log(folder)
-                self.folderStack.append(folder["id"])
-                self.addToPath(folder["name"])
-                self.level += 1
-                first = False
+                self.folderStack.append([folder["name"], folder["id"]])
 
             if itemtype == Type.FOLDER:
                 self.currentMode = ViewMode.FOLDERS
                 self.currentSubMode = ViewSubMode.NONE
             else:
+                self.folderStack.pop()
                 self.currentMetaData = getMetadata(itemdata, self.loginToken)
                 self.currentMode = ViewMode.SHAPE
                 self.currentSubMode = ViewSubMode.NONE
@@ -222,6 +216,7 @@ class MyDriveLoggedInTab(QDialog):
 
             self.lineEdit_search.clear()
             self.pushButton_stopsearch.setEnabled(False)
+            self.setPath()
             self.fillListWidget()
             return
 
@@ -238,29 +233,26 @@ class MyDriveLoggedInTab(QDialog):
 
             elif self.currentMode == ViewMode.MAP or self.currentMode == ViewMode.SHAPE:
                 self.currentMode = ViewMode.FOLDERS
-                self.removeFromPath()
+                #self.removeFromPath()
 
             elif self.currentMode == ViewMode.WFS:
                 self.currentMode = ViewMode.SHAPE
                 self.currentSubMode = ViewSubMode.NONE
-                self.removeFromPath()
+                #self.removeFromPath()
 
             elif self.currentMode == ViewMode.WCS or self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS:
                 self.currentMode = ViewMode.MAP
                 self.currentSubMode = ViewSubMode.NONE
-                self.removeFromPath()
-        
-        elif self.currentMode == ViewMode.ROOT:
-            self.onNext()
+                #self.removeFromPath()
 
         elif self.currentMode == ViewMode.FOLDERS:
 
-            if  itemtype == Type.FOLDER:
+            if  itemtype == Type.FOLDER or itemtype == Type.ROOT:
                 self.onNext()
 
             elif itemtype == Type.SHAPE or itemtype == Type.MAP:
                 self.currentMetaData = getMetadata(itemdata, self.loginToken)
-                self.addToPath(self.currentMetaData["name"])
+                #self.addToPath(self.currentMetaData["name"])
                 if itemtype == Type.SHAPE:
                     self.currentMode = ViewMode.SHAPE
                 else:
@@ -269,7 +261,7 @@ class MyDriveLoggedInTab(QDialog):
         elif self.currentMode == ViewMode.SHAPE or self.currentMode == ViewMode.MAP:
             self.currentMode = mapViewMode(itemdata)
             self.currentSubMode = initialSubMode(itemdata)
-            self.addToPath(itemdata)
+            #self.addToPath(itemdata)
 
         elif self.currentMode == ViewMode.WMS:
             self.WMSDoubleClick(item)
@@ -283,19 +275,24 @@ class MyDriveLoggedInTab(QDialog):
         elif self.currentMode == ViewMode.WCS:
             self.WCSDoubleClick(item)
 
+        self.setPath()
         self.fillListWidget()
 
     def fillListWidget(self):
         log(f"fillListWidget called with modi: {self.currentMode} and {self.currentSubMode}")
         self.clearListWidget()
 
-        if (self.currentMode == ViewMode.ROOT):
-            self.populateListWithRoot()
-            return
-
-        self.addReturnItem()
         if (self.currentMode == ViewMode.FOLDERS):
-            self.getFolder(self.folderStack[-1], isRoot=(self.level == 1))
+            log("================yeahpoaahah==========")
+            log(self.folderStack)
+            if (len(self.folderStack) == 1):
+                self.populateListWithRoot()
+            elif (len(self.folderStack) == 2):
+                self.addReturnItem()
+                self.getFolder(self.folderStack[1][1], isRoot=True)
+            else:
+                self.addReturnItem()
+                self.getFolder(self.folderStack[-1][1])
             return
 
         item = self.currentItem.data((QtCore.Qt.UserRole))
@@ -305,6 +302,8 @@ class MyDriveLoggedInTab(QDialog):
         self.highlightedID = item.getData()
         self.highlightedType = item.getType()
         self.pushButton_openBrowser.setEnabled(True)
+
+        self.addReturnItem()
 
         if (self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS or self.currentMode == ViewMode.WCS):
             
@@ -470,13 +469,12 @@ class MyDriveLoggedInTab(QDialog):
         self.loginToken = ""
         self.loggedIn = False
         self.userInfo = {}
-        self.level = 0
         self.path = "/"
-        self.folderStack = []
+        self.folderStack = [["base", "base"]]
         self.searchText = ""
         self.currentMetaData = None
         self.currentTimestamp = None
-        self.currentMode = ViewMode.ROOT
+        self.currentMode = ViewMode.FOLDERS
         self.previousMode = None
         self.currentSubMode = ViewSubMode.NONE
         self.currentItem = None
@@ -486,11 +484,10 @@ class MyDriveLoggedInTab(QDialog):
         self.highlightedID = ""
         self.stateBeforeSearch = {}
         self.lineEdit_search.clear()
-        self.setPath(self.path)
+        self.setPath()
 
     def getCurrentState(self):
         state = {
-                "level" : (self.level),
                 "path": (self.path),
                 "folderStack": (self.folderStack),
                 "currentMetaData": (self.currentMetaData),
@@ -509,7 +506,6 @@ class MyDriveLoggedInTab(QDialog):
 
     def setCurrentState(self, state):
         """ reset to a certain state, and call fillListWidget to redraw the plugin """
-        self.level = (state["level"])
         self.folderStack = (state["folderStack"])
         self.currentMetaData = (state["currentMetaData"])
         self.currentTimestamp = (state["currentTimestamp"])
@@ -523,7 +519,7 @@ class MyDriveLoggedInTab(QDialog):
         self.highlightedID = (state["highlightedID"])
         self.highlightedType = (state["highlightedType"])
         self.pushButton_openBrowser.setEnabled(self.highlightedID != "")
-        self.setPath(state["path"])
+        self.setPath()
         self.fillListWidget()
 
     def onSearchChange(self, text):
@@ -543,9 +539,45 @@ class MyDriveLoggedInTab(QDialog):
             self.label_path.setText("Searching..")
             self.performSearch()
 
+    def pathFromStack(self):
+        log("Getting path from stack")
+        #log(self.folderStack)
+        revfolders = self.folderStack[::-1]
+
+        if len(self.folderStack) == 1:
+            return "/"
+
+        if self.currentMode == ViewMode.WCS:
+            path = "/WCS"
+        elif self.currentMode == ViewMode.WMS:
+            path = "/WMS"
+        elif self.currentMode == ViewMode.WMTS:
+            path = "/WMTS"
+        elif self.currentMode == ViewMode.WFS:
+            path = "/WFS"
+        else:
+            path = ""
+
+        for folder in revfolders:
+            if folder[0] == "base" and folder[1] == "base":
+                continue
+            if len(path) + len(folder[0]) < MAXPATHLEN:
+                if folder[0] == "root":
+                    path = f"/{getRootName(folder[1])}{path}"
+                else:
+                    path = f"/{getRootName(folder[0])}{path}"
+            else:
+                path = f"..{path}"
+                break
+        log(path)
+        return path
+
     def removeFromPath(self):
         """ remove one level from the path, useful when going back in the folder structure """
-        if (self.level == 0):
+        self.folderStack.pop()
+        self.setPath()
+        return
+        if (len(self.folderStack == 1)):
             self.setPath("/")
             return
         self.setPath(self.path.rsplit('/',1)[0])
@@ -556,7 +588,11 @@ class MyDriveLoggedInTab(QDialog):
             self.path = ""
         self.setPath(f"{self.path}/{foldername}")
 
-    def setPath(self, path):
+    def setPath(self):
+        """ set the displayed path to the one specified in self.folderstack"""
+        thepath = self.pathFromStack()
+        self.label_path.setText(f"{thepath}")
+        return
         """ set the displayed path """
         self.path = path
         toolong = False
@@ -581,38 +617,39 @@ class MyDriveLoggedInTab(QDialog):
         #log("BEGIN")
         #log(self.folderStack)
         success = True
-        if (self.level == 0 and not self.currentMode == ViewMode.SEARCH):
+        if (len(self.folderStack) == 1 and not self.currentMode == ViewMode.SEARCH):
             success = self.onNextRoot()
         else:
             success = self.onNextNormal()
         if success:
             self.currentFolderId = self.currentItem.data(QtCore.Qt.UserRole).getData()
             self.currentMode = ViewMode.FOLDERS
-            self.level += 1
             self.currentItem = None
         else:
             displayMessageBox("Error!", "Cannot open this folder")
+        self.setPath()
 
     def onNextNormal(self):
         """ non-root onNext """
+        log("onnextnormal")
         pathId = self.currentItem.data(QtCore.Qt.UserRole).getData()
+        name = self.currentItem.data(QtCore.Qt.UserRole).getExtra()
         if self.getFolder(pathId):
-            self.folderStack.append(pathId)
-            self.addToPath(self.currentItem.text())
+            self.folderStack.append([name, pathId])
+            self.setPath()
             return True
         else:
             log("Error! onNextNormal: getFolder failed")
             log(f"pathid: {pathId}")
             return False
-        
         #self.addToPath(pathId = self.selected.get)
 
     def onNextRoot(self):
         """ onNext for root folders """
+        log("onnextroot")
         root = self.currentItem.data(QtCore.Qt.UserRole).getData()
         if self.getFolder(root, True):
-            self.folderStack.append(root)
-            self.addToPath(rootName[root])
+            self.folderStack.append(["root", root])
             return True
         else:
             log("Error! onNextRoot: getFolder failed")
@@ -756,7 +793,7 @@ class MyDriveLoggedInTab(QDialog):
             datamap["pageStart"] = resmaps["nextPageStart"]
             _, resmaps = self.request(apiurl, datamap)
             maps += resmaps["result"]
-        
+
         if havefolders:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders]
         
@@ -767,25 +804,16 @@ class MyDriveLoggedInTab(QDialog):
     def onPrevious(self):
         """ handles walking back through te folder tree """
         if self.currentMode == ViewMode.SEARCH:
-            self.removeFromPath()
             self.currentItem = None
-            self.folderStack.pop()
+            self.removeFromPath()
             return
         
         log("folderStack before popping:")
         log(self.folderStack)
-        log(self.level)
 
-        self.level -= 1
-        self.removeFromPath()
         self.currentItem = None
-        self.folderStack.pop()
+        self.removeFromPath()
 
-        if self.level == 0:
-            self.path = "/"
-            self.folderStack = []
-            self.currentMode = ViewMode.ROOT
-            return
 
     def clearListWidget(self):
         for _ in range(self.listWidget_mydrive.count()):
@@ -827,9 +855,9 @@ class MyDriveLoggedInTab(QDialog):
 
     def populateListWithRoot(self):
         """ Adds the 3 root folders to the widget """
-        myprojects = ListData("rootfolder", "myMaps")
-        sharedwithme = ListData("rootfolder", "shared")
-        favorites = ListData("rootfolder", "favorites")
+        myprojects = ListData(Type.ROOT, "myMaps")
+        sharedwithme = ListData(Type.ROOT, "shared")
+        favorites = ListData(Type.ROOT, "favorites")
 
         myprojectsitem = QListWidgetItem()
         sharedwithmeitem = QListWidgetItem()

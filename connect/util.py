@@ -47,6 +47,7 @@ class Type(Enum):
     MESSAGE = auto()
 
 class ViewMode(Enum):
+    BASE = auto()
     ROOT = auto()
     FOLDERS = auto()
     SHAPE = auto()
@@ -85,8 +86,10 @@ nameRoot = {
 }
 
 def getRootName(root):
-    return rootName[root]
-    
+    if root in rootName:
+        return rootName[root]
+    return root
+
 def makeRequest(url, headers, data=None):
         log(f"Requesting {url}")
         success = True
@@ -164,7 +167,7 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
         item = ListData(Type.MAP, mapdata["id"], False)
     elif isFolder:
         icon = QIcon(FOLDERICON)
-        item = ListData(Type.FOLDER, mapdata["id"])
+        item = ListData(Type.FOLDER, mapdata["id"], extra=mapdata["name"])
     elif mapdata["isShape"]:
         icon = QIcon(VECTORICON)
         item = ListData(Type.SHAPE, mapdata["id"], mapdata["isShape"])
@@ -200,21 +203,12 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
 
 def getMetadata(mapid, token):
     """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
-    apiurl = F"{URL}/metadata"
     headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
     headers["Authorization"] = f"Bearer {token}"
     data = {
         "mapId": f"{mapid}",
     }
-    j1 = requests.post(apiurl, json=data, headers=headers)
-    if not j1:
-        log("getMetadata failed!")
-        return {}
-    data = json.loads(j1.text)
-    #log(f"metadata of map with id {mapid}")
-    #jlog(data)
-    #log("end of metadata")
-    return data
+    return makeRequest("/metadata", headers=headers, data=data)
 
 def getUrl(mode, mapId, token = "empty"):
     """ constructs the url and copies it to the clipboard"""
