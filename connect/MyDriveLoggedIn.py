@@ -254,6 +254,9 @@ class MyDriveLoggedInTab(QDialog):
         log(f"fillListWidget called with modi: {self.currentMode} and {self.currentSubMode}")
         self.clearListWidget()
 
+        if (not self.currentMode == ViewMode.SEARCH):
+            self.setPath()
+
         if (self.currentMode == ViewMode.FOLDERS):
             log("================yeahpoaahah==========")
             log(self.folderStack)
