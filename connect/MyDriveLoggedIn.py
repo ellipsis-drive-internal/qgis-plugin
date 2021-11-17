@@ -522,9 +522,9 @@ class MyDriveLoggedInTab(QDialog):
         path = ""
         if self.currentMode in [ViewMode.MAP, ViewMode.SHAPE]:
             log(self.currentMetaData)
-            path = self.currentMetaData["name"]
+            path = f"/{self.currentMetaData['name']}"
         elif self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WCS, ViewMode.WFS]:
-            path = f"{self.currentMetaData['name']}/{protToString[self.currentMode]}"
+            path = f"/{self.currentMetaData['name']}/{protToString[self.currentMode]}"
 
         for folder in revfolders:
             if folder[0] == "base" and folder[1] == "base":
