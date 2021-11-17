@@ -258,7 +258,6 @@ class MyDriveLoggedInTab(QDialog):
             self.setPath()
 
         if (self.currentMode == ViewMode.FOLDERS):
-            log("================yeahpoaahah==========")
             log(self.folderStack)
             if (len(self.folderStack) == 1):
                 self.populateListWithRoot()
@@ -394,7 +393,7 @@ class MyDriveLoggedInTab(QDialog):
         rlayer = QgsVectorLayer(uri, text, 'wfs')
 
         if not rlayer.isValid():
-            log("Layer failed to load!") 
+            log("Layer failed to load!")
         else:
             QgsProject.instance().addMapLayer(rlayer)
         
@@ -457,6 +456,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentFolderId = None
         self.currentZoom = None
         self.highlightedID = ""
+        self.highlightedType = None
         self.stateBeforeSearch = {}
         self.lineEdit_search.clear()
         self.setPath()
