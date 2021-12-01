@@ -213,8 +213,11 @@ class MyDriveLoggedInTab(QDialog):
                 #self.removeFromPath()
 
             elif self.currentMode == ViewMode.WCS or self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS:
-                self.currentMode = ViewMode.MAP
-                self.currentSubMode = ViewSubMode.NONE
+                if self.currentSubMode == ViewSubMode.TIMESTAMPS:
+                    self.currentMode = ViewMode.MAP
+                    self.currentSubMode = ViewSubMode.NONE
+                elif self.currentSubMode == ViewSubMode.MAPLAYERS:
+                    self.currentSubMode = ViewSubMode.TIMESTAMPS
                 #self.removeFromPath()
 
         elif self.currentMode == ViewMode.FOLDERS:
