@@ -159,11 +159,10 @@ class MyDriveLoggedInTab(QDialog):
         # if we're searching, the regular rules don't apply
         if self.currentMode == ViewMode.SEARCH:
             root, folderpath = self.getPathInfo(itemdata)
-            jlog(folderpath)
+            if root is None and folderpath is None:
+                return
             folderpath.reverse()
             self.folderStack = [[ "base", "base"], ["root", root]]
-            log("================start=============================")
-            first = True
             for folder in folderpath:
                 log("Adding 'regular' folder")
                 log(folder)
@@ -174,17 +173,14 @@ class MyDriveLoggedInTab(QDialog):
                 self.currentSubMode = ViewSubMode.NONE
             else:
                 self.folderStack.pop()
-                self.currentMetaData = getMetadata(itemdata, self.loginToken)[1]
+                success, self.currentMetaData = getMetadata(itemdata, self.loginToken)
+                if not success:
+                    return
                 self.currentMode = ViewMode.SHAPE
                 self.currentSubMode = ViewSubMode.NONE
                 if itemtype == Type.MAP:
                     self.currentMode = ViewMode.MAP
                 self.currentItem = item
-
-            log("====================result========================")
-            log(self.folderStack)
-            log(folderpath)
-            log("====================result========================")
 
             self.lineEdit_search.clear()
             self.pushButton_stopsearch.setEnabled(False)
@@ -226,7 +222,9 @@ class MyDriveLoggedInTab(QDialog):
                 self.onNext()
 
             elif itemtype == Type.SHAPE or itemtype == Type.MAP:
-                self.currentMetaData = getMetadata(itemdata, self.loginToken)[1]
+                success, self.currentMetaData = getMetadata(itemdata, self.loginToken)
+                if not success:
+                    return
                 #self.addToPath(self.currentMetaData["name"])
                 if itemtype == Type.SHAPE:
                     self.currentMode = ViewMode.SHAPE
@@ -332,6 +330,9 @@ class MyDriveLoggedInTab(QDialog):
             if not rlayer.isValid():
                 displayMessageBox("Error loading layer", "Layer failed to load.")
                 log("Layer failed to load!")
+                log(rlayer)
+                log(rlayer.error())
+                log(dir(rlayer))
             else:
                 QgsProject.instance().addMapLayer(rlayer)
             # we have to restore the previous item as the current item, to maintain the view (instead of 'opening' the layer)
@@ -430,7 +431,7 @@ class MyDriveLoggedInTab(QDialog):
 
         if not rlayer.isValid():
             displayMessageBox("Error loading layer", "Layer failed to load.")
-            log("Layer failed to load!") 
+            log("Layer failed to load!")
         else:
             QgsProject.instance().addMapLayer(rlayer)
         
