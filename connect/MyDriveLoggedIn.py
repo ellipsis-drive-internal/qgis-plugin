@@ -42,7 +42,7 @@ class MyDriveLoggedInTab(QDialog):
 
         QgsProject.instance().layersAdded.connect(self.zoomHandler)
 
-        self.loginToken = ""
+        self.loginToken = None
         self.loggedIn = False
         self.userInfo = {}
         self.path = "/"
@@ -449,7 +449,7 @@ class MyDriveLoggedInTab(QDialog):
     def resetState(self):
         """ helper function to reset our state (used when logging out) """
         self.clearListWidget()
-        self.loginToken = ""
+        self.loginToken = None
         self.loggedIn = False
         self.userInfo = {}
         self.path = "/"

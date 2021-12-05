@@ -1,5 +1,6 @@
 import os
 from PyQt5.QtCore import QSize
+from qgis.utils import isPluginLoaded
 
 import requests
 from PyQt5.QtWidgets import QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QWidget
@@ -40,7 +41,7 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.setLayout(self.layout)
 
         self.loggedIn = False
-        self.loginToken = ""
+        self.loginToken = None
 
         self.userInfo = {}
 
@@ -51,38 +52,10 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.stackedWidget.addWidget(self.loginWidget)
         self.stackedWidget.addWidget(self.loggedInWidget)
         self.stackedWidget.addWidget(self.noconnectionWidget)
-
-        self.isOnline = connected_to_internet()
-
-        self.loginWidget.isOnline = self.isOnline
-        self.loggedInWidget.isOnline = self.isOnline
         
         self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
 
-        if not self.isOnline:
-            self.stackedWidget.setCurrentIndex(2)
-        elif (self.settings.contains("token")):
-            log("Login data found")
-            self.loggedIn = True
-            self.loginToken = self.settings.value("token")
-            self.loggedInWidget.loginToken = self.loginToken
-            log("Getting username")
-            apiurl = f"{URL}/account/info"
-            headers = CaseInsensitiveDict()
-            headers["Authorization"] = f"Bearer {self.loginToken}"
-            resp = requests.get(apiurl, headers=headers)
-            data = resp.json()
-            jlog(data)
-            if (resp):
-                log("getting user info success")
-                self.loggedInWidget.userInfo = data
-                self.loggedInWidget.label.setText(f"Welcome {data['username']}!")
-            else:
-                log("getUserData failed")
-
-            self.stackedWidget.setCurrentIndex(1)
-        else:
-            log("No login data found")
+        self.checkOnlineAndSetIndex()
 
     def sizeHint(self):
         a = QWidget.sizeHint(self)
@@ -90,8 +63,38 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         a.setWidth(SIZEW)
         return a
         
+    def checkOnlineAndSetIndex(self):
+        self.isOnline = connected_to_internet()
+
+        self.loginWidget.isOnline = self.isOnline
+        self.loggedInWidget.isOnline = self.isOnline
+
+        self.loggedIn, self.loginToken = self.isLoggedIn()
+
+        if not self.isOnline:
+            self.stackedWidget.setCurrentIndex(2)
+        elif self.loggedIn:
+            # get user info
+            headers = CaseInsensitiveDict()
+            headers["Authorization"] = f"Bearer {self.loginToken}"
+            success, data = makeRequest("/account/info", headers=headers)
+            if success:
+                self.loggedInWidget.userInfo = data
+                self.loggedInWidget.label.setText(f"Welcome {data['username']}")
+            self.loggedInWidget.loggedIn = True
+            self.loggedInWidget.loginToken = self.loginToken
+            self.stackedWidget.setCurrentIndex(1)
+        else:
+            self.stackedWidget.setCurrentIndex(0)
+
+    def isLoggedIn(self):
+        if not self.settings.contains("token"):
+            return [False, None]
+        else:
+            return [True, self.settings.value("token")]
+
     def handleConnectedSignal(self):
-        self.stackedWidget.setCurrentIndex(0 if not self.loggedIn else 1)
+        self.checkOnlineAndSetIndex()
         
     def closeEvent(self, event):
         self.closingPlugin.emit()
@@ -113,9 +116,9 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
     def handleLogoutSignal(self):
         log("logout signal received!")
         self.loggedIn = False
-        self.loginToken = ""
+        self.loginToken = None
         self.loggedInWidget.loggedIn = False
-        self.loggedInWidget.loginToken = ""
+        self.loggedInWidget.loginToken = None
         self.loggedInWidget.resetState()
         self.stackedWidget.setCurrentIndex(0)
         
