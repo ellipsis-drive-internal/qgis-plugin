@@ -89,6 +89,10 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_stopsearch = QPushButton()
         self.pushButton_stopsearch.setText("Stop search")
 
+        self.pushButton_refresh = QPushButton()
+        self.pushButton_refresh.setText("Refresh")
+        self.pushButton_refresh.clicked.connect(self.onRefresh)
+
         self.pushButton_openBrowser = QPushButton()
         self.pushButton_openBrowser.setText("Open in browser")
         self.pushButton_openBrowser.clicked.connect(self.onOpenBrowser)
@@ -111,11 +115,15 @@ class MyDriveLoggedInTab(QDialog):
         self.gridLayout.addWidget(self.pushButton_logout, 0, 1)
         self.gridLayout.addWidget(self.lineEdit_search, 1, 0)
         self.gridLayout.addWidget(self.pushButton_stopsearch, 1, 1)
-        self.gridLayout.addWidget(self.label_path, 2, 0, 1, 2)
+        self.gridLayout.addWidget(self.label_path, 2, 0)
+        self.gridLayout.addWidget(self.pushButton_refresh, 2,1)
         self.gridLayout.addWidget(self.listWidget_mydrive, 3, 0, 1, 2)
         self.gridLayout.addWidget(self.pushButton_openBrowser, 4,0, 1, 2)
         
         self.setLayout(self.gridLayout)
+
+    def onRefresh(self):
+        log("Refresh")    
 
     def onOpenBrowser(self):
         if "id" in self.currentMetaData:
