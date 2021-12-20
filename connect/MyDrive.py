@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit
 from qgis.PyQt import uic, QtGui, QtWidgets, uic
 
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
-from requests.structures import CaseInsensitiveDict
 from .MyDriveLoggedIn import MyDriveLoggedInTab
 from .MyDriveLogIn import MyDriveLoginTab
 from .NoConnection import NoConnectionTab
@@ -74,10 +73,7 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         if not self.isOnline:
             self.stackedWidget.setCurrentIndex(2)
         elif self.loggedIn:
-            # get user info
-            headers = CaseInsensitiveDict()
-            headers["Authorization"] = f"Bearer {self.loginToken}"
-            success, data = makeRequest("/account/info", headers=headers)
+            success, data = getUserData(self.loginToken)
             if success:
                 self.loggedInWidget.userInfo = data
                 self.loggedInWidget.label.setText(f"Welcome {data['username']}")

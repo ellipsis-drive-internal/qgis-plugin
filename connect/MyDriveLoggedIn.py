@@ -133,15 +133,16 @@ class MyDriveLoggedInTab(QDialog):
     def addReturnItem(self):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
 
+    def getMetadata(self, mapid):
+        data = {
+            "pathId": mapid,
+        }
+        return self.request("/info", data=data)
+
     def getPathInfo(self, id):
-        for root in ["myMaps", "shared", "shared"]:
-            data = {
-                "pathId": id,
-                "root": root
-            }
-            success, output = self.request("/path/info", data=data)
-            if success:
-                return [root, output["path"]]
+        success, output = self.getMetadata(id)
+        if success:
+            return [output["path"]["root"], output["path"]["path"]]
         return [None, None]
 
 
@@ -159,8 +160,10 @@ class MyDriveLoggedInTab(QDialog):
         # if we're searching, the regular rules don't apply
         if self.currentMode == ViewMode.SEARCH:
             root, folderpath = self.getPathInfo(itemdata)
+            log(root)
             if root is None and folderpath is None:
                 return
+            root = "shared" if root == "sharedWithMe" else root # ugly fix for weird api
             folderpath.reverse()
             self.folderStack = [[ "base", "base"], ["root", root]]
             for folder in folderpath:
@@ -173,7 +176,7 @@ class MyDriveLoggedInTab(QDialog):
                 self.currentSubMode = ViewSubMode.NONE
             else:
                 self.folderStack.pop()
-                success, self.currentMetaData = getMetadata(itemdata, self.loginToken)
+                success, self.currentMetaData = self.getMetadata(itemdata)
                 if not success:
                     return
                 self.currentMode = ViewMode.SHAPE
@@ -222,7 +225,7 @@ class MyDriveLoggedInTab(QDialog):
                 self.onNext()
 
             elif itemtype == Type.SHAPE or itemtype == Type.MAP:
-                success, self.currentMetaData = getMetadata(itemdata, self.loginToken)
+                success, self.currentMetaData = self.getMetadata(itemdata)
                 if not success:
                     return
                 #self.addToPath(self.currentMetaData["name"])

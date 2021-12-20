@@ -99,22 +99,6 @@ class MyDriveLoginTab(QDialog):
         retval = msg.exec_()
         return
 
-    def getUserData(self, token):
-        log("Getting user data")
-        apiurl = f"{URL}/account/info"
-        headers = CaseInsensitiveDict()
-        headers["Authorization"] = f"Bearer {token}"
-        resp = requests.get(apiurl, headers=headers)
-        data = resp.json()
-        jlog(data)
-        if (resp):
-            log("getUserData success")
-            self.userInfo = data
-            return True
-        log("getUserData failed")
-        return False
-        
-
     def loginButton(self):
         """ handler for the log in button """
         actual_remember = False
@@ -151,9 +135,9 @@ class MyDriveLoginTab(QDialog):
                 log("login token saved to settings")
             else:
                 log("token NOT saved to settings")
-            
-            if self.getUserData(loginToken):
-                self.loginSignal.emit(loginToken, self.userInfo)
+            success, data  = getUserData(loginToken)
+            if success:
+                self.loginSignal.emit(loginToken, self.data)
             self.username = ""
             self.password = ""
             self.lineEdit_username.setText("")

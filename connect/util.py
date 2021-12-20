@@ -10,6 +10,7 @@ import requests
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
+from requests.structures import CaseInsensitiveDict
 
 TABSFOLDER = os.path.join(os.path.dirname(__file__), "..", "tabs/")
 ICONSFOLDER = os.path.join(os.path.dirname(__file__), "..", "icons/")
@@ -122,6 +123,21 @@ def getRootName(root):
         return rootName[root]
     return root
 
+def getUserData(token):
+    log("Getting user data")
+    apiurl = f"{URL}/account/info"
+    headers = CaseInsensitiveDict()
+    headers["Authorization"] = f"Bearer {token}"
+    resp = requests.get(apiurl, headers=headers)
+    if (resp):
+        data = resp.json()
+        jlog(data)
+        log("getUserData success")
+        return True, data
+    log("getUserData failed")
+    log(resp.reason)
+    return False, None
+
 def makeRequest(url, headers, data=None):
         log(f"Requesting {url}")
         success = True
@@ -133,6 +149,7 @@ def makeRequest(url, headers, data=None):
                 log(data)
                 log(headers)
                 log(j1)
+                log(j1.reason)
                 success = False
             else:
                 log("Request successful")
@@ -164,15 +181,15 @@ def connected_to_internet(url=URL, timeout=5):
 
 def getErrorLevel(map):
     """ receives a map object (from the api) and returns whether there is something wrong with it or not """
-    if "deleted" in map and map["deleted"]:
+    if map["deleted"]:
         return ErrorLevel.DELETED
-    elif "isShape" in map and "timestamps" in map and (not map["isShape"] and len(map["timestamps"]) == 0):
+    elif map["type"] == "map" and len(map["timestamps"]) == 0:
         return ErrorLevel.NOTIMESTAMPS
-    elif "isShape" in map and "geometryLayers" and (map["isShape"] and len(map["geometryLayers"]) == 0):
+    elif map["type"] == "shape" and len(map["geometryLayers"]) == 0:
         return ErrorLevel.NOLAYERS
-    elif "disabled" in map and map["disabled"]:
+    elif map["disabled"]:
         return ErrorLevel.DISABLED
-    elif "accessLevel" in map and map["accessLevel"] < 200:
+    elif map["yourAccess"]["accessLevel"] < 200:
         return ErrorLevel.WCSACCESS
     else:
         return ErrorLevel.NORMAL
@@ -201,12 +218,12 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
     elif isFolder:
         icon = QIcon(FOLDERICON)
         item = ListData(Type.FOLDER, mapdata["id"], extra=mapdata["name"])
-    elif mapdata["isShape"]:
+    elif mapdata["type"] == "shape":
         icon = QIcon(VECTORICON)
-        item = ListData(Type.SHAPE, mapdata["id"], mapdata["isShape"])
+        item = ListData(Type.SHAPE, mapdata["id"], True)
     else:
         icon = QIcon(RASTERICON)
-        item = ListData(Type.MAP, mapdata["id"], mapdata["isShape"])
+        item = ListData(Type.MAP, mapdata["id"], False)
 
     # now we handle the errorLevel
     if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL or errorLevel == ErrorLevel.WCSACCESS:
@@ -231,17 +248,6 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
         newitem.setData(QtCore.Qt.UserRole, item)
         newitem.setIcon(QIcon(ERRORICON))
         return newitem
-     
-
-
-def getMetadata(mapid, token):
-    """ Returns metadata (in JSON) for a map (by mapid) by calling the Ellipsis API"""
-    headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
-    headers["Authorization"] = f"Bearer {token}"
-    data = {
-        "mapId": f"{mapid}",
-    }
-    return makeRequest("/metadata", headers=headers, data=data)
 
 def getUrl(mode, mapId, token = "empty"):
     """ constructs the url and copies it to the clipboard"""
