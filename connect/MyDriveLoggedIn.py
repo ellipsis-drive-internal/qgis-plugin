@@ -42,7 +42,7 @@ class MyDriveLoggedInTab(QDialog):
 
         QgsProject.instance().layersAdded.connect(self.zoomHandler)
 
-        self.loginToken = ""
+        self.loginToken = None
         self.loggedIn = False
         self.userInfo = {}
         self.path = "/"
@@ -159,11 +159,10 @@ class MyDriveLoggedInTab(QDialog):
         # if we're searching, the regular rules don't apply
         if self.currentMode == ViewMode.SEARCH:
             root, folderpath = self.getPathInfo(itemdata)
-            jlog(folderpath)
+            if root is None and folderpath is None:
+                return
             folderpath.reverse()
             self.folderStack = [[ "base", "base"], ["root", root]]
-            log("================start=============================")
-            first = True
             for folder in folderpath:
                 log("Adding 'regular' folder")
                 log(folder)
@@ -174,17 +173,14 @@ class MyDriveLoggedInTab(QDialog):
                 self.currentSubMode = ViewSubMode.NONE
             else:
                 self.folderStack.pop()
-                self.currentMetaData = getMetadata(itemdata, self.loginToken)[1]
+                success, self.currentMetaData = getMetadata(itemdata, self.loginToken)
+                if not success:
+                    return
                 self.currentMode = ViewMode.SHAPE
                 self.currentSubMode = ViewSubMode.NONE
                 if itemtype == Type.MAP:
                     self.currentMode = ViewMode.MAP
                 self.currentItem = item
-
-            log("====================result========================")
-            log(self.folderStack)
-            log(folderpath)
-            log("====================result========================")
 
             self.lineEdit_search.clear()
             self.pushButton_stopsearch.setEnabled(False)
@@ -213,8 +209,11 @@ class MyDriveLoggedInTab(QDialog):
                 #self.removeFromPath()
 
             elif self.currentMode == ViewMode.WCS or self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS:
-                self.currentMode = ViewMode.MAP
-                self.currentSubMode = ViewSubMode.NONE
+                if self.currentSubMode == ViewSubMode.TIMESTAMPS:
+                    self.currentMode = ViewMode.MAP
+                    self.currentSubMode = ViewSubMode.NONE
+                elif self.currentSubMode == ViewSubMode.MAPLAYERS:
+                    self.currentSubMode = ViewSubMode.TIMESTAMPS
                 #self.removeFromPath()
 
         elif self.currentMode == ViewMode.FOLDERS:
@@ -223,7 +222,9 @@ class MyDriveLoggedInTab(QDialog):
                 self.onNext()
 
             elif itemtype == Type.SHAPE or itemtype == Type.MAP:
-                self.currentMetaData = getMetadata(itemdata, self.loginToken)[1]
+                success, self.currentMetaData = getMetadata(itemdata, self.loginToken)
+                if not success:
+                    return
                 #self.addToPath(self.currentMetaData["name"])
                 if itemtype == Type.SHAPE:
                     self.currentMode = ViewMode.SHAPE
@@ -258,7 +259,6 @@ class MyDriveLoggedInTab(QDialog):
             self.setPath()
 
         if (self.currentMode == ViewMode.FOLDERS):
-            log("================yeahpoaahah==========")
             log(self.folderStack)
             if (len(self.folderStack) == 1):
                 self.populateListWithRoot()
@@ -323,13 +323,18 @@ class MyDriveLoggedInTab(QDialog):
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&url={theurl}"
             log("WMS")
             log(actualurl)
-            #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
-            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
             
-            #if not rlayer.isValid():
-            #    log("Layer failed to load!") 
-            #else:
-            #    QgsProject.instance().addMapLayer(rlayer)
+            # iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            
+            if not rlayer.isValid():
+                displayMessageBox("Error loading layer", "Layer failed to load.")
+                log("Layer failed to load!")
+                log(rlayer)
+                log(rlayer.error())
+                log(dir(rlayer))
+            else:
+                QgsProject.instance().addMapLayer(rlayer)
             # we have to restore the previous item as the current item, to maintain the view (instead of 'opening' the layer)
             self.currentItem = self.previousItem
 
@@ -355,14 +360,15 @@ class MyDriveLoggedInTab(QDialog):
             theurl = F"{URL}/wmts/{mapid}/{self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
-            #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
             
-            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            # iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
 
-            #if not rlayer.isValid():
-            #    log("Layer failed to load!") 
-            #else:
-            #    QgsProject.instance().addMapLayer(rlayer)
+            if not rlayer.isValid():
+                displayMessageBox("Error loading layer", "Layer failed to load.")
+                log("Layer failed to load!")
+            else:
+               QgsProject.instance().addMapLayer(rlayer)
             # same as above
             self.currentItem = self.previousItem
 
@@ -394,7 +400,8 @@ class MyDriveLoggedInTab(QDialog):
         rlayer = QgsVectorLayer(uri, text, 'wfs')
 
         if not rlayer.isValid():
-            log("Layer failed to load!") 
+            displayMessageBox("Error loading layer", "Layer failed to load.")
+            log("Layer failed to load!")
         else:
             QgsProject.instance().addMapLayer(rlayer)
         
@@ -423,7 +430,8 @@ class MyDriveLoggedInTab(QDialog):
         rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'wcs')
 
         if not rlayer.isValid():
-            log("Layer failed to load!") 
+            displayMessageBox("Error loading layer", "Layer failed to load.")
+            log("Layer failed to load!")
         else:
             QgsProject.instance().addMapLayer(rlayer)
         
@@ -441,7 +449,7 @@ class MyDriveLoggedInTab(QDialog):
     def resetState(self):
         """ helper function to reset our state (used when logging out) """
         self.clearListWidget()
-        self.loginToken = ""
+        self.loginToken = None
         self.loggedIn = False
         self.userInfo = {}
         self.path = "/"
@@ -457,6 +465,7 @@ class MyDriveLoggedInTab(QDialog):
         self.currentFolderId = None
         self.currentZoom = None
         self.highlightedID = ""
+        self.highlightedType = None
         self.stateBeforeSearch = {}
         self.lineEdit_search.clear()
         self.setPath()
