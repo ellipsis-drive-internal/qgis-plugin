@@ -137,7 +137,7 @@ class MyDriveLoginTab(QDialog):
                 log("token NOT saved to settings")
             success, data  = getUserData(loginToken)
             if success:
-                self.loginSignal.emit(loginToken, self.data)
+                self.loginSignal.emit(loginToken, data)
             self.username = ""
             self.password = ""
             self.lineEdit_username.setText("")
