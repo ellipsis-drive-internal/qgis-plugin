@@ -386,6 +386,9 @@ class MyDriveLoggedInTab(QDialog):
         QtCore.QTimer.singleShot(500, lambda:iface.zoomToActiveLayer())
 
     def WFSDoubleClick(self, item):
+        
+        # !!!! WFS should be CAPITALS, the other protocols should be lowercase
+
         text = item.text()
         itemdata = item.data((QtCore.Qt.UserRole))
         #id = item.data((QtCore.Qt.UserRole)).getData()
@@ -404,7 +407,6 @@ class MyDriveLoggedInTab(QDialog):
         log(uri)
         
         rlayer = QgsVectorLayer(uri, text, 'WFS')
-        # log(f"iface.addVectorLayer({uri}, {text}, 'WFS')")
         # iface.addVectorLayer(uri, text, 'WFS')
 
         if not rlayer.isValid():
