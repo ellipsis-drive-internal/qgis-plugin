@@ -403,13 +403,15 @@ class MyDriveLoggedInTab(QDialog):
         uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
         log(uri)
         
-        rlayer = QgsVectorLayer(uri, text, 'wfs')
+        # rlayer = QgsVectorLayer(uri, text, 'wfs')
 
-        if not rlayer.isValid():
-            displayMessageBox("Error loading layer", "Layer failed to load.")
-            log("Layer failed to load!")
-        else:
-            QgsProject.instance().addMapLayer(rlayer)
+        iface.addVectorLayer(uri, text, 'wfs')
+
+        # if not rlayer.isValid():
+        #     displayMessageBox("Error loading layer", "Layer failed to load.")
+        #     log("Layer failed to load!")
+        # else:
+        #     QgsProject.instance().addMapLayer(rlayer)
         
         self.currentItem = self.previousItem
 
