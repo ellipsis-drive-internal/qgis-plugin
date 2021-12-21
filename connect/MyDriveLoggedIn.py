@@ -303,7 +303,8 @@ class MyDriveLoggedInTab(QDialog):
         elif (self.currentMode == ViewMode.WFS):
             geometryLayers = self.currentMetaData["geometryLayers"]
             for geometryLayer in geometryLayers:
-                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, geometryLayer["name"], data=geometryLayer))
+                if not geometryLayer["deleted"] and not geometryLayer["availability"]["blocked"]:
+                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, geometryLayer["name"], data=geometryLayer))
 
         elif (self.currentMode == ViewMode.WCS):
             timestamps = self.currentMetaData["timestamps"]
