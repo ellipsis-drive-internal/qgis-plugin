@@ -403,7 +403,7 @@ class MyDriveLoggedInTab(QDialog):
         uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
         log(uri)
         
-        rlayer = QgsVectorLayer(uri, text, 'wfs')
+        rlayer = QgsVectorLayer(uri, text, 'WFS')
         # log(f"iface.addVectorLayer({uri}, {text}, 'WFS')")
         # iface.addVectorLayer(uri, text, 'WFS')
 
