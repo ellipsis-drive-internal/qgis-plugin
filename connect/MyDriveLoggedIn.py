@@ -329,18 +329,18 @@ class MyDriveLoggedInTab(QDialog):
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&url={theurl}"
             log("WMS")
             log(actualurl)
-            # rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
             
-            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            # iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
             
-            # if not rlayer.isValid():
-            #     displayMessageBox("Error loading layer", "Layer failed to load.")
-            #     log("Layer failed to load!")
-            #     log(rlayer)
-            #     log(rlayer.error())
-            #     log(dir(rlayer))
-            # else:
-            #     QgsProject.instance().addMapLayer(rlayer)
+            if not rlayer.isValid():
+                displayMessageBox("Error loading layer", "Layer failed to load.")
+                log("Layer failed to load!")
+                log(rlayer)
+                log(rlayer.error())
+                log(dir(rlayer))
+            else:
+                QgsProject.instance().addMapLayer(rlayer)
             # we have to restore the previous item as the current item, to maintain the view (instead of 'opening' the layer)
             self.currentItem = self.previousItem
 
@@ -366,15 +366,15 @@ class MyDriveLoggedInTab(QDialog):
             theurl = F"{URL}/wmts/{mapid}/{self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
-            #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
             
-            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            # iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
 
-            # if not rlayer.isValid():
-            #     displayMessageBox("Error loading layer", "Layer failed to load.")
-            #     log("Layer failed to load!")
-            # else:
-            #    QgsProject.instance().addMapLayer(rlayer)
+            if not rlayer.isValid():
+                displayMessageBox("Error loading layer", "Layer failed to load.")
+                log("Layer failed to load!")
+            else:
+               QgsProject.instance().addMapLayer(rlayer)
             # same as above
             self.currentItem = self.previousItem
 
@@ -403,15 +403,15 @@ class MyDriveLoggedInTab(QDialog):
         uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
         log(uri)
         
-        # rlayer = QgsVectorLayer(uri, text, 'wfs')
-        log(f"iface.addVectorLayer({uri}, {text}, 'WFS')")
-        iface.addVectorLayer(uri, text, 'WFS')
+        rlayer = QgsVectorLayer(uri, text, 'wfs')
+        # log(f"iface.addVectorLayer({uri}, {text}, 'WFS')")
+        # iface.addVectorLayer(uri, text, 'WFS')
 
-        # if not rlayer.isValid():
-        #     displayMessageBox("Error loading layer", "Layer failed to load.")
-        #     log("Layer failed to load!")
-        # else:
-        #     QgsProject.instance().addMapLayer(rlayer)
+        if not rlayer.isValid():
+            displayMessageBox("Error loading layer", "Layer failed to load.")
+            log("Layer failed to load!")
+        else:
+            QgsProject.instance().addMapLayer(rlayer)
         
         self.currentItem = self.previousItem
 
