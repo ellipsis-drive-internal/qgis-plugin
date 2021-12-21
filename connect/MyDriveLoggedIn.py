@@ -289,7 +289,8 @@ class MyDriveLoggedInTab(QDialog):
                 timestamps = self.currentMetaData["timestamps"]
                 maplayers = self.currentMetaData["mapLayers"]
                 for timestamp in timestamps:
-                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp, extra=maplayers))
+                    if timestamp["status"] == "finished":
+                        self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp, extra=maplayers))
 
             elif (self.currentSubMode == ViewSubMode.MAPLAYERS):
                 self.currentTimestamp = item.getData()
@@ -307,7 +308,8 @@ class MyDriveLoggedInTab(QDialog):
         elif (self.currentMode == ViewMode.WCS):
             timestamps = self.currentMetaData["timestamps"]
             for timestamp in timestamps:
-                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp))
+                if timestamp["status"] == "finished":
+                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp))
 
     def WMSDoubleClick(self, item):
         itemtype = item.data((QtCore.Qt.UserRole)).getType()
