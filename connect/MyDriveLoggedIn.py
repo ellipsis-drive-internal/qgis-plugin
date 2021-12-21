@@ -331,7 +331,7 @@ class MyDriveLoggedInTab(QDialog):
             log(actualurl)
             # rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
             
-            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
             
             # if not rlayer.isValid():
             #     displayMessageBox("Error loading layer", "Layer failed to load.")
@@ -368,7 +368,7 @@ class MyDriveLoggedInTab(QDialog):
             log(actualurl)
             #rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
             
-            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
 
             # if not rlayer.isValid():
             #     displayMessageBox("Error loading layer", "Layer failed to load.")
@@ -404,8 +404,8 @@ class MyDriveLoggedInTab(QDialog):
         log(uri)
         
         # rlayer = QgsVectorLayer(uri, text, 'wfs')
-
-        iface.addVectorLayer(uri, text, 'wfs')
+        log(f"iface.addVectorLayer({uri}, {text}, 'WFS')")
+        iface.addVectorLayer(uri, text, 'WFS')
 
         # if not rlayer.isValid():
         #     displayMessageBox("Error loading layer", "Layer failed to load.")
@@ -435,7 +435,7 @@ class MyDriveLoggedInTab(QDialog):
         self.clearListWidget()
         self.listWidget_mydrive.addItem(toListItem(Type.MESSAGE, "Loading..."))
 
-        rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'wcs')
+        rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'WCS')
 
         if not rlayer.isValid():
             displayMessageBox("Error loading layer", "Layer failed to load.")
