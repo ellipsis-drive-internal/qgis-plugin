@@ -297,7 +297,8 @@ class MyDriveLoggedInTab(QDialog):
                 timestamps = self.currentMetaData["timestamps"]
                 maplayers = self.currentMetaData["mapLayers"]
                 for timestamp in timestamps:
-                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp, extra=maplayers))
+                    if timestamp["status"] == "finished":
+                        self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp, extra=maplayers))
 
             elif (self.currentSubMode == ViewSubMode.MAPLAYERS):
                 self.currentTimestamp = item.getData()
@@ -310,12 +311,14 @@ class MyDriveLoggedInTab(QDialog):
         elif (self.currentMode == ViewMode.WFS):
             geometryLayers = self.currentMetaData["geometryLayers"]
             for geometryLayer in geometryLayers:
-                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, geometryLayer["name"], data=geometryLayer))
+                if not geometryLayer["deleted"] and not geometryLayer["availability"]["blocked"]:
+                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, geometryLayer["name"], data=geometryLayer))
 
         elif (self.currentMode == ViewMode.WCS):
             timestamps = self.currentMetaData["timestamps"]
             for timestamp in timestamps:
-                self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp))
+                if timestamp["status"] == "finished":
+                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp))
 
     def WMSDoubleClick(self, item):
         itemtype = item.data((QtCore.Qt.UserRole)).getType()
@@ -371,7 +374,7 @@ class MyDriveLoggedInTab(QDialog):
             theurl = F"{URL}/wmts/{mapid}/{self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
-            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'WMS')
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
             
             # iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
 
@@ -391,6 +394,9 @@ class MyDriveLoggedInTab(QDialog):
         QtCore.QTimer.singleShot(500, lambda:iface.zoomToActiveLayer())
 
     def WFSDoubleClick(self, item):
+        
+        # !!!! WFS should be CAPITALS, the other protocols should be lowercase
+
         text = item.text()
         itemdata = item.data((QtCore.Qt.UserRole))
         #id = item.data((QtCore.Qt.UserRole)).getData()
@@ -408,7 +414,8 @@ class MyDriveLoggedInTab(QDialog):
         uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
         log(uri)
         
-        rlayer = QgsVectorLayer(uri, text, 'wfs')
+        rlayer = QgsVectorLayer(uri, text, 'WFS')
+        # iface.addVectorLayer(uri, text, 'WFS')
 
         if not rlayer.isValid():
             displayMessageBox("Error loading layer", "Layer failed to load.")
