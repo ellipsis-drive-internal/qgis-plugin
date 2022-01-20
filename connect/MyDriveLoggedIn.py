@@ -403,13 +403,16 @@ class MyDriveLoggedInTab(QDialog):
         mapid = self.currentMetaData["id"]
         theurl = F"{URL}/wfs/{mapid}/{self.loginToken}?"
 
+        extend = itemdata.getData()["extent"]
+
         #typename moet dus layerId_{layer ID zijn}
         params = {
             'service': 'WFS',
             'version': '2.0.0',
             'request': 'GetFeature',
             'typename': f'layerId_{itemdata.getData()["id"]}',
-            'srsname': "EPSG:4326"
+            'srsname': "EPSG:4326",
+            'BBOX': f"{extend['xMin'],extend['xMax'], extend['yMin'], extend['yMax']}"
         }
         uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
         log(uri)
