@@ -2,9 +2,7 @@ import json
 import os
 import urllib
 import webbrowser
-from copy import copy
 from PyQt5.uic.uiparser import QtWidgets
-
 import requests
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
@@ -412,10 +410,12 @@ class MyDriveLoggedInTab(QDialog):
             'request': 'GetFeature',
             'typename': f'layerId_{itemdata.getData()["id"]}',
             'srsname': "EPSG:4326",
-            'BBOX': f"{extend['xMin'],extend['xMax'], extend['yMin'], extend['yMax']}"
+            'BBOX': f"{extend['xMin']},{extend['xMax']},{extend['yMin']},{extend['yMax']}",
+            'restrictToRequestBBOX': 1
         }
+
+
         uri = f'{theurl}' + urllib.parse.unquote(urllib.parse.urlencode(params))
-        log(uri)
         
         rlayer = QgsVectorLayer(uri, text, 'WFS')
         # iface.addVectorLayer(uri, text, 'WFS')
