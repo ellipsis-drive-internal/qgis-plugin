@@ -121,7 +121,29 @@ class MyDriveLoggedInTab(QDialog):
         self.setLayout(self.gridLayout)
 
     def onRefresh(self):
-        log("Refresh")    
+        # what we have to do probably depends on the state that we're in 
+        if self.currentMode == ViewMode.BASE:
+            pass # TODO remove this
+        elif self.currentMode == ViewMode.ROOT:
+            pass # TODO remove this also
+        elif self.currentMode == ViewMode.FOLDERS:
+            # fetch everything inside the folder again
+            pass
+        elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP]:
+            # reload the protocols: do nothing basically? maybe check for WCS access level
+            pass
+        elif self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
+            
+            # success, self.currentMetaData = self.getMetadata(self.current)
+            self.fillListWidget()
+            # fetch the layers and stuff
+            pass
+        elif self.currentMode == ViewMode.SEARCH:
+            # perform search again
+            pass
+
+        self.fillListWidget()
+        log("Refresh")
 
     def onOpenBrowser(self):
         if "id" in self.currentMetaData:
@@ -130,11 +152,19 @@ class MyDriveLoggedInTab(QDialog):
             webbrowser.open(f"https://app.ellipsis-drive.com/view?mapId={self.highlightedID}")
         return
 
-        if self.highlightedType == Type.SHAPE or self.highlightedType == Type.MAP:
-            webbrowser.open(f"https://app.ellipsis-drive.com/view?mapId={self.highlightedID}") 
-        elif self.highlightedType == Type.FOLDER and False:
-            root, _ = self.getPathInfo(self.highlightedID)
-            webbrowser.openf(f"https://app.ellipsis-drive.com/drive/{root}?pathId={self.highlightedID}")
+        if self.currentMode == ViewMode.FOLDERS:
+            # if in the root, open the root
+            # else, open the folder 
+            pass
+        elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP]:
+            # open the map
+            pass
+        elif self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
+            # still open the map
+            pass
+        elif self.currentMode == ViewMode.SEARCH:
+            # open search..?
+            pass
 
     def addReturnItem(self):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
@@ -305,7 +335,7 @@ class MyDriveLoggedInTab(QDialog):
                     self.listWidget_mydrive.addItem(toListItem(Type.MAPLAYER, mapLayer["name"], mapLayer))
 
         elif (self.currentMode == ViewMode.MAP or self.currentMode == ViewMode.SHAPE):
-            self.populateListWithProtocols(Type.MAP if self.currentMode == ViewMode.MAP else Type.SHAPE, item.getDisableWCS())
+            self.populateListWithProtocols(Type.MAP if self.currentMode == ViewMode.MAP else Type.SHAPE)
         elif (self.currentMode == ViewMode.WFS):
             geometryLayers = self.currentMetaData["geometryLayers"]
             for geometryLayer in geometryLayers:
@@ -846,16 +876,15 @@ class MyDriveLoggedInTab(QDialog):
             self.settings.remove("token")
         self.logoutSignal.emit()
 
-    def populateListWithProtocols(self, type, disableWCS = False):
-        log(f"listing protocols for {type}, disableWCS = {disableWCS}")
+    def populateListWithProtocols(self, type):
+        log(f"listing protocols for {type}")
         if type == Type.SHAPE:
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WFS", "WFS"))
 
         elif type == Type.MAP:
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WMS", "WMS"))
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WMTS", "WMTS"))
-            if not disableWCS:
-                self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WCS", "WCS"))
+            self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WCS", "WCS"))
 
     def populateListWithRoot(self):
         """ Adds the 3 root folders to the widget """

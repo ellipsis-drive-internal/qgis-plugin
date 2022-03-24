@@ -226,8 +226,7 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
         item = ListData(Type.MAP, mapdata["id"], False)
 
     # now we handle the errorLevel
-    if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL or errorLevel == ErrorLevel.WCSACCESS:
-        item.setDisableWCS(errorLevel == ErrorLevel.WCSACCESS)
+    if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL:
         newitem.setText(mapdata["name"])
         newitem.setData(QtCore.Qt.UserRole, item)
         newitem.setIcon(icon)
@@ -238,6 +237,7 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
             ErrorLevel.NOTIMESTAMPS: "Map has no timestamps",
             ErrorLevel.NOLAYERS: "Shape has no layers",
             ErrorLevel.DISABLED: "Project disabled",
+            ErrorLevel.WCSACCESS: "Access level too low"
         }
         if isFolder and errorLevel != ErrorLevel.NORMAL:
             errmsgdict[ErrorLevel.DELETED] = "Folder deleted"
@@ -261,18 +261,11 @@ def getUrl(mode, mapId, token = "empty"):
 
 class ListData:
     """ Class used for objects in the QList of the EllipsisConnect plugin """
-    def __init__(self, type="none", data="", isaShape=None, shouldDisableWCS=False, extra=None):
+    def __init__(self, type="none", data="", isaShape=None, extra=None):
         self.type = type
         self.data = data
         self.isaShape = isaShape
-        self.shouldDisableWCS = shouldDisableWCS
         self.extra = extra
-    
-    def setDisableWCS(self, val):
-        self.shouldDisableWCS = val
-
-    def getDisableWCS(self):
-        return self.shouldDisableWCS
 
     def setExtra(self, extra):
         self.extra = extra
