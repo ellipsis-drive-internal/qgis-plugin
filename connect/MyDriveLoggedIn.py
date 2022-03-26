@@ -121,13 +121,20 @@ class MyDriveLoggedInTab(QDialog):
         self.setLayout(self.gridLayout)
 
     def onRefresh(self):
-        # what we have to do probably depends on the state that we're in 
-        if self.currentMode == ViewMode.BASE:
-            pass # TODO remove this
-        elif self.currentMode == ViewMode.ROOT:
-            pass # TODO remove this also
-        elif self.currentMode == ViewMode.FOLDERS:
-            # fetch everything inside the folder again
+        # what we have to do depends on the state that we're in 
+
+        if self.currentMode == ViewMode.FOLDERS:
+            folder = self.folderStack[-1]
+            if folder[0] == "base": # starting location
+                return
+                # we could do this but it doesn't really make sense to do so
+                self.clearListWidget()
+                self.populateListWithRoot()
+            elif folder[0] == "root": # root folders
+                if folder[1] in ["myMaps", "shared", "favorites"]:
+                    self.getFolder(folder[1], True)
+            else: # regular folder
+                self.getFolder(folder[1], False)
             pass
         elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP]:
             # reload the protocols: do nothing basically? maybe check for WCS access level
@@ -162,7 +169,7 @@ class MyDriveLoggedInTab(QDialog):
                     url = "https://app.ellipsis-drive.com/drive/shared"
                 elif folder[1] == "favorites":
                     url = "https://app.ellipsis-drive.com/drive/favorites"
-            else: # regular map
+            else: # regular folder
                 url = f"https://app.ellipsis-drive.com/drive/projects?pathId={folder[1]}"
             pass
         elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP, ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
