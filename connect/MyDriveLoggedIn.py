@@ -94,7 +94,7 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_openBrowser = QPushButton()
         self.pushButton_openBrowser.setText("Open in browser")
         self.pushButton_openBrowser.clicked.connect(self.onOpenBrowser)
-        self.pushButton_openBrowser.setEnabled(False)
+        self.pushButton_openBrowser.setEnabled(True)
 
         self.label.setText("Welcome!")
         self.lineEdit_search.setPlaceholderText("Search..")
@@ -146,25 +146,34 @@ class MyDriveLoggedInTab(QDialog):
         log("Refresh")
 
     def onOpenBrowser(self):
-        if "id" in self.currentMetaData:
-            webbrowser.open(f"https://app.ellipsis-drive.com/view?mapId={self.currentMetaData['id']}")
-        else:
-            webbrowser.open(f"https://app.ellipsis-drive.com/view?mapId={self.highlightedID}")
-        return
+        log(self.currentMode)
+        log(self.currentSubMode)
+        log(self.folderStack)
+        url = ""
 
         if self.currentMode == ViewMode.FOLDERS:
-            # if in the root, open the root
-            # else, open the folder 
+            folder = self.folderStack[-1]
+            if folder[0] == "base": # starting location
+                url = "https://app.ellipsis-drive.com/"
+            elif folder[0] == "root": # root folders
+                if folder[1] == "myMaps":
+                    url = "https://app.ellipsis-drive.com/drive/projects"
+                elif folder[1] == "shared":
+                    url = "https://app.ellipsis-drive.com/drive/shared"
+                elif folder[1] == "favorites":
+                    url = "https://app.ellipsis-drive.com/drive/favorites"
+            else: # regular map
+                url = f"https://app.ellipsis-drive.com/drive/projects?pathId={folder[1]}"
             pass
-        elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP]:
-            # open the map
-            pass
-        elif self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
-            # still open the map
-            pass
+        elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP, ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
+            mapid = self.currentMetaData["path"]["path"][0]["id"]
+            url = f"https://app.ellipsis-drive.com/view?mapId={mapid}"
         elif self.currentMode == ViewMode.SEARCH:
-            # open search..?
-            pass
+            url = f"https://app.ellipsis-drive.com/drive/search?q={self.searchText}"
+
+        if not url == "":
+            webbrowser.open(url)
+        
 
     def addReturnItem(self):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
@@ -183,7 +192,6 @@ class MyDriveLoggedInTab(QDialog):
 
 
     def onListWidgetDoubleClick(self, item):
-        self.pushButton_openBrowser.setEnabled(False)
         itemdata = item.data((QtCore.Qt.UserRole)).getData()
         itemtype = item.data((QtCore.Qt.UserRole)).getType()
         """ handler for clicks on items in the folder listwidget """
@@ -315,7 +323,6 @@ class MyDriveLoggedInTab(QDialog):
         # when we're 'inside' a block, we also enable the openBrowser button
         self.highlightedID = item.getData()
         self.highlightedType = item.getType()
-        self.pushButton_openBrowser.setEnabled(True)
 
         self.addReturnItem()
 
@@ -493,7 +500,6 @@ class MyDriveLoggedInTab(QDialog):
         """ handler for the Stop Search button: does what it says it does """
         self.pushButton_stopsearch.setEnabled(False)
         self.lineEdit_search.clear()
-        self.pushButton_openBrowser.setEnabled(False)
         self.setCurrentState(self.stateBeforeSearch)
         self.searchText = ""
 
@@ -553,7 +559,6 @@ class MyDriveLoggedInTab(QDialog):
         self.currentZoom = (state["currentZoom"])
         self.highlightedID = (state["highlightedID"])
         self.highlightedType = (state["highlightedType"])
-        self.pushButton_openBrowser.setEnabled(self.highlightedID != "")
         self.setPath()
         self.fillListWidget()
 
@@ -864,10 +869,7 @@ class MyDriveLoggedInTab(QDialog):
 
         self.highlightedID = itemdata
         self.highlightedType = itemtype
-        if (itemtype == Type.SHAPE or itemtype == Type.MAP or (itemtype == Type.FOLDER and False)):
-            self.pushButton_openBrowser.setEnabled(True)
-        else:
-            self.pushButton_openBrowser.setEnabled(False)
+
 
     def logOut(self):
         """ emits the logout signal and removes the login token from the settings """
