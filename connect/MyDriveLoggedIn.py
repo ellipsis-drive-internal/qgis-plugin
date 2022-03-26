@@ -88,7 +88,7 @@ class MyDriveLoggedInTab(QDialog):
         self.pushButton_stopsearch.setText("Stop search")
 
         self.pushButton_refresh = QPushButton()
-        self.pushButton_refresh.setText("Refresh")
+        self.pushButton_refresh.setIcon(QIcon(REFRESHICON))
         self.pushButton_refresh.clicked.connect(self.onRefresh)
 
         self.pushButton_openBrowser = QPushButton()

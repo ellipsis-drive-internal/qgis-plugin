@@ -20,6 +20,7 @@ VECTORICON = os.path.join(ICONSFOLDER,"vector.svg")
 RASTERICON = os.path.join(ICONSFOLDER,"raster.svg")
 ERRORICON = os.path.join(ICONSFOLDER,"error.svg")
 RETURNICON = os.path.join(ICONSFOLDER,"return.svg")
+REFRESHICON = os.path.join(ICONSFOLDER,"refresh.svg")
 
 PRODUCTIONURL = 'https://api.ellipsis-drive.com/v1'
 DEVURL = 'https://dev.api.ellipsis-drive.com/v1'
