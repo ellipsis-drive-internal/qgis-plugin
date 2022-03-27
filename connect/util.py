@@ -32,7 +32,7 @@ URL = PRODUCTIONURL
 
 MAXPATHLEN = 45
 
-DEBUG = False
+DEBUG = True
 DISABLESEARCH = False
 
 # taken from https://gist.github.com/walkermatt/2871026

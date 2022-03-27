@@ -121,36 +121,34 @@ class MyDriveLoggedInTab(QDialog):
         self.setLayout(self.gridLayout)
 
     def onRefresh(self):
-        # what we have to do depends on the state that we're in 
+        # what we have to do depends on the state that we're in
+
+        self.pushButton_refresh.setEnabled(False)
+        label = self.label_path.text()
+        self.clearListWidget()
+
+        self.label_path.setText("Refreshing")
 
         if self.currentMode == ViewMode.FOLDERS:
             folder = self.folderStack[-1]
-            if folder[0] == "base": # starting location
-                return
-                # we could do this but it doesn't really make sense to do so
-                self.clearListWidget()
+            if folder[0] == "base":
                 self.populateListWithRoot()
-            elif folder[0] == "root": # root folders
-                if folder[1] in ["myMaps", "shared", "favorites"]:
-                    self.getFolder(folder[1], True)
-            else: # regular folder
-                self.getFolder(folder[1], False)
-            pass
+            elif folder[0] == "root":
+                self.fillListWidget()
+                #self.getFolder(folder[1], True)
+            else:
+                self.fillListWidget()
+                #self.getFolder(folder[1], False)
         elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP]:
-            # reload the protocols: do nothing basically? maybe check for WCS access level
-            pass
-        elif self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
-            
-            # success, self.currentMetaData = self.getMetadata(self.current)
             self.fillListWidget()
-            # fetch the layers and stuff
-            pass
+        elif self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
+            _, self.currentMetaData = self.getMetadata(self.currentMetaData["id"])
+            self.fillListWidget()
         elif self.currentMode == ViewMode.SEARCH:
-            # perform search again
-            pass
+            self.performSearch()
 
-        self.fillListWidget()
-        log("Refresh")
+        self.pushButton_refresh.setEnabled(True)
+        self.label_path.setText(label)
 
     def onOpenBrowser(self):
         log(self.currentMode)
@@ -326,8 +324,6 @@ class MyDriveLoggedInTab(QDialog):
 
         item = self.currentItem.data((QtCore.Qt.UserRole))
 
-
-        # when we're 'inside' a block, we also enable the openBrowser button
         self.highlightedID = item.getData()
         self.highlightedType = item.getType()
 
