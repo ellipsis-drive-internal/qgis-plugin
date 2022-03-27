@@ -881,7 +881,7 @@ class MyDriveLoggedInTab(QDialog):
             self.settings.remove("token")
         self.logoutSignal.emit()
 
-    def populateListWithProtocols(self, type):
+    def populateListWithProtocols(self, type, WCSENABLED = True):
         log(f"listing protocols for {type}")
         if type == Type.SHAPE:
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WFS", "WFS"))
@@ -889,7 +889,10 @@ class MyDriveLoggedInTab(QDialog):
         elif type == Type.MAP:
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WMS", "WMS"))
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WMTS", "WMTS"))
-            self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WCS", "WCS"))
+            if WCSENABLED:
+                self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WCS", "WCS"))
+            else:
+                self.listWidget_mydrive.addItem(toListItem(Type.MESSAGE, "WCS (Accesslevel too low)", "WCS", icon=QIcon(ERRORICON)))
 
     def populateListWithRoot(self):
         """ Adds the 3 root folders to the widget """
