@@ -346,7 +346,7 @@ class MyDriveLoggedInTab(QDialog):
 
         elif (self.currentMode == ViewMode.MAP or self.currentMode == ViewMode.SHAPE):
             level = self.currentMetaData["yourAccess"]["accessLevel"]
-            WCSaccess = level > 200
+            WCSaccess = level >= 200
             self.populateListWithProtocols(Type.MAP if self.currentMode == ViewMode.MAP else Type.SHAPE, WCSAccess=WCSaccess)
         elif (self.currentMode == ViewMode.WFS):
             geometryLayers = self.currentMetaData["geometryLayers"]
