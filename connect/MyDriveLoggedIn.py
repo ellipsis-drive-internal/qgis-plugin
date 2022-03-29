@@ -349,7 +349,9 @@ class MyDriveLoggedInTab(QDialog):
                     self.listWidget_mydrive.addItem(toListItem(Type.MAPLAYER, mapLayer["name"], mapLayer))
 
         elif (self.currentMode == ViewMode.MAP or self.currentMode == ViewMode.SHAPE):
-            self.populateListWithProtocols(Type.MAP if self.currentMode == ViewMode.MAP else Type.SHAPE)
+            level = self.currentMetaData["yourAccess"]["accessLevel"]
+            WCSaccess = level > 200
+            self.populateListWithProtocols(Type.MAP if self.currentMode == ViewMode.MAP else Type.SHAPE, WCSAccess=WCSaccess)
         elif (self.currentMode == ViewMode.WFS):
             geometryLayers = self.currentMetaData["geometryLayers"]
             for geometryLayer in geometryLayers:
@@ -885,7 +887,7 @@ class MyDriveLoggedInTab(QDialog):
             self.settings.remove("token")
         self.logoutSignal.emit()
 
-    def populateListWithProtocols(self, type):
+    def populateListWithProtocols(self, type, WCSAccess = True):
         log(f"listing protocols for {type}")
         if type == Type.SHAPE:
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WFS", "WFS"))
@@ -893,7 +895,14 @@ class MyDriveLoggedInTab(QDialog):
         elif type == Type.MAP:
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WMS", "WMS"))
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WMTS", "WMTS"))
-            self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WCS", "WCS"))
+            if WCSAccess:
+                self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WCS", "WCS"))
+            else:
+                    listitem = QListWidgetItem()
+                    listitem.setData(QtCore.Qt.UserRole, "WCS Accesslevel error")
+                    listitem.setText("WCS (Accesslevel too low)")
+                    listitem.setIcon(QIcon(ERRORICON))
+                    return listitem
 
     def populateListWithRoot(self):
         """ Adds the 3 root folders to the widget """
