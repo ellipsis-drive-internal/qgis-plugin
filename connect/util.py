@@ -201,7 +201,7 @@ def toListItem(type, text, data = None, extra = None, icon = None):
     listdata = ListData(type, data, extra = extra)
     listitem.setData(QtCore.Qt.UserRole, listdata)
     listitem.setText(text)
-    if not icon is None:
+    if icon is not None:
         listitem.setIcon(QIcon(icon))
     return listitem
 
@@ -227,7 +227,7 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
         item = ListData(Type.MAP, mapdata["id"], False)
 
     # now we handle the errorLevel
-    if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL:
+    if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL or errorLevel == ErrorLevel.WCSACCESS:
         newitem.setText(mapdata["name"])
         newitem.setData(QtCore.Qt.UserRole, item)
         newitem.setIcon(icon)

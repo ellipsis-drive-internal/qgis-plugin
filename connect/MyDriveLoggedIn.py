@@ -885,6 +885,7 @@ class MyDriveLoggedInTab(QDialog):
 
     def populateListWithProtocols(self, type, WCSAccess = True):
         log(f"listing protocols for {type}")
+        log(f"WCSACCESS: {WCSAccess}")
         if type == Type.SHAPE:
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WFS", "WFS"))
 
@@ -894,11 +895,8 @@ class MyDriveLoggedInTab(QDialog):
             if WCSAccess:
                 self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WCS", "WCS"))
             else:
-                    listitem = QListWidgetItem()
-                    listitem.setData(QtCore.Qt.UserRole, "WCS Accesslevel error")
-                    listitem.setText("WCS (Accesslevel too low)")
-                    listitem.setIcon(QIcon(ERRORICON))
-                    return listitem
+                listitem = toListItem(Type.ERROR, "WCS (Accesslevel too low)", "WCS Accesslevel error")
+                self.listWidget_mydrive.addItem(listitem)
 
     def populateListWithRoot(self):
         """ Adds the 3 root folders to the widget """
