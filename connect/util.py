@@ -2,7 +2,7 @@
 
 import json
 import os
-from enum import Enum, auto
+from enum import Enum, auto, unique
 from threading import Timer
 from typing import List
 
@@ -53,6 +53,7 @@ def debounce(wait):
         return debounced
     return decorator
 
+@unique
 class Type(Enum):
     ROOT = auto()
     FOLDER = auto()
@@ -66,6 +67,7 @@ class Type(Enum):
     ERROR = auto()
     MESSAGE = auto()
 
+@unique
 class ViewMode(Enum):
     BASE = auto()
     ROOT = auto()
@@ -78,6 +80,7 @@ class ViewMode(Enum):
     WCS = auto()
     SEARCH = auto()
 
+@unique
 class ViewSubMode(Enum):
     NONE = auto()
     TIMESTAMPS = auto()
@@ -85,13 +88,15 @@ class ViewSubMode(Enum):
     GEOMETRYLAYERS = auto()
     INFOLDER = auto()
 
+@unique
 class ErrorLevel(Enum):
-    NORMAL = 1
-    DISABLED = 2
-    NOLAYERS = 3
-    NOTIMESTAMPS = 4
-    DELETED = 5
-    WCSACCESS = 6
+    NORMAL = auto()
+    DISABLED = auto()
+    NOLAYERS = auto()
+    NOTIMESTAMPS = auto()
+    DELETED = auto()
+    WCSACCESS = auto()
+    NOACCESS = auto()
 
 rootName = {
     "myMaps": "My Drive",
@@ -190,6 +195,8 @@ def getErrorLevel(map):
         return ErrorLevel.NOLAYERS
     elif map["disabled"]:
         return ErrorLevel.DISABLED
+    elif map["yourAccess"]["accessLevel"] == 0:
+        return ErrorLevel.NOACCESS
     elif map["yourAccess"]["accessLevel"] < 200:
         return ErrorLevel.WCSACCESS
     else:
@@ -238,7 +245,8 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
             ErrorLevel.NOTIMESTAMPS: "Map has no timestamps",
             ErrorLevel.NOLAYERS: "Shape has no layers",
             ErrorLevel.DISABLED: "Project disabled",
-            ErrorLevel.WCSACCESS: "Access level too low"
+            ErrorLevel.WCSACCESS: "Access level too low",
+            ErrorLevel.NOACCESS: "Access level is 0"
         }
         if isFolder and errorLevel != ErrorLevel.NORMAL:
             errmsgdict[ErrorLevel.DELETED] = "Folder deleted"
