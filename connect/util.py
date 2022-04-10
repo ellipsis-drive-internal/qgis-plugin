@@ -258,10 +258,10 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
         newitem.setIcon(QIcon(ERRORICON))
         return newitem
 
-def getUrl(mode, mapId, token = "empty"):
+def getUrl(mode, mapId, token = None):
     """ constructs the url and copies it to the clipboard"""
     theurl = ""
-    if token == "empty":
+    if token is None:
         theurl = f"{URL}/{mode}/{mapId}"
     else:
         theurl = f"{URL}/{mode}/{mapId}/{token}"
