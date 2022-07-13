@@ -1,17 +1,13 @@
-import json
-import os
 import urllib
 import webbrowser
 from PyQt5.uic.uiparser import QtWidgets
-import requests
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import (QDial, QDialog, QDockWidget, QGridLayout, QLabel,
-                             QLineEdit, QListWidget, QPushButton, QSizePolicy, QWidget)
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QListWidget, QPushButton, QWidget
+from cv2 import RETR_TREE
 from qgis.core import *
-from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
-from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
+from qgis.PyQt.QtWidgets import QListWidgetItem
 from qgis.utils import iface
 from requests import api
 
@@ -32,7 +28,10 @@ def mapViewMode(str):
         return ViewMode.WCS
 
 class MyDriveLoggedInTab(QDialog):
-    """ The LoggedIn tab, giving users access to their drive. Used in combination with the MyDriveTab and the MyDriveLoginTab"""
+    """ 
+    The LoggedIn tab, giving users access to their drive. 
+    Used in combination with the MyDriveTab and the MyDriveLoginTab
+    """
     logoutSignal = pyqtSignal()
     def __init__(self):
         super(MyDriveLoggedInTab, self).__init__()
@@ -178,7 +177,6 @@ class MyDriveLoggedInTab(QDialog):
 
         if not url == "":
             webbrowser.open(url)
-        
 
     def addReturnItem(self):
         self.listWidget_mydrive.addItem(toListItem(Type.RETURN, "..", icon=RETURNICON))
@@ -187,7 +185,9 @@ class MyDriveLoggedInTab(QDialog):
         data = {
             "pathId": mapid,
         }
-        return self.request("/info", data=data)
+        rettype, content = self.request("/info", data=data)
+        rettype = reqToBool(rettype)
+        return rettype, content
 
     def getPathInfo(self, id):
         success, output = self.getMetadata(id)
@@ -657,7 +657,7 @@ class MyDriveLoggedInTab(QDialog):
         """ handler for the Next button, used for navigating the folder structure """
         #log("BEGIN")
         #log(self.folderStack)
-        success = True
+        success = ReqType.SUCC
         if (len(self.folderStack) == 1 and not self.currentMode == ViewMode.SEARCH):
             success = self.onNextRoot()
         else:
@@ -666,7 +666,9 @@ class MyDriveLoggedInTab(QDialog):
             self.currentFolderId = self.currentItem.data(QtCore.Qt.UserRole).getData()
             self.currentMode = ViewMode.FOLDERS
             self.currentItem = None
-        else:
+        elif success == ReqType.AUTHERR:
+            pass
+        elif success == ReqType.FAIL:
             displayMessageBox("Error!", "Cannot open this folder")
         self.setPath()
 
@@ -675,33 +677,50 @@ class MyDriveLoggedInTab(QDialog):
         log("onnextnormal")
         pathId = self.currentItem.data(QtCore.Qt.UserRole).getData()
         name = self.currentItem.data(QtCore.Qt.UserRole).getExtra()
-        if self.getFolder(pathId):
+        rettype = self.getFolder(pathId)
+        if rettype:
             self.folderStack.append([name, pathId])
             self.setPath()
             return True
         else:
             log("Error! onNextNormal: getFolder failed")
             log(f"pathid: {pathId}")
-            return False
-        #self.addToPath(pathId = self.selected.get)
+            return rettype
 
     def onNextRoot(self):
         """ onNext for root folders """
         log("onnextroot")
         root = self.currentItem.data(QtCore.Qt.UserRole).getData()
-        if self.getFolder(root, True):
+        rettype = self.getFolder(root, True)
+        if rettype:
             self.folderStack.append(["root", root])
             return True
         else:
             log("Error! onNextRoot: getFolder failed")
             log(f"root: {root}")
-            return False
+            return rettype
 
     def request(self, url, data, headers=None,):
         if headers is None:
             headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
             headers["Authorization"] = f"Bearer {self.loginToken}"
-        return makeRequest(url, headers, data)
+        status, content =  makeRequest(url, headers, data)
+
+        if status == ReqType.AUTHERR:
+            # token expired!
+            # display message, logout the user
+            log("Token expired!!")
+            displayMessageBox("Authentication error", "Token has expired")
+            return status, None
+        elif status == ReqType.CONNERR:
+            # connection error!
+            # display messagebox I think? maybe go to no internet screen
+            log("Connection error!!")
+            return status, None
+        elif status == ReqType.FAIL:
+            return False, content
+        
+        return True, content
 
     @debounce(0.5)
     def performSearch(self):
@@ -748,20 +767,29 @@ class MyDriveLoggedInTab(QDialog):
         while havefolders and (not resfolders["nextPageStart"] is None):
             log("pagination on folders in search")
             data["pageStart"] = resfolders["nextPageStart"]
-            _, resfolders = self.request(apiurlfolders, data)
-            folders += resfolders["result"]
+            rettype, resfolders = self.request(apiurlfolders, data)
+            if rettype:
+                folders += resfolders["result"]
+            else:
+                break
 
         while havemaps and (not resmaps["nextPageStart"] is None):
             log("pagination on maps in search")
             data["pageStart"] = resmaps["nextPageStart"]
-            _, resmaps = self.request(apiurlmaps, data)
-            maps += resmaps["result"]
+            rettype, resmaps = self.request(apiurlmaps, data)
+            if rettype:
+                maps += resmaps["result"]
+            else:
+                break
         
         while haveshapes and (not resshapes["nextPageStart"] is None):
             log("pagination on shapes in search")
             data["pageStart"] = resshapes["nextPageStart"]
-            _, resshapes = self.request(apiurlshapes, data)
-            shapes += resshapes["result"]
+            rettype, resshapes = self.request(apiurlshapes, data)
+            if rettype:
+                shapes += resshapes["result"]
+            else:
+                break
 
         #folders first
         if havefolders and self.currentMode == ViewMode.SEARCH:
@@ -810,8 +838,12 @@ class MyDriveLoggedInTab(QDialog):
         success1, resmaps = self.request(apiurl, datamap)
         success2, resfolders = self.request(apiurl, datafolder)
 
+        if success1 == ReqType.AUTHERR or success2 == ReqType.AUTHERR:
+            displayMessageBox("AUTH ERRORRRRR", "AUTH ERRORRRR")
+            return ReqType.AUTHERR
+
         if not success1 and not success2:
-            return
+            return False
 
         havefolders = False
         havemaps = False
@@ -829,14 +861,20 @@ class MyDriveLoggedInTab(QDialog):
         while havefolders and (not resfolders["nextPageStart"] is None):
             log("Pagination on folders in getFolder")
             datafolder["pageStart"] = resfolders["nextPageStart"]
-            _, resfolders = self.request(apiurl, datafolder)
-            folders += resfolders["result"]
+            rettype, resfolders = self.request(apiurl, datafolder)
+            if rettype:
+                 folders += resfolders["result"]
+            else:
+                break
 
         while havemaps and (not resmaps["nextPageStart"] is None):
             log("Pagination on maps in getFolder")
             datamap["pageStart"] = resmaps["nextPageStart"]
-            _, resmaps = self.request(apiurl, datamap)
-            maps += resmaps["result"]
+            rettype, resmaps = self.request(apiurl, datamap)
+            if rettype:
+                maps += resmaps["result"]
+            else:
+                break
 
         if havefolders:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders]

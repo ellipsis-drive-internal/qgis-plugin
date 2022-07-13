@@ -1,10 +1,8 @@
 import os
 from PyQt5.QtCore import QSize
-from qgis.utils import isPluginLoaded
 
-import requests
-from PyQt5.QtWidgets import QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QCheckBox, QPushButton, QSizePolicy, QSpacerItem, QStackedWidget, QWidget
-from qgis.PyQt import uic, QtGui, QtWidgets, uic
+from PyQt5.QtWidgets import QDockWidget, QStackedWidget, QWidget
+from qgis.PyQt import uic
 
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from .MyDriveLoggedIn import MyDriveLoggedInTab
@@ -15,6 +13,7 @@ from .util import *
 FORM_CLASS, _ = uic.loadUiType(os.path.join(TABSFOLDER, "MyDriveStack.ui"))
 
 class MyDriveTab(QDockWidget, FORM_CLASS):
+    """ the class that encapsulates the other views that are actually shown """
     loginSignal = pyqtSignal(object)
     logoutSignal = pyqtSignal()
     closingPlugin = pyqtSignal()
@@ -57,12 +56,14 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.checkOnlineAndSetIndex()
 
     def sizeHint(self):
+        """ size hint for qgis """
         a = QWidget.sizeHint(self)
         a.setHeight(SIZEH)
         a.setWidth(SIZEW)
         return a
         
     def checkOnlineAndSetIndex(self):
+        """ check if we have an internet connection, and set the (starting) tabindex accordingly """
         self.isOnline = connected_to_internet()
 
         self.loginWidget.isOnline = self.isOnline
@@ -84,19 +85,23 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
             self.stackedWidget.setCurrentIndex(0)
 
     def isLoggedIn(self):
+        """ checks if a token is present, returns a tuple of (bool, token/none) """
         if not self.settings.contains("token"):
             return [False, None]
         else:
             return [True, self.settings.value("token")]
 
     def handleConnectedSignal(self):
+        """ signal handler """
         self.checkOnlineAndSetIndex()
         
     def closeEvent(self, event):
+        """ event handler """
         self.closingPlugin.emit()
         event.accept()
 
     def handleLoginSignal(self, token, userInfo):
+        """ login signlar handler"""
         log("login signal received!")
         self.loginToken = token
         self.loggedIn = True
@@ -110,6 +115,7 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.stackedWidget.setCurrentIndex(1)
     
     def handleLogoutSignal(self):
+        """ logout singal handler """
         log("logout signal received!")
         self.loggedIn = False
         self.loginToken = None

@@ -1,9 +1,5 @@
-import os
-from PyQt5.QtCore import QLine, QSize
-
 import requests
-from PyQt5.QtWidgets import QCheckBox, QDialog, QDockWidget, QGridLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QSpacerItem, QWidget
-from qgis.PyQt import uic
+from PyQt5.QtWidgets import QCheckBox, QDialog, QGridLayout, QLabel, QLineEdit, QPushButton, QSizePolicy, QSpacerItem, QWidget
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from qgis.PyQt.QtWidgets import QMessageBox
 from requests.structures import CaseInsensitiveDict
@@ -28,18 +24,21 @@ class MyDriveLoginTab(QDialog):
         self.loggedIn = False
 
     def keyPressEvent(self, qKeyEvent):
-        if qKeyEvent.key() == QtCore.Qt.Key_Return: 
+        """ enable the user to press enter to log in """
+        if qKeyEvent.key() == QtCore.Qt.Key_Return:
             self.loginButton()
         else:
             super().keyPressEvent(qKeyEvent)
 
     def sizeHint(self):
+        """ used by qgis to set the size """
         a = QWidget.sizeHint(self)
         a.setHeight(SIZEH)
         a.setWidth(SIZEW)
         return a
 
     def constructUI(self):
+        """ function that constructs the login UI """
         self.gridLayout = QGridLayout()
         
         self.label_username = QLabel()
@@ -76,9 +75,11 @@ class MyDriveLoginTab(QDialog):
         self.setLayout(self.gridLayout)
 
     def onChangeRemember(self, button):
+        """ function called when the 'remember me' checkbox is clicked """
         self.rememberMe = button.isChecked()
 
     def confirmRemember(self):
+        """ confirm if the user is sure that they want their info to be remembered """
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
 
@@ -90,6 +91,7 @@ class MyDriveLoginTab(QDialog):
         return retval == QMessageBox.Ok
 
     def displayLoginError(self):
+        """ displays an error, called when the login fails """
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Warning)
 
@@ -115,13 +117,14 @@ class MyDriveLoginTab(QDialog):
 
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
-        data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 3155760000)
+        data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 10) # orignal value 3155760000
 
         log(data)
         try:
             resp = requests.post(apiurl, headers=headers, data=data)
-        except:
+        except requests.exceptions.RequestException as e:
             displayMessageBox("Request failed", "Please check your internet connection")
+            log(e)
             return
         data = resp.json()
         jlog(data)
@@ -135,7 +138,7 @@ class MyDriveLoginTab(QDialog):
                 log("login token saved to settings")
             else:
                 log("token NOT saved to settings")
-            success, data  = getUserData(loginToken)
+            success, data = getUserData(loginToken)
             if success:
                 self.loginSignal.emit(loginToken, data)
             self.username = ""
@@ -147,7 +150,9 @@ class MyDriveLoginTab(QDialog):
             log("Login failed")
 
     def onUsernameChange(self, text):
+        """ makes the internal username match the form """
         self.username = text
 
     def onPasswordChange(self, text):
+        """ makes the internal password match the form """
         self.password = text

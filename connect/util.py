@@ -4,7 +4,7 @@ import json
 import os
 from enum import Enum, auto, unique
 from threading import Timer
-from typing import List
+from winreg import REG_QWORD
 
 import requests
 from PyQt5 import QtCore
@@ -55,6 +55,7 @@ def debounce(wait):
 
 @unique
 class Type(Enum):
+    """ enum that describes what type an item has """
     ROOT = auto()
     FOLDER = auto()
     MAP = auto()
@@ -69,6 +70,7 @@ class Type(Enum):
 
 @unique
 class ViewMode(Enum):
+    """ describes what we are currently viewing """
     BASE = auto()
     ROOT = auto()
     FOLDERS = auto()
@@ -82,6 +84,7 @@ class ViewMode(Enum):
 
 @unique
 class ViewSubMode(Enum):
+    """ inside a single viewmode there exists submodes, this represents which one we are viewing """
     NONE = auto()
     TIMESTAMPS = auto()
     MAPLAYERS = auto()
@@ -90,6 +93,7 @@ class ViewSubMode(Enum):
 
 @unique
 class ErrorLevel(Enum):
+    """ enum to describe the error level, NORMAL means nothing wrong with the map """
     NORMAL = auto()
     DISABLED = auto()
     NOLAYERS = auto()
@@ -97,6 +101,17 @@ class ErrorLevel(Enum):
     DELETED = auto()
     WCSACCESS = auto()
     NOACCESS = auto()
+
+@unique
+class ReqType(Enum):
+    """ enum describing the type of request result """
+    SUCC = auto()
+    FAIL = auto()
+    CONNERR = auto()
+    AUTHERR = auto()
+
+    def __bool__(self):
+        return self == ReqType.SUCC
 
 rootName = {
     "myMaps": "My Drive",
@@ -125,11 +140,13 @@ stringToProt = {
 }
 
 def getRootName(root):
+    """ convert a root 'name' to its representing string """
     if root in rootName:
         return rootName[root]
     return root
 
 def getUserData(token):
+    """ TODO this should use makeRequest """
     log("Getting user data")
     apiurl = f"{URL}/account/info"
     headers = CaseInsensitiveDict()
@@ -145,32 +162,40 @@ def getUserData(token):
     return False, None
 
 def makeRequest(url, headers, data=None):
-        log(f"Requesting {url}")
-        success = True
-        try:
-            j1 = requests.post(f"{URL}{url}", json=data, headers=headers)
-            if not j1:
-                log("Request failed!")
-                log(f"{URL}{url}")
-                log(data)
-                log(headers)
-                log(j1)
-                log(j1.reason)
-                success = False
-            else:
-                log("Request successful")
-                log(f"{URL}{url}")
-                log(data)
-                log(headers)
-                log(j1)
-                success = True
-            return success, json.loads(j1.text)
-        except requests.ConnectionError:
-            displayMessageBox("Request failed", "Please check your internet connection")
-            return False, None
+    """ makes api requests, and returns a tuple of (resulttype, result/None) """
+    log(f"Requesting {url}")
+
+    success = ReqType.SUCC
+    try:
+        j1 = requests.post(f"{URL}{url}", json=data, headers=headers)
+        if not j1:
+            log("Request failed!")
+            log(f"{URL}{url}")
+            log(data)
+            log(headers)
+            log(j1)
+            log(j1.reason)
+            success = ReqType.FAIL
+        
+            if j1.status_code == 401:
+                # token is probably expired
+                log("token expired")
+                return ReqType.AUTHERR, None
+        else:
+            log("Request successful")
+            log(f"{URL}{url}")
+            log(data)
+            log(headers)
+            log(j1)
+            success = ReqType.SUCC
+        return success, json.loads(j1.text)
+    except requests.ConnectionError:
+        # displayMessageBox("Request failed", "Please check your internet connection")
+        return ReqType.CONNERR, None
 
 @debounce(0.5)
 def displayMessageBox(title, text):
+    """ utility function that shows a messagebox, debounced to not spam users accidentaly """
     msg = QMessageBox()
     msg.setWindowTitle(title)
     msg.setText(text)
@@ -178,6 +203,7 @@ def displayMessageBox(title, text):
     msg.exec_()
 
 def connected_to_internet(url=URL, timeout=5):
+    """ check for connection error """
     try:
         _ = requests.head(url, timeout=timeout)
         return True
@@ -277,26 +303,33 @@ class ListData:
         self.extra = extra
 
     def setExtra(self, extra):
+        """ setter """
         self.extra = extra
     
     def getExtra(self):
+        """ getter """
         return self.extra
 
     def setData(self, type, data, isaShape):
+        """ setter """
         self.type = type
         self.data = data
         self.isaShape = isaShape
 
     def getData(self):
+        """ getter """
         return self.data
 
     def getType(self):
+        """ getter """
         return self.type
     
     def isShape(self):
+        """ getter """
         return self.isaShape
 
     def isEmpty(self):
+        """ check if data is empty """
         return self.type == "none" and self.data == ""
 
 def log(text):
