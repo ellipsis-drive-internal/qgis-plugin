@@ -4,7 +4,6 @@ import json
 import os
 from enum import Enum, auto, unique
 from threading import Timer
-from winreg import REG_QWORD
 
 import requests
 from PyQt5 import QtCore

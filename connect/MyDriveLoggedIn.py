@@ -4,7 +4,6 @@ from PyQt5.uic.uiparser import QtWidgets
 from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QListWidget, QPushButton, QWidget
-from cv2 import RETR_TREE
 from qgis.core import *
 from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from qgis.PyQt.QtWidgets import QListWidgetItem
