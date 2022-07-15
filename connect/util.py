@@ -24,12 +24,13 @@ REFRESHICON = os.path.join(ICONSFOLDER,"refresh.svg")
 PRODUCTIONURL = 'https://api.ellipsis-drive.com/v1'
 DEVURL = 'https://dev.api.ellipsis-drive.com/v1'
 
+V1URL = 'https://api.ellipsis-drive.com/v1'
 V2URL = 'https://api.ellipsis-drive.com/v2'
 
 SIZEW = 0
 SIZEH = 500
 
-URL = PRODUCTIONURL
+URL = V1URL
 
 MAXPATHLEN = 45
 
@@ -162,18 +163,28 @@ def getUserData(token):
     log(resp.reason)
     return False, None
 
-def makeRequest(url, headers, data=None):
+def makeRequest(url, headers, data=None, version=0):
     """ makes api requests, and returns a tuple of (resulttype, result/None) """
-    log(f"Requesting {url}")
+
+    if version == 0:
+        APIURL = URL
+    elif version == 1:
+        APIURL = V1URL
+    elif version == 2:
+        APIURL = V2URL
+
+    FULLURL = f"{APIURL}{url}"   
+
+    log(f"Requesting '{FULLURL}'")
     log(data)
     log(headers)
 
     success = ReqType.SUCC
     try:
-        j1 = requests.post(f"{URL}{url}", json=data, headers=headers)
+        j1 = requests.post(f"{FULLURL}", json=data, headers=headers)
         if not j1:
             log("Request failed!")
-            log(f"{URL}{url}")
+            log(f"{FULLURL}")
             log(data)
             log(headers)
             log(j1)
@@ -186,7 +197,7 @@ def makeRequest(url, headers, data=None):
                 return ReqType.AUTHERR, None
         else:
             log("Request successful")
-            log(f"{URL}{url}")
+            log(f"{FULLURL}")
             log(data)
             log(headers)
             log(j1)
