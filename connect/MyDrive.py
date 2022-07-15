@@ -89,7 +89,18 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         if not self.settings.contains("token"):
             return [False, None]
         else:
-            return [True, self.settings.value("token")]
+            curToken = self.settings.value("token")
+
+            #check if token is still valid
+            log("Token found, checking validity")
+            headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+            headers["Authorization"] = f"Bearer {curToken}"
+            status, _ = makeRequest("", headers)
+            log(status)
+            if status:
+                return [True, self.settings.value("token")]
+            else:
+                return [False, None]
 
     def handleConnectedSignal(self):
         """ signal handler """
