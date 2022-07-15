@@ -112,18 +112,18 @@ class MyDriveLoginTab(QDialog):
             else:
                 actual_remember = True
 
-        apiurl = f"{URL}/account/login"
+        apiurl = f"{V2URL}/account/login"
         log(f'Logging in: username: {self.username}, password: {self.password}')
 
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
-        data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 10) # orignal value 3155760000
+        data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 30) # orignal value 3155760000
 
         log(data)
         try:
             resp = requests.post(apiurl, headers=headers, data=data)
         except requests.exceptions.RequestException as e:
-            displayMessageBox("Request failed", "Please check your internet connection")
+            getMessageBox("Request failed", "Please check your internet connection").exec_()
             log(e)
             return
         data = resp.json()

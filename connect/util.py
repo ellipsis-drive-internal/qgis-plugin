@@ -24,6 +24,8 @@ REFRESHICON = os.path.join(ICONSFOLDER,"refresh.svg")
 PRODUCTIONURL = 'https://api.ellipsis-drive.com/v1'
 DEVURL = 'https://dev.api.ellipsis-drive.com/v1'
 
+V2URL = 'https://api.ellipsis-drive.com/v2'
+
 SIZEW = 0
 SIZEH = 500
 
@@ -163,6 +165,8 @@ def getUserData(token):
 def makeRequest(url, headers, data=None):
     """ makes api requests, and returns a tuple of (resulttype, result/None) """
     log(f"Requesting {url}")
+    log(data)
+    log(headers)
 
     success = ReqType.SUCC
     try:
@@ -192,14 +196,13 @@ def makeRequest(url, headers, data=None):
         # displayMessageBox("Request failed", "Please check your internet connection")
         return ReqType.CONNERR, None
 
-@debounce(0.5)
-def displayMessageBox(title, text):
-    """ utility function that shows a messagebox, debounced to not spam users accidentaly """
+def getMessageBox(title, text):
+    """ utility function that returns a messagebox """
     msg = QMessageBox()
     msg.setWindowTitle(title)
     msg.setText(text)
     msg.setStandardButtons(QMessageBox.Ok)
-    msg.exec_()
+    return msg
 
 def connected_to_internet(url=URL, timeout=5):
     """ check for connection error """

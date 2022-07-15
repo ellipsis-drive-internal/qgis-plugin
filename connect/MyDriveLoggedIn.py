@@ -185,7 +185,6 @@ class MyDriveLoggedInTab(QDialog):
             "pathId": mapid,
         }
         rettype, content = self.request("/info", data=data)
-        rettype = reqToBool(rettype)
         return rettype, content
 
     def getPathInfo(self, id):
@@ -381,7 +380,7 @@ class MyDriveLoggedInTab(QDialog):
             # iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
             
             if not rlayer.isValid():
-                displayMessageBox("Error loading layer", "Layer failed to load.")
+                getMessageBox("Error loading layer", "Layer failed to load.").exec_()
                 log("Layer failed to load!")
                 log(rlayer)
                 log(rlayer.error())
@@ -418,7 +417,7 @@ class MyDriveLoggedInTab(QDialog):
             # iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
 
             if not rlayer.isValid():
-                displayMessageBox("Error loading layer", "Layer failed to load.")
+                getMessageBox("Error loading layer", "Layer failed to load.").exec_()
                 log("Layer failed to load!")
             else:
                QgsProject.instance().addMapLayer(rlayer)
@@ -462,7 +461,7 @@ class MyDriveLoggedInTab(QDialog):
         # iface.addVectorLayer(uri, text, 'WFS')
 
         if not rlayer.isValid():
-            displayMessageBox("Error loading layer", "Layer failed to load.")
+            getMessageBox("Error loading layer", "Layer failed to load.").exec_()
             log("Layer failed to load!")
         else:
             QgsProject.instance().addMapLayer(rlayer)
@@ -492,7 +491,7 @@ class MyDriveLoggedInTab(QDialog):
         rlayer = QgsRasterLayer(wcsUri, f'{self.currentMetaData["name"]}', 'wcs')
 
         if not rlayer.isValid():
-            displayMessageBox("Error loading layer", "Layer failed to load.")
+            getMessageBox("Error loading layer", "Layer failed to load.").exec_()
             log("Layer failed to load!")
         else:
             QgsProject.instance().addMapLayer(rlayer)
@@ -668,7 +667,7 @@ class MyDriveLoggedInTab(QDialog):
         elif success == ReqType.AUTHERR:
             pass
         elif success == ReqType.FAIL:
-            displayMessageBox("Error!", "Cannot open this folder")
+            getMessageBox("Error!", "Cannot open this folder").exec_()
         self.setPath()
 
     def onNextNormal(self):
@@ -709,17 +708,14 @@ class MyDriveLoggedInTab(QDialog):
             # token expired!
             # display message, logout the user
             log("Token expired!!")
-            displayMessageBox("Authentication error", "Token has expired")
-            return status, None
+            getMessageBox("Authentication error", "Your login token has probably expired, please log out and log in again.").exec_()
         elif status == ReqType.CONNERR:
             # connection error!
             # display messagebox I think? maybe go to no internet screen
-            log("Connection error!!")
-            return status, None
-        elif status == ReqType.FAIL:
-            return False, content
+            log("Connection error!")
+            getMessageBox("Connection error", "Please check your internet connection and try again.").exec_()
         
-        return True, content
+        return status, content
 
     @debounce(0.5)
     def performSearch(self):
@@ -740,8 +736,19 @@ class MyDriveLoggedInTab(QDialog):
         }
 
         sucm, resmaps = self.request(apiurlmaps, data)
+
+        if sucm == ReqType.AUTHERR:
+            return ReqType.AUTHERR
+
         sucs, resshapes = self.request(apiurlshapes, data)
+
+        if sucm == ReqType.AUTHERR:
+            return ReqType.AUTHERR
+
         sucf, resfolders = self.request(apiurlfolders, data)
+
+        if sucm == ReqType.AUTHERR:
+            return ReqType.AUTHERR
         
         havefolders = False
         haveshapes = False
@@ -835,10 +842,13 @@ class MyDriveLoggedInTab(QDialog):
             }
 
         success1, resmaps = self.request(apiurl, datamap)
+
+        if success1 == ReqType.AUTHERR:
+            return ReqType.AUTHERR
+
         success2, resfolders = self.request(apiurl, datafolder)
 
-        if success1 == ReqType.AUTHERR or success2 == ReqType.AUTHERR:
-            displayMessageBox("AUTH ERRORRRRR", "AUTH ERRORRRR")
+        if success2 == ReqType.AUTHERR:
             return ReqType.AUTHERR
 
         if not success1 and not success2:
