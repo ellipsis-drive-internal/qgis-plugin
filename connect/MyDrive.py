@@ -85,7 +85,7 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
             self.stackedWidget.setCurrentIndex(0)
 
     def isLoggedIn(self):
-        """ checks if a token is present, returns a tuple of (bool, token/none) """
+        """ checks if a token is present, returns a tuple of (bool, token/None) """
         if not self.settings.contains("token"):
             return [False, None]
         else:
@@ -96,9 +96,14 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
             headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
             headers["Authorization"] = f"Bearer {curToken}"
             status, content = makeRequest("/validate", headers, version=2)
+            log(content)
             if status and content["valid"]:
+                log("Token still valid")
                 return [True, self.settings.value("token")]
             else:
+                # remove invalid token
+                log("Removing invalid token")
+                self.settings.remove("token")
                 return [False, None]
 
     def handleConnectedSignal(self):

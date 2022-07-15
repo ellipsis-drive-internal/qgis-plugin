@@ -117,9 +117,10 @@ class MyDriveLoginTab(QDialog):
 
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
-        data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 30) # orignal value 3155760000
+        data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 30) # max value is 5184000
 
         log(data)
+
         try:
             resp = requests.post(apiurl, headers=headers, data=data)
         except requests.exceptions.RequestException as e:
