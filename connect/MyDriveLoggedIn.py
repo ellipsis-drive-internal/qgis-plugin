@@ -708,7 +708,8 @@ class MyDriveLoggedInTab(QDialog):
             # token expired!
             # display message, logout the user
             log("Token expired!!")
-            getMessageBox("Authentication error", "Your login token has probably expired, please log out and log in again.").exec_()
+            getMessageBox("Authentication error", "Your login token has probably expired, please log in again.").exec_()
+            self.logOut()
         elif status == ReqType.CONNERR:
             # connection error!
             # display messagebox I think? maybe go to no internet screen

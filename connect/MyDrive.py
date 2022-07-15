@@ -77,7 +77,7 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
             success, data = getUserData(self.loginToken)
             if success:
                 self.loggedInWidget.userInfo = data
-                self.loggedInWidget.label.setText(f"Welcome {data['username']}")
+                self.loggedInWidget.label.setText(f"Welcome {data['username']}!")
             self.loggedInWidget.loggedIn = True
             self.loggedInWidget.loginToken = self.loginToken
             self.stackedWidget.setCurrentIndex(1)
