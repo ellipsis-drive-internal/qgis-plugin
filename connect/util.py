@@ -1,9 +1,11 @@
 """ This file contains functions and constants used by the LogIn/LoggedIn/Community tabs """
 
+from encodings import normalize_encoding
 import json
 import os
 from enum import Enum, auto, unique
 from threading import Timer
+from urllib import parse
 
 import requests
 from PyQt5 import QtCore
@@ -116,14 +118,14 @@ class ReqType(Enum):
         return self == ReqType.SUCC
 
 rootName = {
-    "myMaps": "My Drive",
-    "shared": "Shared",
+    "myDrive": "My Drive",
+    "sharedWithMe": "Shared",
     "favorites": "Favorites",
 }
 
 nameRoot = {
-    "My Drive": "myMaps",
-    "Shared": "shared",
+    "My Drive": "myDrive",
+    "Shared": "sharedWithMe",
     "Favorites": "favorites",
 }
 
@@ -163,7 +165,7 @@ def getUserData(token):
     log(resp.reason)
     return False, None
 
-def makeRequest(url, headers, data=None, version=0):
+def makeRequest(url, headers, data=None, version=2):
     """ makes api requests, and returns a tuple of (resulttype, result/None) """
 
     if version == 0:
@@ -173,11 +175,15 @@ def makeRequest(url, headers, data=None, version=0):
     elif version == 2:
         APIURL = V2URL
 
-    FULLURL = f"{APIURL}{url}"   
+    FULLURL = f"{APIURL}{url}"
 
     log(f"Requesting '{FULLURL}'")
     log(data)
     log(headers)
+
+    # do URL encode for GET parameters
+
+    FULLURL = f"{FULLURL}"
 
     success = ReqType.SUCC
     try:

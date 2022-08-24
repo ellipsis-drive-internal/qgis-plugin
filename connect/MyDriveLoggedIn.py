@@ -159,9 +159,9 @@ class MyDriveLoggedInTab(QDialog):
             if folder[0] == "base": # starting location
                 url = "https://app.ellipsis-drive.com/"
             elif folder[0] == "root": # root folders
-                if folder[1] == "myMaps":
+                if folder[1] == "myDrive":
                     url = "https://app.ellipsis-drive.com/drive/projects"
-                elif folder[1] == "shared":
+                elif folder[1] == "sharedWithMe":
                     url = "https://app.ellipsis-drive.com/drive/shared"
                 elif folder[1] == "favorites":
                     url = "https://app.ellipsis-drive.com/drive/favorites"
@@ -210,7 +210,7 @@ class MyDriveLoggedInTab(QDialog):
             log(root)
             if root is None and folderpath is None:
                 return
-            root = "shared" if root == "sharedWithMe" else root # ugly fix for weird api
+            #root = "shared" if root == "sharedWithMe" else root # ugly fix for weird api
             folderpath.reverse()
             self.folderStack = [[ "base", "base"], ["root", root]]
             for folder in folderpath:
@@ -822,24 +822,24 @@ class MyDriveLoggedInTab(QDialog):
         datamap = {}
         datafolder= {}
         if (isRoot):
-            apiurl = f"/path/listRoot"
+            apiurl = f"/account/root/{id}"
             datamap = {
-                "root": f"{id}",
-                "type": "map"
+                "rootName": f"{id}",
+                "isFolder": False
             }
             datafolder = {
-                "root": f"{id}",
-                "type": "folder"
+                "rootName": f"{id}",
+                "isFolder": True
             }
         else:
-            apiurl = f"/path/listFolder"
+            apiurl = f"/path/{id}/list"
             datamap = {
                 "pathId": f"{id}",
-                "type": "map"
+                "isFolder": False
             }
             datafolder = {
                 "pathId": f"{id}",
-                "type": "folder"
+                "isFolder": True
             }
 
         success1, resmaps = self.request(apiurl, datamap)
@@ -948,8 +948,8 @@ class MyDriveLoggedInTab(QDialog):
 
     def populateListWithRoot(self):
         """ Adds the 3 root folders to the widget """
-        myprojects = ListData(Type.ROOT, "myMaps")
-        sharedwithme = ListData(Type.ROOT, "shared")
+        myprojects = ListData(Type.ROOT, "myDrive")
+        sharedwithme = ListData(Type.ROOT, "sharedWithMe")
         favorites = ListData(Type.ROOT, "favorites")
 
         myprojectsitem = QListWidgetItem()
