@@ -1,6 +1,5 @@
 """ This file contains functions and constants used by the LogIn/LoggedIn/Community tabs """
 
-from encodings import normalize_encoding
 import json
 import os
 from enum import Enum, auto, unique
@@ -165,8 +164,26 @@ def getUserData(token):
     log(resp.reason)
     return False, None
 
-def makeRequest(url, headers, data=None, version=2):
+def GET(url, headers, data):
+    """ make GET request """
+    coded_data = ""
+    if data is not None:
+        coded_data = parse.urlencode(query=data)
+    CALLURL = f"{url}{coded_data}"
+    return requests.get(CALLURL, headers=headers)
+
+def POST(url, headers, data):
+    """ make POST request """
+    return requests.post(url, json=data, headers=headers)
+
+def makeRequest(url, headers, data=None, version=2, method="GET"):
     """ makes api requests, and returns a tuple of (resulttype, result/None) """
+
+    def req(url, h, d):
+        if method == "GET":
+            return GET(url, h, d)
+        elif method == "POST":
+            return POST(url, h, d)
 
     if version == 0:
         APIURL = URL
@@ -181,13 +198,11 @@ def makeRequest(url, headers, data=None, version=2):
     log(data)
     log(headers)
 
-    # do URL encode for GET parameters
-
     FULLURL = f"{FULLURL}"
 
     success = ReqType.SUCC
     try:
-        j1 = requests.post(f"{FULLURL}", json=data, headers=headers)
+        j1 = req(f"{FULLURL}", headers, data)
         if not j1:
             log("Request failed!")
             log(f"{FULLURL}")

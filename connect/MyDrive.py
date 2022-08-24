@@ -95,7 +95,7 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
             log("Token found, checking validity")
             headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
             headers["Authorization"] = f"Bearer {curToken}"
-            status, content = makeRequest("/validate", headers, version=2)
+            status, content = makeRequest("/validate", headers, version=2, method="POST")
             log(content)
             if status and content["valid"]:
                 log("Token still valid")
