@@ -169,7 +169,8 @@ def GET(url, headers, data):
     coded_data = ""
     if data is not None:
         coded_data = parse.urlencode(query=data)
-    CALLURL = f"{url}{coded_data}"
+    CALLURL = f"{url}?{coded_data}"
+    log(f"Callurl = {CALLURL}")
     return requests.get(CALLURL, headers=headers)
 
 def POST(url, headers, data):
@@ -185,16 +186,17 @@ def makeRequest(url, headers, data=None, version=2, method="GET"):
         elif method == "POST":
             return POST(url, h, d)
 
-    if version == 0:
-        APIURL = URL
-    elif version == 1:
+    if version == 1:
         APIURL = V1URL
     elif version == 2:
         APIURL = V2URL
+    else:
+        APIURL = URL
 
     FULLURL = f"{APIURL}{url}"
 
     log(f"Requesting '{FULLURL}'")
+    log(method)
     log(data)
     log(headers)
 
@@ -247,20 +249,26 @@ def connected_to_internet(url=URL, timeout=5):
 
 def getErrorLevel(map):
     """ receives a map object (from the api) and returns whether there is something wrong with it or not """
-    if map["deleted"]:
-        return ErrorLevel.DELETED
-    elif map["type"] == "map" and len(map["timestamps"]) == 0:
+    
+    # if map["deleted"]:
+    #     return ErrorLevel.DELETED
+
+    if map["type"] == "map" and len(map["timestamps"]) == 0:
         return ErrorLevel.NOTIMESTAMPS
-    elif map["type"] == "shape" and len(map["geometryLayers"]) == 0:
+
+    if map["type"] == "shape" and len(map["geometryLayers"]) == 0:
         return ErrorLevel.NOLAYERS
-    elif map["disabled"]:
+
+    if map["user"]["disabled"]:
         return ErrorLevel.DISABLED
-    elif map["yourAccess"]["accessLevel"] == 0:
+
+    if map["yourAccess"]["accessLevel"] == 0:
         return ErrorLevel.NOACCESS
-    elif map["yourAccess"]["accessLevel"] < 200:
+
+    if map["yourAccess"]["accessLevel"] < 200:
         return ErrorLevel.WCSACCESS
-    else:
-        return ErrorLevel.NORMAL
+    
+    return ErrorLevel.NORMAL
 
 def toListItem(type, text, data = None, extra = None, icon = None):
     """ same as convertMapdataToListItem, but for timestamps and maplayers. should be refactored sometime """

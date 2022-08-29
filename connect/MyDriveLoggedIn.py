@@ -184,7 +184,9 @@ class MyDriveLoggedInTab(QDialog):
         data = {
             "pathId": mapid,
         }
-        rettype, content = self.request("/info", data=data)
+        rettype, content = self.request(f"/path/{mapid}", data=data)
+        log("METADATA:")
+        log(content)
         return rettype, content
 
     def getPathInfo(self, id):
@@ -327,11 +329,13 @@ class MyDriveLoggedInTab(QDialog):
 
         self.addReturnItem()
 
+        maptype = self.currentMetaData["type"]
+
         if (self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS or self.currentMode == ViewMode.WCS):
             
             if (self.currentSubMode == ViewSubMode.TIMESTAMPS):
-                timestamps = self.currentMetaData["timestamps"]
-                maplayers = self.currentMetaData["mapLayers"]
+                timestamps = self.currentMetaData[maptype]["timestamps"]
+                maplayers = self.currentMetaData[maptype]["layers"]
                 for timestamp in timestamps:
                     if timestamp["status"] == "finished":
                         self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp, extra=maplayers))
@@ -353,7 +357,7 @@ class MyDriveLoggedInTab(QDialog):
                     self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, geometryLayer["name"], data=geometryLayer))
 
         elif (self.currentMode == ViewMode.WCS):
-            timestamps = self.currentMetaData["timestamps"]
+            timestamps = self.currentMetaData["raster"]["timestamps"]
             for timestamp in timestamps:
                 if timestamp["status"] == "finished":
                     self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp))
@@ -702,8 +706,8 @@ class MyDriveLoggedInTab(QDialog):
         if headers is None:
             headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
             headers["Authorization"] = f"Bearer {self.loginToken}"
-        status, content =  makeRequest(url, headers, data, method)
-
+        status, content =  makeRequest(url, headers, data, version=2, method=method)
+        log(content)
         if status == ReqType.AUTHERR:
             # token expired!
             # display message, logout the user
@@ -825,21 +829,21 @@ class MyDriveLoggedInTab(QDialog):
             apiurl = f"/account/root/{id}"
             datamap = {
                 "rootName": f"{id}",
-                "isFolder": False
+                "isFolder": "false"
             }
             datafolder = {
                 "rootName": f"{id}",
-                "isFolder": True
+                "isFolder": "true"
             }
         else:
             apiurl = f"/path/{id}/list"
             datamap = {
                 "pathId": f"{id}",
-                "isFolder": False
+                "isFolder": "false"
             }
             datafolder = {
                 "pathId": f"{id}",
-                "isFolder": True
+                "isFolder": "true"
             }
 
         success1, resmaps = self.request(apiurl, datamap)
