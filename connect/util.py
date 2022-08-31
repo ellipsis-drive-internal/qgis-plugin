@@ -1,5 +1,6 @@
 """ This file contains functions and constants used by the LogIn/LoggedIn/Community tabs """
 
+from email import header
 import json
 import os
 from enum import Enum, auto, unique
@@ -31,7 +32,7 @@ V2URL = 'https://api.ellipsis-drive.com/v2'
 SIZEW = 0
 SIZEH = 500
 
-URL = V1URL
+URL = V2URL
 
 MAXPATHLEN = 45
 
@@ -151,15 +152,13 @@ def getRootName(root):
 def getUserData(token):
     """ TODO this should use makeRequest """
     log("Getting user data")
-    apiurl = f"{URL}/account/info"
     headers = CaseInsensitiveDict()
     headers["Authorization"] = f"Bearer {token}"
-    resp = requests.get(apiurl, headers=headers)
-    if (resp):
-        data = resp.json()
-        jlog(data)
+    return makeRequest("/account", headers=headers)
+    if (succ):
         log("getUserData success")
-        return True, data
+        jlog(content)
+        return succ, content
     log("getUserData failed")
     log(resp.reason)
     return False, None
@@ -175,16 +174,23 @@ def GET(url, headers, data):
 
 def POST(url, headers, data):
     """ make POST request """
+    log("POST")
+    log(headers)
+    log(data)
     return requests.post(url, json=data, headers=headers)
 
 def makeRequest(url, headers, data=None, version=2, method="GET"):
     """ makes api requests, and returns a tuple of (resulttype, result/None) """
 
+    log("makeRequest")
+    log(headers)
+    log(data)
+
     def req(url, h, d):
         if method == "GET":
-            return GET(url, h, d)
-        elif method == "POST":
-            return POST(url, h, d)
+            return GET(url, headers=h, data=d)
+        else: # method == "POST"
+            return POST(url, headers=h, data=d)
 
     if version == 1:
         APIURL = V1URL
@@ -204,7 +210,7 @@ def makeRequest(url, headers, data=None, version=2, method="GET"):
 
     success = ReqType.SUCC
     try:
-        j1 = req(f"{FULLURL}", headers, data)
+        j1 = req(f"{FULLURL}", h=headers, d=data)
         if not j1:
             log("Request failed!")
             log(f"{FULLURL}")

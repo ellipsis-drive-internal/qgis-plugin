@@ -117,25 +117,24 @@ class MyDriveLoginTab(QDialog):
 
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
-        data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 5184000) # max value is 5184000
+        data = {}
+        data["username"] = self.username
+        data["password"] = self.password
+        data["validFor"] = 5184000 # max value is 5184000
+        # data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 5184000) # max value is 5184000
 
         log(data)
 
-        try:
-            resp = requests.post(apiurl, headers=headers, data=data)
-        except requests.exceptions.RequestException as e:
-            getMessageBox("Request failed", "Please check your internet connection").exec_()
-            log(e)
-            return
-        data = resp.json()
-        jlog(data)
-        if resp:
+        reqsuc, content = makeRequest("/account/login", headers=headers, data=data, method="POST")
+        log(reqsuc)
+        log(content)
+        if reqsuc:
             #print(f"Token: {data['token']}")
             self.loggedIn = True
-            loginToken = data['token']
+            loginToken = content['token']
             log("logged in")
             if actual_remember:
-                self.settings.setValue("token",data["token"])
+                self.settings.setValue("token", content["token"])
                 log("login token saved to settings")
             else:
                 log("token NOT saved to settings")
