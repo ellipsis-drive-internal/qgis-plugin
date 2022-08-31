@@ -150,7 +150,6 @@ def getRootName(root):
     return root
 
 def getUserData(token):
-    """ TODO this should use makeRequest """
     log("Getting user data")
     headers = CaseInsensitiveDict()
     headers["Authorization"] = f"Bearer {token}"
