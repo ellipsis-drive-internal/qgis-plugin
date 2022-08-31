@@ -250,13 +250,14 @@ def connected_to_internet(url=URL, timeout=5):
 def getErrorLevel(map):
     """ receives a map object (from the api) and returns whether there is something wrong with it or not """
     
-    # if map["deleted"]:
-    #     return ErrorLevel.DELETED
+    # TODO is this correct? trashed in stead of deleted
+    if map["trashed"]:
+         return ErrorLevel.DELETED
 
-    if map["type"] == "map" and len(map["timestamps"]) == 0:
+    if map["type"] == "raster" and len(map["raster"]["timestamps"]) == 0:
         return ErrorLevel.NOTIMESTAMPS
 
-    if map["type"] == "shape" and len(map["geometryLayers"]) == 0:
+    if map["type"] == "vector" and len(map["vector"]["layers"]) == 0:
         return ErrorLevel.NOLAYERS
 
     if map["user"]["disabled"]:
@@ -294,7 +295,7 @@ def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = 
     elif isFolder:
         icon = QIcon(FOLDERICON)
         item = ListData(Type.FOLDER, mapdata["id"], extra=mapdata["name"])
-    elif mapdata["type"] == "shape":
+    elif mapdata["type"] == "vector":
         icon = QIcon(VECTORICON)
         item = ListData(Type.SHAPE, mapdata["id"], True)
     else:

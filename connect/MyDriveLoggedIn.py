@@ -351,9 +351,9 @@ class MyDriveLoggedInTab(QDialog):
             WCSaccess = level >= 200
             self.populateListWithProtocols(Type.MAP if self.currentMode == ViewMode.MAP else Type.SHAPE, WCSAccess=WCSaccess)
         elif (self.currentMode == ViewMode.WFS):
-            geometryLayers = self.currentMetaData["geometryLayers"]
+            geometryLayers = self.currentMetaData["vector"]["layers"]
             for geometryLayer in geometryLayers:
-                if not geometryLayer["deleted"] and not geometryLayer["availability"]["blocked"]:
+                if not geometryLayer["trashed"] and not geometryLayer["availability"]["blocked"]:
                     self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, geometryLayer["name"], data=geometryLayer))
 
         elif (self.currentMode == ViewMode.WCS):
