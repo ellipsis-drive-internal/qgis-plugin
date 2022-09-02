@@ -117,19 +117,12 @@ class MyDriveLoginTab(QDialog):
 
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
-        data = {}
-        data["username"] = self.username
-        data["password"] = self.password
-        data["validFor"] = 5184000 # max value is 5184000
-        # data = '{"username": "%s", "password": "%s", "validFor": %i}' % (self.username, self.password, 5184000) # max value is 5184000
+        data = {"username" : self.username, "password": self.password, "validFor": 5184000} # max value is 5184000
 
         log(data)
 
         reqsuc, content = makeRequest("/account/login", headers=headers, data=data, method="POST")
-        log(reqsuc)
-        log(content)
         if reqsuc:
-            #print(f"Token: {data['token']}")
             self.loggedIn = True
             loginToken = content['token']
             log("logged in")

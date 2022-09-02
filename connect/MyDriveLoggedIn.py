@@ -375,7 +375,7 @@ class MyDriveLoggedInTab(QDialog):
             layerid = itemdata["id"]
             ids = f"{self.currentTimestamp['id']}_{layerid}"
             mapid = self.currentMetaData["id"]
-            theurl = F"{URL}/wms/{mapid}/{self.loginToken}"
+            theurl = F"{URL}/ogc/wms/{mapid}"
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&url={theurl}"
             log("WMS")
             log(actualurl)
@@ -413,7 +413,7 @@ class MyDriveLoggedInTab(QDialog):
             data = itemdata
             ids = f"{self.currentTimestamp['id']}_{data['id']}"
             mapid = self.currentMetaData["id"]
-            theurl = F"{URL}/wmts/{mapid}/{self.loginToken}"
+            theurl = F"{URL}/ogc/wmts/{mapid}/{self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
             rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
@@ -443,7 +443,7 @@ class MyDriveLoggedInTab(QDialog):
         itemdata = item.data((QtCore.Qt.UserRole))
         #id = item.data((QtCore.Qt.UserRole)).getData()
         mapid = self.currentMetaData["id"]
-        theurl = F"{URL}/wfs/{mapid}/{self.loginToken}?"
+        theurl = F"{URL}/ogc/wfs/{mapid}/{self.loginToken}?"
 
         extend = itemdata.getData()["extent"]
 
@@ -484,7 +484,7 @@ class MyDriveLoggedInTab(QDialog):
         timestampid = itemdata.getData()["id"]
 
         mapid = self.currentMetaData["id"]
-        theurl = F"{URL}/wcs/{mapid}/{self.loginToken}"
+        theurl = F"{URL}/ogc/wcs/{mapid}/{self.loginToken}"
         
         wcsUri = makeWCSuri(theurl, timestampid )
 

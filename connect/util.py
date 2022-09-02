@@ -150,17 +150,11 @@ def getRootName(root):
     return root
 
 def getUserData(token):
+    """ retrieves user data from API """
     log("Getting user data")
     headers = CaseInsensitiveDict()
     headers["Authorization"] = f"Bearer {token}"
     return makeRequest("/account", headers=headers)
-    if (succ):
-        log("getUserData success")
-        jlog(content)
-        return succ, content
-    log("getUserData failed")
-    log(resp.reason)
-    return False, None
 
 def GET(url, headers, data):
     """ make GET request """
