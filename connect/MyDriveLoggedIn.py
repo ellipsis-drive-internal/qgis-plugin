@@ -375,8 +375,8 @@ class MyDriveLoggedInTab(QDialog):
             layerid = itemdata["id"]
             ids = f"{self.currentTimestamp['id']}_{layerid}"
             mapid = self.currentMetaData["id"]
-            theurl = F"{URL}/ogc/wms/{mapid}"
-            actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&url={theurl}"
+            theurl = F"{URL}/ogc/wms/{mapid}/"
+            actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&url={theurl}?token={self.loginToken}"
             log("WMS")
             log(actualurl)
             rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
@@ -413,7 +413,7 @@ class MyDriveLoggedInTab(QDialog):
             data = itemdata
             ids = f"{self.currentTimestamp['id']}_{data['id']}"
             mapid = self.currentMetaData["id"]
-            theurl = F"{URL}/ogc/wmts/{mapid}/{self.loginToken}"
+            theurl = f"{URL}/ogc/wmts/{mapid}/?token={self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
             rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
@@ -443,7 +443,7 @@ class MyDriveLoggedInTab(QDialog):
         itemdata = item.data((QtCore.Qt.UserRole))
         #id = item.data((QtCore.Qt.UserRole)).getData()
         mapid = self.currentMetaData["id"]
-        theurl = F"{URL}/ogc/wfs/{mapid}/{self.loginToken}?"
+        theurl = F"{URL}/ogc/wfs/{mapid}?"
 
         extend = itemdata.getData()["extent"]
 
@@ -455,7 +455,8 @@ class MyDriveLoggedInTab(QDialog):
             'typename': f'layerId_{itemdata.getData()["id"]}',
             'srsname': "EPSG:4326",
             'BBOX': f"{extend['xMin']},{extend['xMax']},{extend['yMin']},{extend['yMax']}",
-            'restrictToRequestBBOX': 1
+            'restrictToRequestBBOX': 1,
+            'token': self.loginToken    
         }
 
 
@@ -476,7 +477,7 @@ class MyDriveLoggedInTab(QDialog):
         itemdata = item.data((QtCore.Qt.UserRole))
 
         def makeWCSuri( url, layer ):
-            params = {  'dpiMode': 7 , 'identifier': layer,'url': url.split('?')[0]  }
+            params = {  'dpiMode': 7 , 'identifier': layer,'url': url }
             uri = urllib.parse.unquote( urllib.parse.urlencode(params)  )
             return uri
 
@@ -484,9 +485,14 @@ class MyDriveLoggedInTab(QDialog):
         timestampid = itemdata.getData()["id"]
 
         mapid = self.currentMetaData["id"]
-        theurl = F"{URL}/ogc/wcs/{mapid}/{self.loginToken}"
+        theurl = f"{URL}/ogc/wcs/{mapid}/?token={self.loginToken}"
         
+        log(f"token: {self.loginToken}")
+        log(theurl)
+
         wcsUri = makeWCSuri(theurl, timestampid )
+
+        log(wcsUri)
 
         # display loading item while the layer is loading
         self.clearListWidget()

@@ -117,7 +117,7 @@ class MyDriveLoginTab(QDialog):
 
         headers = CaseInsensitiveDict()
         headers["Content-Type"] = "application/json"
-        data = {"username" : self.username, "password": self.password, "validFor": 5184000} # max value is 5184000
+        data = {"username" : self.username, "password": self.password, "validFor": 5184000} # max validFor value is 5184000
 
         log(data)
 
