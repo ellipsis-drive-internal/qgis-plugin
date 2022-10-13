@@ -737,88 +737,98 @@ class MyDriveLoggedInTab(QDialog):
 
         self.clearListWidget()
 
-        apiurlmaps = f"/account/maps"
-        apiurlshapes = f"/account/shapes"
-        apiurlfolders = f"/account/folders"
+        apiurl = f"/path"
 
-        data = {
-            "access": ["owned", "subscribed", "favorited"],
+        datafolder = {
+            "type": "folder",
             "name": f"{self.searchText}",
         }
 
-        sucm, resmaps = self.request(apiurlmaps, data)
+        datavector = {
+            "type": "vector",
+            "name": f"{self.searchText}",
+        }
 
-        if sucm == ReqType.AUTHERR:
+        dataraster = {
+            "type": "raster",
+            "name": f"{self.searchText}",
+        }
+
+        sucr, resras = self.request(apiurl, dataraster, method="POST")
+
+        if sucr == ReqType.AUTHERR:
             return ReqType.AUTHERR
 
-        sucs, resshapes = self.request(apiurlshapes, data)
+        sucv, resvec = self.request(apiurl, datavector, method="POST")
 
-        if sucm == ReqType.AUTHERR:
+        if sucr == ReqType.AUTHERR:
             return ReqType.AUTHERR
 
-        sucf, resfolders = self.request(apiurlfolders, data)
+        sucf, resfol = self.request(apiurl, datafolder, method="POST")
 
-        if sucm == ReqType.AUTHERR:
+        if sucr == ReqType.AUTHERR:
             return ReqType.AUTHERR
         
-        havefolders = False
-        haveshapes = False
-        havemaps = False
+        havefol = False
+        havevec = False
+        haveras = False
 
-        if sucm and "result" in resmaps and resmaps["result"]:
-            log("Have maps")
-            maps = resmaps["result"]
-            havemaps = True
+        if sucr and "result" in resras and resras["result"]:
+            log("Have rasters")
+            maps = resras["result"]
+            haveras = True
 
-        if sucs and "result" in resshapes and resshapes["result"]:
-            log("Have shapes")
-            log(resshapes["result"])
-            shapes = resshapes["result"]
-            haveshapes = True
+        if sucv and "result" in resvec and resvec["result"]:
+            log("Have vectors")
+            log(resvec["result"])
+            shapes = resvec["result"]
+            havevec = True
 
-        if sucf and "result" in resfolders and resfolders["result"]:
-            havefolders = True
-            folders = resfolders["result"]
+        if sucf and "result" in resfol and resfol["result"]:
+            log("Have folders")
+            log(resfol["result"])
+            havefol = True
+            folders = resfol["result"]
 
         # "pagination"
-        while havefolders and (not resfolders["nextPageStart"] is None):
+        while havefol and (not resfol["nextPageStart"] is None):
             log("pagination on folders in search")
-            data["pageStart"] = resfolders["nextPageStart"]
-            rettype, resfolders = self.request(apiurlfolders, data)
+            datafolder["pageStart"] = resfol["nextPageStart"]
+            rettype, resfol = self.request(apiurl, datafolder, method="POST")
             if rettype:
-                folders += resfolders["result"]
+                folders += resfol["result"]
             else:
                 break
 
-        while havemaps and (not resmaps["nextPageStart"] is None):
+        while haveras and (not resras["nextPageStart"] is None):
             log("pagination on maps in search")
-            data["pageStart"] = resmaps["nextPageStart"]
-            rettype, resmaps = self.request(apiurlmaps, data)
+            dataraster["pageStart"] = resras["nextPageStart"]
+            rettype, resras = self.request(apiurl, dataraster, method="POST")
             if rettype:
-                maps += resmaps["result"]
+                maps += resras["result"]
             else:
                 break
         
-        while haveshapes and (not resshapes["nextPageStart"] is None):
+        while havevec and (not resvec["nextPageStart"] is None):
             log("pagination on shapes in search")
-            data["pageStart"] = resshapes["nextPageStart"]
-            rettype, resshapes = self.request(apiurlshapes, data)
+            datavector["pageStart"] = resvec["nextPageStart"]
+            rettype, resvec = self.request(apiurl, datavector, method="POST")
             if rettype:
-                shapes += resshapes["result"]
+                shapes += resvec["result"]
             else:
                 break
 
         #folders first
-        if havefolders and self.currentMode == ViewMode.SEARCH:
+        if havefol and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(folder, True, errorLevel=getErrorLevel(folder))) for folder in folders]
 
-        if havemaps and self.currentMode == ViewMode.SEARCH:
+        if haveras and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in maps]
         
-        if haveshapes and self.currentMode == ViewMode.SEARCH:
+        if havevec and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in shapes]
 
-        if not havefolders and not havemaps and not haveshapes:
+        if not havefol and not haveras and not havevec:
             # users may stop the search
             if (self.currentMode == ViewMode.SEARCH):
                 self.clearListWidget()
