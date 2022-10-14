@@ -159,9 +159,10 @@ def getUserData(token):
 def GET(url, headers, data):
     """ make GET request """
     coded_data = ""
+    CALLURL = f"{url}"
     if data is not None:
         coded_data = parse.urlencode(query=data)
-    CALLURL = f"{url}?{coded_data}"
+        CALLURL = f"{url}?{coded_data}"
     log(f"Callurl = {CALLURL}")
     return requests.get(CALLURL, headers=headers)
 

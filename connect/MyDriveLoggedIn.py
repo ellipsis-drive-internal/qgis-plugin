@@ -1,4 +1,5 @@
 import urllib
+from urllib.parse import urlencode
 import webbrowser
 from PyQt5.uic.uiparser import QtWidgets
 from PyQt5 import QtCore
@@ -708,7 +709,7 @@ class MyDriveLoggedInTab(QDialog):
             log(f"root: {root}")
             return rettype
 
-    def request(self, url, data, headers=None, method="GET"):
+    def request(self, url, data=None, headers=None, method="GET"):
         if headers is None:
             headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
             headers["Authorization"] = f"Bearer {self.loginToken}"
@@ -739,34 +740,23 @@ class MyDriveLoggedInTab(QDialog):
 
         apiurl = f"/path"
 
-        datafolder = {
-            "type": "folder",
-            "name": f"{self.searchText}",
-        }
+        folderurl = f'{apiurl}?type=["folder"]&name={self.searchText}'
+        vectorurl = f'{apiurl}?type=["vector"]&name={self.searchText}'
+        rasterurl = f'{apiurl}?type=["raster"]&name={self.searchText}'
 
-        datavector = {
-            "type": "vector",
-            "name": f"{self.searchText}",
-        }
-
-        dataraster = {
-            "type": "raster",
-            "name": f"{self.searchText}",
-        }
-
-        sucr, resras = self.request(apiurl, dataraster, method="POST")
+        sucr, resras = self.request(rasterurl)
 
         if sucr == ReqType.AUTHERR:
             return ReqType.AUTHERR
 
-        sucv, resvec = self.request(apiurl, datavector, method="POST")
+        sucv, resvec = self.request(vectorurl)
 
-        if sucr == ReqType.AUTHERR:
+        if sucv == ReqType.AUTHERR:
             return ReqType.AUTHERR
 
-        sucf, resfol = self.request(apiurl, datafolder, method="POST")
+        sucf, resfol = self.request(folderurl)
 
-        if sucr == ReqType.AUTHERR:
+        if sucf == ReqType.AUTHERR:
             return ReqType.AUTHERR
         
         havefol = False
@@ -791,32 +781,32 @@ class MyDriveLoggedInTab(QDialog):
             folders = resfol["result"]
 
         # "pagination"
-        while havefol and (not resfol["nextPageStart"] is None):
-            log("pagination on folders in search")
-            datafolder["pageStart"] = resfol["nextPageStart"]
-            rettype, resfol = self.request(apiurl, datafolder, method="POST")
-            if rettype:
-                folders += resfol["result"]
-            else:
-                break
+        # while havefol and (not resfol["nextPageStart"] is None):
+        #     log("pagination on folders in search")
+        #     datafolder["pageStart"] = resfol["nextPageStart"]
+        #     rettype, resfol = self.request(apiurl, datafolder, method="POST")
+        #     if rettype:
+        #         folders += resfol["result"]
+        #     else:
+        #         break
 
-        while haveras and (not resras["nextPageStart"] is None):
-            log("pagination on maps in search")
-            dataraster["pageStart"] = resras["nextPageStart"]
-            rettype, resras = self.request(apiurl, dataraster, method="POST")
-            if rettype:
-                maps += resras["result"]
-            else:
-                break
+        # while haveras and (not resras["nextPageStart"] is None):
+        #     log("pagination on maps in search")
+        #     dataraster["pageStart"] = resras["nextPageStart"]
+        #     rettype, resras = self.request(apiurl, dataraster, method="POST")
+        #     if rettype:
+        #         maps += resras["result"]
+        #     else:
+        #         break
         
-        while havevec and (not resvec["nextPageStart"] is None):
-            log("pagination on shapes in search")
-            datavector["pageStart"] = resvec["nextPageStart"]
-            rettype, resvec = self.request(apiurl, datavector, method="POST")
-            if rettype:
-                shapes += resvec["result"]
-            else:
-                break
+        # while havevec and (not resvec["nextPageStart"] is None):
+        #     log("pagination on shapes in search")
+        #     datavector["pageStart"] = resvec["nextPageStart"]
+        #     rettype, resvec = self.request(apiurl, datavector, method="POST")
+        #     if rettype:
+        #         shapes += resvec["result"]
+        #     else:
+        #         break
 
         #folders first
         if havefol and self.currentMode == ViewMode.SEARCH:
