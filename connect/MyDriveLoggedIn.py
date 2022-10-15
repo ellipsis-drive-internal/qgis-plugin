@@ -765,13 +765,13 @@ class MyDriveLoggedInTab(QDialog):
 
         if sucr and "result" in resras and resras["result"]:
             log("Have rasters")
-            maps = resras["result"]
+            rasters = resras["result"]
             haveras = True
 
         if sucv and "result" in resvec and resvec["result"]:
             log("Have vectors")
             log(resvec["result"])
-            shapes = resvec["result"]
+            vectors = resvec["result"]
             havevec = True
 
         if sucf and "result" in resfol and resfol["result"]:
@@ -781,42 +781,42 @@ class MyDriveLoggedInTab(QDialog):
             folders = resfol["result"]
 
         # "pagination"
-        # while havefol and (not resfol["nextPageStart"] is None):
-        #     log("pagination on folders in search")
-        #     datafolder["pageStart"] = resfol["nextPageStart"]
-        #     rettype, resfol = self.request(apiurl, datafolder, method="POST")
-        #     if rettype:
-        #         folders += resfol["result"]
-        #     else:
-        #         break
+        while havefol and (not resfol["nextPageStart"] is None):
+            log("pagination on folders in search")
+            theurl = f'{folderurl}&pageStart={resfol["nextPageStart"]}'
+            rettype, resfol = self.request(theurl)
+            if rettype:
+                folders += resfol["result"]
+            else:
+                break
 
-        # while haveras and (not resras["nextPageStart"] is None):
-        #     log("pagination on maps in search")
-        #     dataraster["pageStart"] = resras["nextPageStart"]
-        #     rettype, resras = self.request(apiurl, dataraster, method="POST")
-        #     if rettype:
-        #         maps += resras["result"]
-        #     else:
-        #         break
+        while haveras and (not resras["nextPageStart"] is None):
+            log("pagination on rasters in search")
+            theurl = f'{rasterurl}&pageStart={resras["nextPageStart"]}'
+            rettype, resras = self.request(theurl)
+            if rettype:
+                rasters += resras["result"]
+            else:
+                break
         
-        # while havevec and (not resvec["nextPageStart"] is None):
-        #     log("pagination on shapes in search")
-        #     datavector["pageStart"] = resvec["nextPageStart"]
-        #     rettype, resvec = self.request(apiurl, datavector, method="POST")
-        #     if rettype:
-        #         shapes += resvec["result"]
-        #     else:
-        #         break
+        while havevec and (not resvec["nextPageStart"] is None):
+            log("pagination on vectors in search")
+            theurl = f'{vectorurl}&pageStart={resvec["nextPageStart"]}'
+            rettype, resvec = self.request(theurl)
+            if rettype:
+                vectors += resvec["result"]
+            else:
+                break
 
         #folders first
         if havefol and self.currentMode == ViewMode.SEARCH:
             [self.listWidget_mydrive.addItem(convertMapdataToListItem(folder, True, errorLevel=getErrorLevel(folder))) for folder in folders]
 
         if haveras and self.currentMode == ViewMode.SEARCH:
-            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in maps]
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in rasters]
         
         if havevec and self.currentMode == ViewMode.SEARCH:
-            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in shapes]
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in vectors]
 
         if not havefol and not haveras and not havevec:
             # users may stop the search
