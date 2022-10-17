@@ -193,7 +193,7 @@ class MyDriveLoggedInTab(QDialog):
     def getPathInfo(self, id):
         success, output = self.getMetadata(id)
         if success:
-            return [output["path"]["root"], output["path"]["path"]]
+            return [output["driveLocation"]["root"], output["driveLocation"]["path"]]
         return [None, None]
 
 
