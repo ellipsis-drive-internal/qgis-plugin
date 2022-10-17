@@ -730,7 +730,7 @@ class MyDriveLoggedInTab(QDialog):
         return status, content
 
     @debounce(0.5)
-    def performSearch(self):
+    def performSearch(self, pagination=False):
         """ actually perform the search, using self.searchText as the string """
         if not self.currentMode == ViewMode.SEARCH:
             return
@@ -781,32 +781,33 @@ class MyDriveLoggedInTab(QDialog):
             folders = resfol["result"]
 
         # "pagination"
-        while havefol and (not resfol["nextPageStart"] is None):
-            log("pagination on folders in search")
-            theurl = f'{folderurl}&pageStart={resfol["nextPageStart"]}'
-            rettype, resfol = self.request(theurl)
-            if rettype:
-                folders += resfol["result"]
-            else:
-                break
+        if pagination:
+            while havefol and (not resfol["nextPageStart"] is None):
+                log("pagination on folders in search")
+                theurl = f'{folderurl}&pageStart={resfol["nextPageStart"]}'
+                rettype, resfol = self.request(theurl)
+                if rettype:
+                    folders += resfol["result"]
+                else:
+                    break
 
-        while haveras and (not resras["nextPageStart"] is None):
-            log("pagination on rasters in search")
-            theurl = f'{rasterurl}&pageStart={resras["nextPageStart"]}'
-            rettype, resras = self.request(theurl)
-            if rettype:
-                rasters += resras["result"]
-            else:
-                break
-        
-        while havevec and (not resvec["nextPageStart"] is None):
-            log("pagination on vectors in search")
-            theurl = f'{vectorurl}&pageStart={resvec["nextPageStart"]}'
-            rettype, resvec = self.request(theurl)
-            if rettype:
-                vectors += resvec["result"]
-            else:
-                break
+            while haveras and (not resras["nextPageStart"] is None):
+                log("pagination on rasters in search")
+                theurl = f'{rasterurl}&pageStart={resras["nextPageStart"]}'
+                rettype, resras = self.request(theurl)
+                if rettype:
+                    rasters += resras["result"]
+                else:
+                    break
+            
+            while havevec and (not resvec["nextPageStart"] is None):
+                log("pagination on vectors in search")
+                theurl = f'{vectorurl}&pageStart={resvec["nextPageStart"]}'
+                rettype, resvec = self.request(theurl)
+                if rettype:
+                    vectors += resvec["result"]
+                else:
+                    break
 
         #folders first
         if havefol and self.currentMode == ViewMode.SEARCH:
