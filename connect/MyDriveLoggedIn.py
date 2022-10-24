@@ -159,16 +159,17 @@ class MyDriveLoggedInTab(QDialog):
             folder = self.folderStack[-1]
             if folder[0] == "base": # starting location
                 url = "https://app.ellipsis-drive.com/"
-            elif folder[0] == "root": # root folders
-                if folder[1] == "myDrive":
-                    url = "https://app.ellipsis-drive.com/drive/projects"
-                elif folder[1] == "sharedWithMe":
-                    url = "https://app.ellipsis-drive.com/drive/shared"
-                elif folder[1] == "favorites":
-                    url = "https://app.ellipsis-drive.com/drive/favorites"
-            else: # regular folder
-                url = f"https://app.ellipsis-drive.com/drive/projects?pathId={folder[1]}"
-            pass
+            else:
+                mapRoot = {
+                    "myDrive": "me",
+                    "sharedWithMe": "shared",
+                    "favorites": "favorites"
+                }
+                url = f"https://app.ellipsis-drive.com/drive/{mapRoot[self.folderStack[1][1]]}"
+
+            if folder[0] != "root": # not just in the root, but in a folder inside a root
+                url = f"{url}?pathId={folder[1]}"
+
         elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP, ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
             mapid = self.currentMetaData["driveLocation"]["path"][0]["id"]
             url = f"https://app.ellipsis-drive.com/view?mapId={mapid}"
@@ -176,6 +177,7 @@ class MyDriveLoggedInTab(QDialog):
             url = f"https://app.ellipsis-drive.com/drive/search?q={self.searchText}"
 
         if not url == "":
+            print(url)
             webbrowser.open(url)
 
     def addReturnItem(self):
