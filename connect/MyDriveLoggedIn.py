@@ -170,7 +170,7 @@ class MyDriveLoggedInTab(QDialog):
                 url = f"https://app.ellipsis-drive.com/drive/projects?pathId={folder[1]}"
             pass
         elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP, ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
-            mapid = self.currentMetaData["path"]["path"][0]["id"]
+            mapid = self.currentMetaData["driveLocation"]["path"][0]["id"]
             url = f"https://app.ellipsis-drive.com/view?mapId={mapid}"
         elif self.currentMode == ViewMode.SEARCH:
             url = f"https://app.ellipsis-drive.com/drive/search?q={self.searchText}"
