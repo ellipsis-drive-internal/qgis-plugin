@@ -715,7 +715,7 @@ class MyDriveLoggedInTab(QDialog):
         if headers is None:
             headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
             headers["Authorization"] = f"Bearer {self.loginToken}"
-        status, content =  makeRequest(url, headers, data, version=2, method=method)
+        status, content =  makeRequest(url, headers, data, method=method)
         log(content)
         if status == ReqType.AUTHERR:
             # token expired!
