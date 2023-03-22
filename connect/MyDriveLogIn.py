@@ -121,7 +121,13 @@ class MyDriveLoginTab(QDialog):
 
         log(data)
 
+        log("===================================")
         reqsuc, content = makeRequest("/account/login", headers=headers, data=data, method="POST")
+        log("V3")
+        log(content)
+        reqsuc, content = makeRequest("/acount/login", headers=headers, data=data, version=2, method="POST")
+        log("V2")
+        log(content)        
         if reqsuc:
             self.loggedIn = True
             loginToken = content['token']

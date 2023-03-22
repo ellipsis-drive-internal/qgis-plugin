@@ -23,20 +23,18 @@ ERRORICON = os.path.join(ICONSFOLDER,"error.svg")
 RETURNICON = os.path.join(ICONSFOLDER,"return.svg")
 REFRESHICON = os.path.join(ICONSFOLDER,"refresh.svg")
 
-PRODUCTIONURL = 'https://api.ellipsis-drive.com/v1'
-DEVURL = 'https://dev.api.ellipsis-drive.com/v1'
-
 V1URL = 'https://api.ellipsis-drive.com/v1'
 V2URL = 'https://api.ellipsis-drive.com/v2'
+V3URL = 'https://api.ellipsis-drive.com/v3'
 
 SIZEW = 0
 SIZEH = 500
 
-URL = V2URL
+URL = V3URL
 
 MAXPATHLEN = 45
 
-DEBUG = False
+DEBUG = True
 DISABLESEARCH = False
 
 # taken from https://gist.github.com/walkermatt/2871026
@@ -173,7 +171,7 @@ def POST(url, headers, data):
     log(data)
     return requests.post(url, json=data, headers=headers)
 
-def makeRequest(url, headers, data=None, version=2, method="GET"):
+def makeRequest(url, headers, data=None, version=3, method="GET"):
     """ makes api requests, and returns a tuple of (resulttype, result/None) """
 
     log("makeRequest")
@@ -190,6 +188,8 @@ def makeRequest(url, headers, data=None, version=2, method="GET"):
         APIURL = V1URL
     elif version == 2:
         APIURL = V2URL
+    elif version == 3:
+        APIURL = V3URL
     else:
         APIURL = URL
 
