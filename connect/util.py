@@ -95,7 +95,7 @@ class ViewSubMode(Enum):
 
 @unique
 class ErrorLevel(Enum):
-    """ enum to describe the error level, NORMAL means nothing wrong with the map """
+    """ enum to describe the error level, NORMAL means nothing wrong with the layer """
     NORMAL = auto()
     DISABLED = auto()
     NOLAYERS = auto()
@@ -246,6 +246,85 @@ def connected_to_internet(url=URL, timeout=5):
     except requests.ConnectionError:
         log("No internet connection available.")
     return False
+
+
+# TODO rewrite this
+
+
+def isValidTimestamp(t):
+    """ returns true if timestamp is valid """
+    if t["status"] != "active":
+        return (False, "Timestamp not active")
+    if t["availability"]["blocked"]:
+        return (False, t["availability"]["reason"])
+    return True
+
+def isValidMap(m):
+    """ returns true if map is valid """
+    if not m:
+        return (False, "No Layer")
+    if m["type"] != "raster" and m["type"] != "vector":
+        return (True, "")
+    if m["disabled"]:
+        return (False, "Layer disabled")
+    if m["trashed"]:
+        return (False, "Layer trashed")
+    if m["yourAccess"]["accessLevel"] == 0:
+        return (False, "No access")
+
+    
+    return (True, "")
+
+""" 
+JS version
+  isValidMap = (m) => {
+    const t = m.type;
+    if (!m) {
+      return { available: false, reason: "No Layer" };
+    }
+    if (m.type !== "raster" && m.type !== "vector") {
+      return { available: true };
+    }
+    if (m.disabled) {
+      return { available: false, reason: "Layer disabled" };
+    }
+    if (m.trashed) {
+      return { available: false, reason: "Layer trashed" };
+    }
+    if (m.yourAccess.accessLevel === 0) {
+      return { available: false, reason: "No access" };
+    }
+    if (
+      m[t].timestamps.filter((t) => this.isValidTimestamp(t, m).available)
+        .length === 0
+    ) {
+      if (
+        m[t].timestamps.find((t) => t.availability?.reason === "relocation")
+      ) {
+        return { available: false, reason: "Relocating layer" };
+      } else if (
+        m[t].timestamps.find((t) => t.availability?.reason === "reindexing")
+      ) {
+        return { available: false, reason: "Reindexing layer" };
+      } else if (
+        t === "raster" &&
+        m[t].timestamps.filter((t) => t.totalSize > 0).length === 0
+      ) {
+        return { available: false, reason: "No uploads" };
+      } else if (m[t].timestamps.find((t) => t.status === "activating")) {
+        return { available: false, reason: "Activating files" };
+      } else if (m[t].timestamps.find((t) => t.status === "pausing")) {
+        return { available: false, reason: "Pausing files" };
+      } else if (m[t].timestamps.find((t) => t.status === "paused")) {
+        return { available: false, reason: "No active timestamps" };
+      } else {
+        return { available: false, reason: "No timestamps" };
+      }
+    }
+    return { available: true };
+  };
+"""
+
 
 def getErrorLevel(map):
     """ receives a map object (from the api) and returns whether there is something wrong with it or not """
