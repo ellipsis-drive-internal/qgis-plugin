@@ -12,6 +12,7 @@ from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
 from requests.structures import CaseInsensitiveDict
+from functools import filter
 
 TABSFOLDER = os.path.join(os.path.dirname(__file__), "..", "tabs/")
 ICONSFOLDER = os.path.join(os.path.dirname(__file__), "..", "icons/")
@@ -103,6 +104,14 @@ class ErrorLevel(Enum):
     DELETED = auto()
     WCSACCESS = auto()
     NOACCESS = auto()
+    TRASHED = auto()
+    RELOCATING = auto()
+    REINDEXING = auto()
+    NOUPLOADS = auto()
+    ACTIVATING = auto()
+    PAUSING = auto()
+    NOACTIVETIMESTAMPS = auto()
+
 
 @unique
 class ReqType(Enum):
@@ -251,15 +260,26 @@ def connected_to_internet(url=URL, timeout=5):
 # TODO rewrite this
 
 
+def funcFind(pred, iter):
+    return next(filter(pred, iter), None)
+
+def findReason(reason, iter):
+    return funcFind(lambda x: isValidTimestamp(x)[1] == reason, iter) is not None
+
 def isValidTimestamp(t):
     """ returns true if timestamp is valid """
     if t["status"] != "active":
         return (False, "Timestamp not active")
     if t["availability"]["blocked"]:
         return (False, t["availability"]["reason"])
-    return True
+    return (True, "")
 
 def isValidMap(m):
+    # m: the layer
+    # t: type of the layer
+    # ts: timestamps of the layer
+
+    t = m["type"]
     """ returns true if map is valid """
     if not m:
         return (False, "No Layer")
@@ -271,8 +291,25 @@ def isValidMap(m):
         return (False, "Layer trashed")
     if m["yourAccess"]["accessLevel"] == 0:
         return (False, "No access")
-
     
+    ts = m[t]["timestamps"]
+
+    if len(filter(lambda x: isValidTimestamp(x)[0] , ts)) == 0:
+        if findReason("relocation", ts):
+            return (False, "Relocating layer")
+        elif findReason("reindexing", ts):
+            return (False, "Reindexing layer")
+        elif t == "raster" and len(filter(lambda x: x["totalSize"] > 0)) == 0:
+            return (False, "No uploads")
+        elif findReason("activating"):
+            return (False, "Activating files")
+        elif findReason("pausing"):
+            return (False, "Pausing files")
+        elif findReason("paused"):
+            return (False, "No active timestamps")
+        else:
+            return (False, "No timestamps")
+
     return (True, "")
 
 """ 
