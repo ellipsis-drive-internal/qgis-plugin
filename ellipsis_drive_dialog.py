@@ -31,7 +31,6 @@ from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QDockWidget
 
 from .connect.util import *
-from .connect.CommunityLibrary import CommunityTab
 from .connect.MyDrive import MyDriveTab
 
 # This loads your .ui file so that PyQt can populate your plugin with the elements from Qt Designer
