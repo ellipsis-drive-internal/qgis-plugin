@@ -138,7 +138,7 @@ class MyDriveLoggedInTab(QDialog):
             else:
                 self.fillListWidget()
                 #self.getFolder(folder[1], False)
-        elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP]:
+        elif self.currentMode in [ViewMode.VECTOR, ViewMode.RASTER]:
             self.fillListWidget()
         elif self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
             _, self.currentMetaData = self.getMetadata(self.currentMetaData["id"])
@@ -170,7 +170,7 @@ class MyDriveLoggedInTab(QDialog):
             if folder[0] != "root": # not just in the root, but in a folder inside a root
                 url = f"{url}?pathId={folder[1]}"
 
-        elif self.currentMode in [ViewMode.SHAPE, ViewMode.MAP, ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
+        elif self.currentMode in [ViewMode.VECTOR, ViewMode.RASTER, ViewMode.WMS, ViewMode.WMTS, ViewMode.WFS, ViewMode.WCS]:
             mapid = self.currentMetaData["driveLocation"]["path"][0]["id"]
             url = f"https://app.ellipsis-drive.com/view?mapId={mapid}"
         elif self.currentMode == ViewMode.SEARCH:
@@ -231,10 +231,10 @@ class MyDriveLoggedInTab(QDialog):
                 success, self.currentMetaData = self.getMetadata(itemdata)
                 if not success:
                     return
-                self.currentMode = ViewMode.SHAPE
+                self.currentMode = ViewMode.VECTOR
                 self.currentSubMode = ViewSubMode.NONE
-                if itemtype == Type.MAP:
-                    self.currentMode = ViewMode.MAP
+                if itemtype == Type.RASTER:
+                    self.currentMode = ViewMode.RASTER
                 self.currentItem = item
 
             self.lineEdit_search.clear()
@@ -254,42 +254,37 @@ class MyDriveLoggedInTab(QDialog):
             if self.currentMode == ViewMode.FOLDERS:
                 self.onPrevious()
 
-            elif self.currentMode == ViewMode.MAP or self.currentMode == ViewMode.SHAPE:
+            elif self.currentMode == ViewMode.RASTER or self.currentMode == ViewMode.VECTOR:
                 self.currentMode = ViewMode.FOLDERS
-                #self.removeFromPath()
 
             elif self.currentMode == ViewMode.WFS:
-                self.currentMode = ViewMode.SHAPE
+                self.currentMode = ViewMode.VECTOR
                 self.currentSubMode = ViewSubMode.NONE
-                #self.removeFromPath()
 
             elif self.currentMode == ViewMode.WCS or self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS:
                 if self.currentSubMode == ViewSubMode.TIMESTAMPS:
-                    self.currentMode = ViewMode.MAP
+                    self.currentMode = ViewMode.RASTER
                     self.currentSubMode = ViewSubMode.NONE
                 elif self.currentSubMode == ViewSubMode.MAPLAYERS:
                     self.currentSubMode = ViewSubMode.TIMESTAMPS
-                #self.removeFromPath()
 
         elif self.currentMode == ViewMode.FOLDERS:
 
             if  itemtype == Type.FOLDER or itemtype == Type.ROOT:
                 self.onNext()
 
-            elif itemtype == Type.SHAPE or itemtype == Type.MAP:
+            elif itemtype == Type.VECTOR or itemtype == Type.RASTER:
                 success, self.currentMetaData = self.getMetadata(itemdata)
                 if not success:
                     return
-                #self.addToPath(self.currentMetaData["name"])
-                if itemtype == Type.SHAPE:
-                    self.currentMode = ViewMode.SHAPE
+                if itemtype == Type.VECTOR:
+                    self.currentMode = ViewMode.VECTOR
                 else:
-                    self.currentMode = ViewMode.MAP
+                    self.currentMode = ViewMode.RASTER
 
-        elif self.currentMode == ViewMode.SHAPE or self.currentMode == ViewMode.MAP:
+        elif self.currentMode == ViewMode.VECTOR or self.currentMode == ViewMode.RASTER:
             self.currentMode = mapViewMode(itemdata)
             self.currentSubMode = initialSubMode(itemdata)
-            #self.addToPath(itemdata)
 
         elif self.currentMode == ViewMode.WMS:
             self.WMSDoubleClick(item)
@@ -346,8 +341,8 @@ class MyDriveLoggedInTab(QDialog):
                 for mapLayer in mapLayers:
                     self.listWidget_mydrive.addItem(toListItem(Type.MAPLAYER, mapLayer["name"], mapLayer))
 
-        elif (self.currentMode in [ViewMode.MAP, ViewMode.SHAPE]):
-            self.populateListWithProtocols(Type.MAP if self.currentMode == ViewMode.MAP else Type.SHAPE)
+        elif (self.currentMode in [ViewMode.RASTER, ViewMode.VECTOR]):
+            self.populateListWithProtocols(Type.RASTER if self.currentMode == ViewMode.RASTER else Type.VECTOR)
         elif (self.currentMode == ViewMode.WFS):
             timestamps = self.currentMetaData["vector"]["timestamps"]
             self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamps["id"], data=timestamp))
@@ -597,7 +592,7 @@ class MyDriveLoggedInTab(QDialog):
             return "/"
 
         path = ""
-        if self.currentMode in [ViewMode.MAP, ViewMode.SHAPE]:
+        if self.currentMode in [ViewMode.RASTER, ViewMode.VECTOR]:
             log(self.currentMetaData)
             path = f"/{self.currentMetaData['name']}"
         elif self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WCS, ViewMode.WFS]:
@@ -806,13 +801,13 @@ class MyDriveLoggedInTab(QDialog):
 
         #folders first
         if havefol and self.currentMode == ViewMode.SEARCH:
-            [self.listWidget_mydrive.addItem(convertMapdataToListItem(folder, True, errorLevel=getErrorLevel(folder))) for folder in folders]
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(folder, Type.FOLDER)) for folder in folders]
 
         if haveras and self.currentMode == ViewMode.SEARCH:
-            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, False, True, getErrorLevel(mapdata))) for mapdata in rasters]
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(raster, Type.RASTER)) for raster in rasters]
         
         if havevec and self.currentMode == ViewMode.SEARCH:
-            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, True, False, getErrorLevel(mapdata))) for mapdata in vectors]
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(vector, Type.VECTOR)) for vector in vectors]
 
         if not havefol and not haveras and not havevec:
             # users may stop the search
@@ -824,29 +819,15 @@ class MyDriveLoggedInTab(QDialog):
 
     def getFolder(self, id, isRoot=False):
         """ clears the listwidgets and flls them with the folders and maps in the specified folder (by folder id) """
-        apiurl = ""
-        datamap = {}
-        datafolder= {}
-        if (isRoot):
-            apiurl = f"/account/root/{id}"
-            datamap = {
-                "rootName": f"{id}",
-                "isFolder": "false"
-            }
-            datafolder = {
-                "rootName": f"{id}",
-                "isFolder": "true"
-            }
-        else:
-            apiurl = f"/path/{id}/list"
-            datamap = {
-                "pathId": f"{id}",
-                "isFolder": "false"
-            }
-            datafolder = {
-                "pathId": f"{id}",
-                "isFolder": "true"
-            }
+        apiurl = f"/account/root/{id}" if isRoot else f"/path/{id}/list"
+        datamap = {
+            "rootName" if isRoot else "pathId": f"{id}",
+            "isFolder": "false"
+        }
+        datafolder = {
+            "rootName": f"{id}",
+            "isFolder": "true"
+        }
 
         success1, resmaps = self.request(apiurl, datamap)
 
@@ -893,10 +874,19 @@ class MyDriveLoggedInTab(QDialog):
                 break
 
         if havefolders:
-            [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, True, errorLevel=getErrorLevel(folderdata))) for folderdata in folders]
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(folderdata, Type.FOLDER)) for folderdata in folders]
         
+        def mapType(map):
+            if map["type"] == "raster":
+                return Type.RASTER
+            elif map["type"] == "vector":
+                return Type.VECTOR
+            else:
+                return Type.FOLDER
+
         if havemaps:
-            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, False, errorLevel=getErrorLevel(mapdata))) for mapdata in maps]
+            [self.listWidget_mydrive.addItem(convertMapdataToListItem(mapdata, mapType(mapdata))) for mapdata in maps]
+
         return True
 
     def onPrevious(self):
@@ -939,7 +929,7 @@ class MyDriveLoggedInTab(QDialog):
 
     def populateListWithProtocols(self, type):
         log(f"listing protocols for {type}")
-        prots = ["WFS"] if type == Type.SHAPE else ["WMS", "WMTS", "WCS"]
+        prots = ["WFS"] if type == Type.VECTOR else ["WMS", "WMTS", "WCS"]
 
         for prot in prots:
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, prot, prot))

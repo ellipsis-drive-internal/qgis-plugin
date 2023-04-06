@@ -60,8 +60,8 @@ class Type(Enum):
     """ enum that describes what type an item has """
     ROOT = auto()
     FOLDER = auto()
-    MAP = auto()
-    SHAPE = auto()
+    RASTER = auto()
+    VECTOR = auto()
     PROTOCOL = auto()
     TIMESTAMP = auto()
     MAPLAYER = auto()
@@ -76,8 +76,8 @@ class ViewMode(Enum):
     BASE = auto()
     ROOT = auto()
     FOLDERS = auto()
-    SHAPE = auto()
-    MAP = auto()
+    VECTOR = auto()
+    RASTER = auto()
     WMS = auto()
     WMTS = auto()
     WFS = auto()
@@ -260,6 +260,7 @@ def connected_to_internet(url=URL, timeout=5):
 
 
 def funcFind(pred, iter):
+    """ python version of JS find function"""
     return next(filter(pred, iter), None)
 
 def findReason(reason, iter):
@@ -285,7 +286,7 @@ def isValidMap(m):
         return (False, "No Layer")
     if m["type"] != "raster" and m["type"] != "vector":
         return (True, "")
-    if m["disabled"]:
+    if m["user"]["disabled"]:
         return (False, "Layer disabled")
     if m["trashed"]:
         return (False, "Layer trashed")
@@ -294,12 +295,12 @@ def isValidMap(m):
     
     ts = m[t]["timestamps"]
 
-    if len(filter(lambda x: isValidTimestamp(x)[0] , ts)) == 0:
+    if len(list(filter(lambda x: isValidTimestamp(x)[0] , ts))) == 0:
         if findReason("relocation", ts):
             return (False, "Relocating layer")
         elif findReason("reindexing", ts):
             return (False, "Reindexing layer")
-        elif t == "raster" and len(filter(lambda x: x["totalSize"] > 0)) == 0:
+        elif t == "raster" and len(list(filter(lambda x: x["totalSize"] > 0, ts))) == 0:
             return (False, "No uploads")
         elif findReason("activating", ts):
             return (False, "Activating files")
@@ -362,33 +363,6 @@ JS version
   };
 """
 
-
-def getErrorLevel(map):
-    """ receives a map object (from the api) and returns whether there is something wrong with it or not """
-    
-    return isValidMap(map)
-
-    # TODO is this correct? trashed in stead of deleted
-    if map["trashed"]:
-         return ErrorLevel.DELETED
-
-    if map["type"] == "raster" and len(map["raster"]["timestamps"]) == 0:
-        return ErrorLevel.NOTIMESTAMPS
-
-    if map["type"] == "vector" and len(map["vector"]["layers"]) == 0:
-        return ErrorLevel.NOLAYERS
-
-    if map["user"]["disabled"]:
-        return ErrorLevel.DISABLED
-
-    if map["yourAccess"]["accessLevel"] == 0:
-        return ErrorLevel.NOACCESS
-
-    if map["yourAccess"]["accessLevel"] < 200:
-        return ErrorLevel.WCSACCESS
-    
-    return ErrorLevel.NORMAL
-
 def toListItem(type, text, data = None, extra = None, icon = None):
     """ same as convertMapdataToListItem, but for timestamps and maplayers. should be refactored sometime """
     listitem = QListWidgetItem()
@@ -400,61 +374,41 @@ def toListItem(type, text, data = None, extra = None, icon = None):
     return listitem
 
 
-def convertMapdataToListItem(mapdata, isFolder = True, isShape = False, isMap = False, errorLevel = ErrorLevel.NORMAL):
-    """ turns a mapdata object into a listwidgetitem, depending on what type of object it is and its errorlevel """
+def convertMapdataToListItem(obj, objtype):
+    """ turns a mapdata object into a listwidgetitem, depending on what type of object it is """
     newitem = QListWidgetItem()
     icon = QIcon()
-    if isShape:
+
+    isValid, errmsg = isValidMap(obj)
+
+    if objtype == Type.VECTOR:
         icon = QIcon(VECTORICON)
-        item = ListData(Type.SHAPE, mapdata["id"], True)
-    elif isMap:
+        item = ListData(Type.VECTOR, obj["id"], True)
+    elif objtype == Type.RASTER:
         icon= QIcon(RASTERICON)
-        item = ListData(Type.MAP, mapdata["id"], False)
-    elif isFolder:
+        item = ListData(Type.RASTER, obj["id"], False)
+    elif objtype == Type.FOLDER:
         icon = QIcon(FOLDERICON)
-        item = ListData(Type.FOLDER, mapdata["id"], extra=mapdata["name"])
-    elif mapdata["type"] == "vector":
+        item = ListData(Type.FOLDER, obj["id"], extra=obj["name"])
+    elif obj["type"] == "vector":
         icon = QIcon(VECTORICON)
-        item = ListData(Type.SHAPE, mapdata["id"], True)
+        item = ListData(Type.VECTOR, obj["id"], True)
     else:
         icon = QIcon(RASTERICON)
-        item = ListData(Type.MAP, mapdata["id"], False)
+        item = ListData(Type.RASTER, obj["id"], False)
 
     # now we handle the errorLevel
-    if errorLevel == 0 or errorLevel == ErrorLevel.NORMAL or errorLevel == ErrorLevel.WCSACCESS:
-        newitem.setText(mapdata["name"])
+    if isValid:
+        newitem.setText(obj["name"])
         newitem.setData(QtCore.Qt.UserRole, item)
         newitem.setIcon(icon)
         return newitem
     else:
-        errmsgdict = {
-            ErrorLevel.DELETED: "Project deleted",
-            ErrorLevel.NOTIMESTAMPS: "Map has no timestamps",
-            ErrorLevel.NOLAYERS: "Shape has no layers",
-            ErrorLevel.DISABLED: "Project disabled",
-            ErrorLevel.WCSACCESS: "Access level too low",
-            ErrorLevel.NOACCESS: "Access level is 0"
-        }
-        if isFolder and errorLevel != ErrorLevel.NORMAL:
-            errmsgdict[ErrorLevel.DELETED] = "Folder deleted"
-            errmsgdict[ErrorLevel.DISABLED] = "Folder disabled"
-
         item = ListData(Type.ERROR)
-        newitem.setText(f'{mapdata["name"]} ({errmsgdict[errorLevel]})')
+        newitem.setText(f'{obj["name"]} ({errmsg})')
         newitem.setData(QtCore.Qt.UserRole, item)
         newitem.setIcon(QIcon(ERRORICON))
         return newitem
-
-def getUrl(mode, mapId, token = None):
-    """ constructs the url and copies it to the clipboard"""
-    theurl = ""
-    if token is None:
-        theurl = f"{URL}/{mode}/{mapId}"
-    else:
-        theurl = f"{URL}/{mode}/{mapId}/{token}"
-    log(f"getUrl: {theurl}")
-    return theurl
-
 class ListData:
     """ Class used for objects in the QList of the EllipsisConnect plugin """
     def __init__(self, type="none", data="", isaShape=None, extra=None):
