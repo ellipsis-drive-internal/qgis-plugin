@@ -12,7 +12,6 @@ from PyQt5 import QtCore
 from PyQt5.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
 from requests.structures import CaseInsensitiveDict
-from functools import filter
 
 TABSFOLDER = os.path.join(os.path.dirname(__file__), "..", "tabs/")
 ICONSFOLDER = os.path.join(os.path.dirname(__file__), "..", "icons/")
@@ -275,12 +274,13 @@ def isValidTimestamp(t):
     return (True, "")
 
 def isValidMap(m):
+    """ checks if a layer is valid or not """
     # m: the layer
     # t: type of the layer
     # ts: timestamps of the layer
 
     t = m["type"]
-    """ returns true if map is valid """
+
     if not m:
         return (False, "No Layer")
     if m["type"] != "raster" and m["type"] != "vector":
@@ -301,11 +301,11 @@ def isValidMap(m):
             return (False, "Reindexing layer")
         elif t == "raster" and len(filter(lambda x: x["totalSize"] > 0)) == 0:
             return (False, "No uploads")
-        elif findReason("activating"):
+        elif findReason("activating", ts):
             return (False, "Activating files")
-        elif findReason("pausing"):
+        elif findReason("pausing", ts):
             return (False, "Pausing files")
-        elif findReason("paused"):
+        elif findReason("paused", ts):
             return (False, "No active timestamps")
         else:
             return (False, "No timestamps")
@@ -366,6 +366,8 @@ JS version
 def getErrorLevel(map):
     """ receives a map object (from the api) and returns whether there is something wrong with it or not """
     
+    return isValidMap(map)
+
     # TODO is this correct? trashed in stead of deleted
     if map["trashed"]:
          return ErrorLevel.DELETED

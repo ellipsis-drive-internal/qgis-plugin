@@ -334,14 +334,11 @@ class MyDriveLoggedInTab(QDialog):
 
         maptype = self.currentMetaData["type"]
 
-        if (self.currentMode == ViewMode.WMS or self.currentMode == ViewMode.WMTS or self.currentMode == ViewMode.WCS):
-            
+        if (self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WCS]):
             if (self.currentSubMode == ViewSubMode.TIMESTAMPS):
                 timestamps = self.currentMetaData[maptype]["timestamps"]
-                maplayers = self.currentMetaData[maptype]["layers"]
                 for timestamp in timestamps:
-                    if timestamp["status"] == "finished":
-                        self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp, extra=maplayers))
+                        self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp))
 
             elif (self.currentSubMode == ViewSubMode.MAPLAYERS):
                 self.currentTimestamp = item.getData()
@@ -349,15 +346,11 @@ class MyDriveLoggedInTab(QDialog):
                 for mapLayer in mapLayers:
                     self.listWidget_mydrive.addItem(toListItem(Type.MAPLAYER, mapLayer["name"], mapLayer))
 
-        elif (self.currentMode == ViewMode.MAP or self.currentMode == ViewMode.SHAPE):
-            level = self.currentMetaData["yourAccess"]["accessLevel"]
-            WCSaccess = level >= 200
-            self.populateListWithProtocols(Type.MAP if self.currentMode == ViewMode.MAP else Type.SHAPE, WCSAccess=WCSaccess)
+        elif (self.currentMode in [ViewMode.MAP, ViewMode.SHAPE]):
+            self.populateListWithProtocols(Type.MAP if self.currentMode == ViewMode.MAP else Type.SHAPE)
         elif (self.currentMode == ViewMode.WFS):
-            geometryLayers = self.currentMetaData["vector"]["layers"]
-            for geometryLayer in geometryLayers:
-                if not geometryLayer["trashed"] and not geometryLayer["availability"]["blocked"]:
-                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, geometryLayer["name"], data=geometryLayer))
+            timestamps = self.currentMetaData["vector"]["timestamps"]
+            self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamps["id"], data=timestamp))
 
         elif (self.currentMode == ViewMode.WCS):
             timestamps = self.currentMetaData["raster"]["timestamps"]
@@ -944,20 +937,12 @@ class MyDriveLoggedInTab(QDialog):
             self.settings.remove("token")
         self.logoutSignal.emit()
 
-    def populateListWithProtocols(self, type, WCSAccess = True):
+    def populateListWithProtocols(self, type):
         log(f"listing protocols for {type}")
-        log(f"WCSACCESS: {WCSAccess}")
-        if type == Type.SHAPE:
-            self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WFS", "WFS"))
+        prots = ["WFS"] if type == Type.SHAPE else ["WMS", "WMTS", "WCS"]
 
-        elif type == Type.MAP:
-            self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WMS", "WMS"))
-            self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WMTS", "WMTS"))
-            if WCSAccess:
-                self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, "WCS", "WCS"))
-            else:
-                listitem = toListItem(Type.ERROR, "WCS (Accesslevel too low)", "WCS Accesslevel error")
-                self.listWidget_mydrive.addItem(listitem)
+        for prot in prots:
+            self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, prot, prot))
 
     def populateListWithRoot(self):
         """ Adds the 3 root folders to the widget """
