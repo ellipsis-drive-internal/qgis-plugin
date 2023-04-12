@@ -63,6 +63,7 @@ class Type(Enum):
     RASTER = auto()
     VECTOR = auto()
     PROTOCOL = auto()
+    VISUAL = auto()
     TIMESTAMP = auto()
     MAPLAYER = auto()
     ACTION = auto()
@@ -82,36 +83,15 @@ class ViewMode(Enum):
     WMTS = auto()
     WFS = auto()
     WCS = auto()
+    MVT = auto()
     SEARCH = auto()
 
 @unique
 class ViewSubMode(Enum):
     """ inside a single viewmode there exists submodes, this represents which one we are viewing """
     NONE = auto()
+    VISUAL = auto() # visualisations
     TIMESTAMPS = auto()
-    MAPLAYERS = auto()
-    GEOMETRYLAYERS = auto()
-    INFOLDER = auto()
-
-@unique
-class ErrorLevel(Enum):
-    """ enum to describe the error level, NORMAL means nothing wrong with the layer """
-    NORMAL = auto()
-    DISABLED = auto()
-    NOLAYERS = auto()
-    NOTIMESTAMPS = auto()
-    DELETED = auto()
-    WCSACCESS = auto()
-    NOACCESS = auto()
-    TRASHED = auto()
-    RELOCATING = auto()
-    REINDEXING = auto()
-    NOUPLOADS = auto()
-    ACTIVATING = auto()
-    PAUSING = auto()
-    NOACTIVETIMESTAMPS = auto()
-
-
 @unique
 class ReqType(Enum):
     """ enum describing the type of request result """
@@ -409,6 +389,7 @@ def convertMapdataToListItem(obj, objtype):
         newitem.setData(QtCore.Qt.UserRole, item)
         newitem.setIcon(QIcon(ERRORICON))
         return newitem
+    
 class ListData:
     """ Class used for objects in the QList of the EllipsisConnect plugin """
     def __init__(self, type="none", data="", isaShape=None, extra=None):

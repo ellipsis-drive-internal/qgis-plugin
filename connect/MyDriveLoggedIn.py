@@ -15,17 +15,19 @@ from .util import *
 
 
 def initialSubMode(str):
-    return ViewSubMode.GEOMETRYLAYERS if str == "WFS" else ViewSubMode.TIMESTAMPS
+    return ViewSubMode.TIMESTAMPS if str in ["WCS", "WFS"] else ViewSubMode.VISUAL
 
 def mapViewMode(str):
     if str == "WMS":
         return ViewMode.WMS
     if str == "WMTS":
         return ViewMode.WMTS
-    if str == "WFS":
-        return ViewMode.WFS
     if str == "WCS":
         return ViewMode.WCS
+    if str == "WFS":
+        return ViewMode.WFS
+    if str == "MVT":
+        return ViewMode.MVT
 
 class MyDriveLoggedInTab(QDialog):
     """ 
@@ -297,9 +299,23 @@ class MyDriveLoggedInTab(QDialog):
 
         elif self.currentMode == ViewMode.WCS:
             self.WCSDoubleClick(item)
+        
+        elif self.currentMode == ViewMode.MVT:
+            self.MVTDoubleClick(item)
 
         self.setPath()
         self.fillListWidget()
+
+    def listTimestamps(self):
+        log("Listing timestamps")
+        maptype = self.currentMetaData["type"]
+        timestamps = self.currentMetaData[maptype]["timestamps"]
+        for timestamp in timestamps:
+                valid, msg = isValidTimestamp(timestamp)
+                if valid:
+                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["date"]["to"], data=timestamp))
+                else:
+                    self.listWidget_mydrive.addItem(toListItem(Type.ERROR, f'{timestamp["date"]["to"]} ({msg})'))
 
     def fillListWidget(self):
         log(f"fillListWidget called with modi: {self.currentMode} and {self.currentSubMode}")
@@ -329,17 +345,19 @@ class MyDriveLoggedInTab(QDialog):
 
         maptype = self.currentMetaData["type"]
 
-        if (self.currentMode in [ViewMode.WMS, ViewMode.WMTS, ViewMode.WCS]):
+        if (self.currentMode in [ViewMode.WMS, ViewMode.WMTS]):
+            # protocols -> visualisations -> timestamps
+            if (self.currentSubMode == ViewSubMode.VISUAL):
+                styles = self.currentMetaData[maptype]["styles"]
+                for style in styles:
+                    self.listWidget_mydrive.addItem(toListItem(Type.VISUAL, style["name"], data=style))
+            elif (self.currentSubMode == ViewSubMode.TIMESTAMPS):
+                self.listTimestamps()
+            
+        elif (self.currentMode in [ViewMode.WCS, ViewMode.WFS]):
+            # protocols -> timestamps
             if (self.currentSubMode == ViewSubMode.TIMESTAMPS):
-                timestamps = self.currentMetaData[maptype]["timestamps"]
-                for timestamp in timestamps:
-                        self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp))
-
-            elif (self.currentSubMode == ViewSubMode.MAPLAYERS):
-                self.currentTimestamp = item.getData()
-                mapLayers = item.getExtra()
-                for mapLayer in mapLayers:
-                    self.listWidget_mydrive.addItem(toListItem(Type.MAPLAYER, mapLayer["name"], mapLayer))
+                self.listTimestamps()
 
         elif (self.currentMode in [ViewMode.RASTER, ViewMode.VECTOR]):
             self.populateListWithProtocols(Type.RASTER if self.currentMode == ViewMode.RASTER else Type.VECTOR)
@@ -351,18 +369,22 @@ class MyDriveLoggedInTab(QDialog):
             timestamps = self.currentMetaData["raster"]["timestamps"]
             for timestamp in timestamps:
                 if timestamp["status"] == "finished":
-                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["dateTo"], data=timestamp))
+                    self.listWidget_mydrive.addItem(toListItem(Type.TIMESTAMP, timestamp["date"]["to"], data=timestamp))
+
+    def MVTDoubleClick(self, item):
+        # todo: implement
+        pass
 
     def WMSDoubleClick(self, item):
         itemtype = item.data((QtCore.Qt.UserRole)).getType()
         itemdata = item.data((QtCore.Qt.UserRole)).getData()
 
-        if itemtype == Type.TIMESTAMP:
-            self.currentSubMode = ViewSubMode.MAPLAYERS
+        if itemtype == Type.VISUAL:
+            self.currentSubMode = ViewSubMode.TIMESTAMPS
             self.previousItem = self.currentItem
             self.currentItem = item
 
-        elif itemtype == Type.MAPLAYER:
+        elif itemtype == Type.TIMESTAMP:
             layerid = itemdata["id"]
             ids = f"{self.currentTimestamp['id']}_{layerid}"
             mapid = self.currentMetaData["id"]
@@ -370,9 +392,7 @@ class MyDriveLoggedInTab(QDialog):
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&url={theurl}?token={self.loginToken}"
             log("WMS")
             log(actualurl)
-            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
-            
-            # iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['date']['to']}_{itemdata['name']}", 'wms')
             
             if not rlayer.isValid():
                 getMessageBox("Error loading layer", "Layer failed to load.").exec_()
@@ -392,13 +412,13 @@ class MyDriveLoggedInTab(QDialog):
         itemtype = item.data((QtCore.Qt.UserRole)).getType()
         itemdata = item.data((QtCore.Qt.UserRole)).getData()
 
-        if itemtype == Type.TIMESTAMP:
-            self.currentSubMode = ViewSubMode.MAPLAYERS
+        if itemtype == Type.VISUAL:
+            self.currentSubMode = ViewSubMode.TIMESTAMPS
             self.currentItem = item
             log("WMTSDoubleClick, should be a timestamp:")
             self.currentZoom = itemdata["zoom"]
 
-        elif itemtype == Type.MAPLAYER:
+        elif itemtype == Type.TIMESTAMP:
             jlog(self.currentMetaData)
             jlog(itemdata)
             data = itemdata
@@ -407,9 +427,9 @@ class MyDriveLoggedInTab(QDialog):
             theurl = f"{URL}/ogc/wmts/{mapid}/?token={self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
-            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+            rlayer = QgsRasterLayer(actualurl, f"{self.currentTimestamp['date']['to']}_{itemdata['name']}", 'wms')
             
-            # iface.addRasterLayer(actualurl, f"{self.currentTimestamp['dateTo']}_{itemdata['name']}", 'wms')
+
 
             if not rlayer.isValid():
                 getMessageBox("Error loading layer", "Layer failed to load.").exec_()
@@ -929,7 +949,7 @@ class MyDriveLoggedInTab(QDialog):
 
     def populateListWithProtocols(self, type):
         log(f"listing protocols for {type}")
-        prots = ["WFS"] if type == Type.VECTOR else ["WMS", "WMTS", "WCS"]
+        prots = ["WFS", "MVT"] if type == Type.VECTOR else ["WMS", "WMTS", "WCS"]
 
         for prot in prots:
             self.listWidget_mydrive.addItem(toListItem(Type.PROTOCOL, prot, prot))
