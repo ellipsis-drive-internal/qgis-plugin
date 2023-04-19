@@ -225,7 +225,7 @@ class MyDriveLoggedInTab(QDialog):
         success, output = self.getMetadata(id)
         if success:
             if output["driveLocation"]["root"] == "external":
-                return ["favourite", output["favouriteLocation"]["path]"]]
+                return ["favorites", output["favoriteLocation"]["path"]]
             return [output["driveLocation"]["root"], output["driveLocation"]["path"]]
         return [None, None]
 
