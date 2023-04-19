@@ -16,16 +16,16 @@ from requests.structures import CaseInsensitiveDict
 TABSFOLDER = os.path.join(os.path.dirname(__file__), "..", "tabs/")
 ICONSFOLDER = os.path.join(os.path.dirname(__file__), "..", "icons/")
 
-FOLDERICON = os.path.join(ICONSFOLDER,"folder.svg")
-VECTORICON = os.path.join(ICONSFOLDER,"vector.svg")
-RASTERICON = os.path.join(ICONSFOLDER,"raster.svg")
-ERRORICON = os.path.join(ICONSFOLDER,"error.svg")
-RETURNICON = os.path.join(ICONSFOLDER,"return.svg")
-REFRESHICON = os.path.join(ICONSFOLDER,"refresh.svg")
+FOLDERICON = os.path.join(ICONSFOLDER, "folder.svg")
+VECTORICON = os.path.join(ICONSFOLDER, "vector.svg")
+RASTERICON = os.path.join(ICONSFOLDER, "raster.svg")
+ERRORICON = os.path.join(ICONSFOLDER, "error.svg")
+RETURNICON = os.path.join(ICONSFOLDER, "return.svg")
+REFRESHICON = os.path.join(ICONSFOLDER, "refresh.svg")
 
-V1URL = 'https://api.ellipsis-drive.com/v1'
-V2URL = 'https://api.ellipsis-drive.com/v2'
-V3URL = 'https://api.ellipsis-drive.com/v3'
+V1URL = "https://api.ellipsis-drive.com/v1"
+V2URL = "https://api.ellipsis-drive.com/v2"
+V3URL = "https://api.ellipsis-drive.com/v3"
 
 SIZEW = 0
 SIZEH = 500
@@ -37,27 +37,34 @@ MAXPATHLEN = 45
 DEBUG = True
 DISABLESEARCH = False
 
+
 # taken from https://gist.github.com/walkermatt/2871026
 def debounce(wait):
-    """ Decorator that will postpone a functions
-        execution until after wait seconds
-        have elapsed since the last time it was invoked. """
+    """Decorator that will postpone a functions
+    execution until after wait seconds
+    have elapsed since the last time it was invoked."""
+
     def decorator(fn):
         def debounced(*args, **kwargs):
             def call_it():
                 fn(*args, **kwargs)
+
             try:
                 debounced.t.cancel()
-            except(AttributeError):
+            except AttributeError:
                 pass
             debounced.t = Timer(wait, call_it)
             debounced.t.start()
+
         return debounced
+
     return decorator
+
 
 @unique
 class Type(Enum):
-    """ enum that describes what type an item has """
+    """enum that describes what type an item has"""
+
     ROOT = auto()
     FOLDER = auto()
     RASTER = auto()
@@ -71,9 +78,11 @@ class Type(Enum):
     ERROR = auto()
     MESSAGE = auto()
 
+
 @unique
 class ViewMode(Enum):
-    """ describes what we are currently viewing """
+    """describes what we are currently viewing"""
+
     BASE = auto()
     ROOT = auto()
     FOLDERS = auto()
@@ -86,15 +95,20 @@ class ViewMode(Enum):
     MVT = auto()
     SEARCH = auto()
 
+
 @unique
 class ViewSubMode(Enum):
-    """ inside a single viewmode there exists submodes, this represents which one we are viewing """
+    """inside a single viewmode there exists submodes, this represents which one we are viewing"""
+
     NONE = auto()
-    VISUAL = auto() # visualisations
+    VISUAL = auto()  # visualisations
     TIMESTAMPS = auto()
+
+
 @unique
 class ReqType(Enum):
-    """ enum describing the type of request result """
+    """enum describing the type of request result"""
+
     SUCC = auto()
     FAIL = auto()
     CONNERR = auto()
@@ -102,6 +116,7 @@ class ReqType(Enum):
 
     def __bool__(self):
         return self == ReqType.SUCC
+
 
 rootName = {
     "myDrive": "My Drive",
@@ -129,21 +144,24 @@ stringToProt = {
     "WFS": ViewMode.WFS,
 }
 
+
 def getRootName(root):
-    """ convert a root 'name' to its representing string """
+    """convert a root 'name' to its representing string"""
     if root in rootName:
         return rootName[root]
     return root
 
+
 def getUserData(token):
-    """ retrieves user data from API """
+    """retrieves user data from API"""
     log("Getting user data")
     headers = CaseInsensitiveDict()
     headers["Authorization"] = f"Bearer {token}"
     return makeRequest("/account", headers=headers)
 
+
 def GET(url, headers, data):
-    """ make GET request """
+    """make GET request"""
     coded_data = ""
     CALLURL = f"{url}"
     if data is not None:
@@ -152,15 +170,17 @@ def GET(url, headers, data):
     log(f"Callurl = {CALLURL}")
     return requests.get(CALLURL, headers=headers)
 
+
 def POST(url, headers, data):
-    """ make POST request """
+    """make POST request"""
     log("POST")
     log(headers)
     log(data)
     return requests.post(url, json=data, headers=headers)
 
+
 def makeRequest(url, headers, data=None, version=3, method="GET"):
-    """ makes api requests, and returns a tuple of (resulttype, result/None) """
+    """makes api requests, and returns a tuple of (resulttype, result/None)"""
 
     log("makeRequest")
     log(headers)
@@ -169,7 +189,7 @@ def makeRequest(url, headers, data=None, version=3, method="GET"):
     def req(url, h, d):
         if method == "GET":
             return GET(url, headers=h, data=d)
-        else: # method == "POST"
+        else:  # method == "POST"
             return POST(url, headers=h, data=d)
 
     if version == 1:
@@ -201,7 +221,7 @@ def makeRequest(url, headers, data=None, version=3, method="GET"):
             log(j1)
             log(j1.reason)
             success = ReqType.FAIL
-        
+
             if j1.status_code == 401:
                 # token is probably expired
                 log("token expired")
@@ -218,16 +238,18 @@ def makeRequest(url, headers, data=None, version=3, method="GET"):
         # displayMessageBox("Request failed", "Please check your internet connection")
         return ReqType.CONNERR, None
 
+
 def getMessageBox(title, text):
-    """ utility function that returns a messagebox """
+    """utility function that returns a messagebox"""
     msg = QMessageBox()
     msg.setWindowTitle(title)
     msg.setText(text)
     msg.setStandardButtons(QMessageBox.Ok)
     return msg
 
+
 def connected_to_internet(url=URL, timeout=5):
-    """ check for connection error """
+    """check for connection error"""
     try:
         _ = requests.head(url, timeout=timeout)
         return True
@@ -240,22 +262,25 @@ def connected_to_internet(url=URL, timeout=5):
 
 
 def funcFind(pred, iter):
-    """ python version of JS find function"""
+    """python version of JS find function"""
     return next(filter(pred, iter), None)
+
 
 def findReason(reason, iter):
     return funcFind(lambda x: isValidTimestamp(x)[1] == reason, iter) is not None
 
+
 def isValidTimestamp(t):
-    """ returns true if timestamp is valid """
+    """returns true if timestamp is valid"""
     if t["status"] != "active":
         return (False, "Timestamp not active")
     if t["availability"]["blocked"]:
         return (False, t["availability"]["reason"])
     return (True, "")
 
+
 def isValidMap(m):
-    """ checks if a layer is valid or not """
+    """checks if a layer is valid or not"""
     # m: the layer
     # t: type of the layer
     # ts: timestamps of the layer
@@ -272,10 +297,10 @@ def isValidMap(m):
         return (False, "Layer trashed")
     if m["yourAccess"]["accessLevel"] == 0:
         return (False, "No access")
-    
+
     ts = m[t]["timestamps"]
 
-    if len(list(filter(lambda x: isValidTimestamp(x)[0] , ts))) == 0:
+    if len(list(filter(lambda x: isValidTimestamp(x)[0], ts))) == 0:
         if findReason("relocation", ts):
             return (False, "Relocating layer")
         elif findReason("reindexing", ts):
@@ -292,6 +317,7 @@ def isValidMap(m):
             return (False, "No timestamps")
 
     return (True, "")
+
 
 """ 
 JS version
@@ -343,10 +369,11 @@ JS version
   };
 """
 
-def toListItem(type, text, data = None, extra = None, icon = None):
-    """ same as convertMapdataToListItem, but for timestamps and maplayers. should be refactored sometime """
+
+def toListItem(type, text, data=None, extra=None, icon=None):
+    """same as convertMapdataToListItem, but for timestamps and maplayers. should be refactored sometime"""
     listitem = QListWidgetItem()
-    listdata = ListData(type, data, extra = extra)
+    listdata = ListData(type, data, extra=extra)
     listitem.setData(QtCore.Qt.UserRole, listdata)
     listitem.setText(text)
     if icon is not None:
@@ -355,17 +382,21 @@ def toListItem(type, text, data = None, extra = None, icon = None):
 
 
 def convertMapdataToListItem(obj, objtype):
-    """ turns a mapdata object into a listwidgetitem, depending on what type of object it is """
+    """turns a mapdata object into a listwidgetitem, depending on what type of object it is"""
     newitem = QListWidgetItem()
     icon = QIcon()
 
     isValid, errmsg = isValidMap(obj)
 
+    if errmsg == "Layer trashed":
+        # TODO this might not work yet
+        return None
+
     if objtype == Type.VECTOR:
         icon = QIcon(VECTORICON)
         item = ListData(Type.VECTOR, obj["id"], True)
     elif objtype == Type.RASTER:
-        icon= QIcon(RASTERICON)
+        icon = QIcon(RASTERICON)
         item = ListData(Type.RASTER, obj["id"], False)
     elif objtype == Type.FOLDER:
         icon = QIcon(FOLDERICON)
@@ -389,9 +420,11 @@ def convertMapdataToListItem(obj, objtype):
         newitem.setData(QtCore.Qt.UserRole, item)
         newitem.setIcon(QIcon(ERRORICON))
         return newitem
-    
+
+
 class ListData:
-    """ Class used for objects in the QList of the EllipsisConnect plugin """
+    """Class used for objects in the QList of the EllipsisConnect plugin"""
+
     def __init__(self, type="none", data="", isaShape=None, extra=None):
         self.type = type
         self.data = data
@@ -399,41 +432,43 @@ class ListData:
         self.extra = extra
 
     def setExtra(self, extra):
-        """ setter """
+        """setter"""
         self.extra = extra
-    
+
     def getExtra(self):
-        """ getter """
+        """getter"""
         return self.extra
 
     def setData(self, type, data, isaShape):
-        """ setter """
+        """setter"""
         self.type = type
         self.data = data
         self.isaShape = isaShape
 
     def getData(self):
-        """ getter """
+        """getter"""
         return self.data
 
     def getType(self):
-        """ getter """
+        """getter"""
         return self.type
-    
+
     def isShape(self):
-        """ getter """
+        """getter"""
         return self.isaShape
 
     def isEmpty(self):
-        """ check if data is empty """
+        """check if data is empty"""
         return self.type == "none" and self.data == ""
 
+
 def log(text):
-    """ only prints when DEBUG is True """
+    """only prints when DEBUG is True"""
     if DEBUG:
         print(text)
 
+
 def jlog(obj):
-    """ logs a JSON object"""
+    """logs a JSON object"""
     text = json.dumps(obj, sort_keys=True, indent=4)
     log(text)
