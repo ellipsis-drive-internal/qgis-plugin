@@ -823,9 +823,9 @@ class MyDriveLoggedInTab(QDialog):
 
         apiurl = f"/path"
 
-        folderurl = f'{apiurl}?type=["folder"]&name={self.searchText}'
-        vectorurl = f'{apiurl}?type=["vector"]&name={self.searchText}'
-        rasterurl = f'{apiurl}?type=["raster"]&name={self.searchText}'
+        folderurl = f'{apiurl}?type=["folder"]&text={self.searchText}'
+        vectorurl = f'{apiurl}?type=["vector"]&text={self.searchText}'
+        rasterurl = f'{apiurl}?type=["raster"]&text={self.searchText}'
 
         sucr, resras = self.request(rasterurl)
 
