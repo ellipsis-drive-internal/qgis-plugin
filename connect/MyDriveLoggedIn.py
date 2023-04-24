@@ -489,15 +489,15 @@ class MyDriveLoggedInTab(QDialog):
             jlog(self.currentMetaData)
             jlog(itemdata)
             data = itemdata
-            ids = f"{self.currentTimestamp['id']}_{data['id']}"
+            ids = f"{data['id']}_{data['id']}"
             mapid = self.currentMetaData["id"]
-            zoom = self.currentTimestamp["zoom"]
+            zoom = data["zoom"]
             theurl = f"{URL}/ogc/wmts/{mapid}/?token={self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{zoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
             rlayer = QgsRasterLayer(
                 actualurl,
-                f"{self.currentTimestamp['date']['to']}_{itemdata['name']}",
+                f"{data['date']['to']}",
                 "wms",
             )
 
