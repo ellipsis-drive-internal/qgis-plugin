@@ -481,8 +481,9 @@ class MyDriveLoggedInTab(QDialog):
         if itemtype == Type.VISUAL:
             self.currentSubMode = ViewSubMode.TIMESTAMPS
             self.currentItem = item
-            log("WMTSDoubleClick, should be a timestamp:")
-            self.currentZoom = itemdata["zoom"]
+            log("DUBEGUGUGEIGJ")
+            log(self.currentItem)
+            log(itemdata)
 
         elif itemtype == Type.TIMESTAMP:
             jlog(self.currentMetaData)
@@ -490,8 +491,9 @@ class MyDriveLoggedInTab(QDialog):
             data = itemdata
             ids = f"{self.currentTimestamp['id']}_{data['id']}"
             mapid = self.currentMetaData["id"]
+            zoom = self.currentTimestamp["zoom"]
             theurl = f"{URL}/ogc/wmts/{mapid}/?token={self.loginToken}"
-            actualurl = f"tileMatrixSet=matrix_{self.currentZoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
+            actualurl = f"tileMatrixSet=matrix_{zoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
             rlayer = QgsRasterLayer(
                 actualurl,
