@@ -624,6 +624,7 @@ class MyDriveLoggedInTab(QDialog):
             "folderStack": (self.folderStack),
             "currentMetaData": (self.currentMetaData),
             "currentTimestamp": (self.currentTimestamp),
+            "currentStyle": (self.currentStyle),
             "currentMode": (self.currentMode),
             "previousMode": (self.previousMode),
             "currentSubMode": (self.currentSubMode),
@@ -827,11 +828,9 @@ class MyDriveLoggedInTab(QDialog):
 
         self.clearListWidget()
 
-        apiurl = f"/path"
-
-        folderurl = f'{apiurl}?type=["folder"]&text={self.searchText}'
-        vectorurl = f'{apiurl}?type=["vector"]&text={self.searchText}'
-        rasterurl = f'{apiurl}?type=["raster"]&text={self.searchText}'
+        rasterurl = f'/path?text={self.searchText}&root=%5B%22myDrive%22%2C%22sharedWithMe%22%2C%22favorites%22%5D&type=%5B%22raster%22%5D'
+        folderurl = f'/path?text={self.searchText}&root=%5B%22myDrive%22%2C%22sharedWithMe%22%2C%22favorites%22%5D&type=%5B%22folder%22%5D'
+        vectorurl = f'/path?text={self.searchText}&root=%5B%22myDrive%22%2C%22sharedWithMe%22%2C%22favorites%22%5D&type=%5B%22vector%22%5D'
 
         sucr, resras = self.request(rasterurl)
 
