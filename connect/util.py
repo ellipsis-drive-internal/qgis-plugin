@@ -34,7 +34,7 @@ URL = V3URL
 
 MAXPATHLEN = 45
 
-DEBUG = True
+DEBUG = False
 DISABLESEARCH = False
 
 
@@ -257,10 +257,6 @@ def connected_to_internet(url=URL, timeout=5):
         log("No internet connection available.")
     return False
 
-
-# TODO rewrite this
-
-
 def funcFind(pred, iter):
     """python version of JS find function"""
     return next(filter(pred, iter), None)
@@ -318,58 +314,6 @@ def isValidMap(m):
 
     return (True, "")
 
-
-""" 
-JS version
-  isValidMap = (m) => {
-    const t = m.type;
-    if (!m) {
-      return { available: false, reason: "No Layer" };
-    }
-    if (m.type !== "raster" && m.type !== "vector") {
-      return { available: true };
-    }
-    if (m.disabled) {
-      return { available: false, reason: "Layer disabled" };
-    }
-    if (m.trashed) {
-      return { available: false, reason: "Layer trashed" };
-    }
-    if (m.yourAccess.accessLevel === 0) {
-      return { available: false, reason: "No access" };
-    }
-    if (
-      m[t].timestamps.filter((t) => this.isValidTimestamp(t, m).available)
-        .length === 0
-    ) {
-      if (
-        m[t].timestamps.find((t) => t.availability?.reason === "relocation")
-      ) {
-        return { available: false, reason: "Relocating layer" };
-      } else if (
-        m[t].timestamps.find((t) => t.availability?.reason === "reindexing")
-      ) {
-        return { available: false, reason: "Reindexing layer" };
-      } else if (
-        t === "raster" &&
-        m[t].timestamps.filter((t) => t.totalSize > 0).length === 0
-      ) {
-        return { available: false, reason: "No uploads" };
-      } else if (m[t].timestamps.find((t) => t.status === "activating")) {
-        return { available: false, reason: "Activating files" };
-      } else if (m[t].timestamps.find((t) => t.status === "pausing")) {
-        return { available: false, reason: "Pausing files" };
-      } else if (m[t].timestamps.find((t) => t.status === "paused")) {
-        return { available: false, reason: "No active timestamps" };
-      } else {
-        return { available: false, reason: "No timestamps" };
-      }
-    }
-    return { available: true };
-  };
-"""
-
-
 def toListItem(type, text, data=None, extra=None, icon=None):
     """same as convertMapdataToListItem, but for timestamps and maplayers. should be refactored sometime"""
     listitem = QListWidgetItem()
@@ -389,7 +333,6 @@ def convertMapdataToListItem(obj, objtype):
     isValid, errmsg = isValidMap(obj)
 
     if errmsg == "Layer trashed":
-        # TODO this might not work yet
         return None
 
     if objtype == Type.VECTOR:
