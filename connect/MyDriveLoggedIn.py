@@ -67,6 +67,7 @@ class MyDriveLoggedInTab(QDialog):
         self.previousMode = None
         self.currentSubMode = ViewSubMode.NONE
         self.currentItem = None
+        self.currentStyle = None
         self.previousItem = None
         self.currentFolderId = None
         self.currentZoom = None
@@ -434,6 +435,7 @@ class MyDriveLoggedInTab(QDialog):
             styleId = self.currentMetaData["vector"]["styles"][0]["id"]
 
             url = f"type=xyz&url={URL}/ogc/mvt/{mapid}/%7Bz%7D/%7Bx%7D/%7By%7D?zipTheResponse%3Dtrue%26style%3D{styleId}%26timestampId%3D{timestampid}%26token%3D{self.loginToken}&zmax={maxzoom}&zmin={minzoom}&http-header:referer="
+            log(url)
             rlayer = QgsVectorTileLayer(url, itemdata["date"]["to"])
             QgsProject.instance().addMapLayer(rlayer)
 
@@ -445,10 +447,10 @@ class MyDriveLoggedInTab(QDialog):
             self.currentSubMode = ViewSubMode.TIMESTAMPS
             self.previousItem = self.currentItem
             self.currentItem = item
+            self.currentStyle = itemdata
 
         elif itemtype == Type.TIMESTAMP:
-            layerid = itemdata["id"]
-            ids = f"{self.currentTimestamp['id']}_{layerid}"
+            ids = f"{itemdata['id']}_{self.currentStyle['id']}"
             mapid = self.currentMetaData["id"]
             theurl = f"{URL}/ogc/wms/{mapid}/"
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&url={theurl}?token={self.loginToken}"
@@ -456,7 +458,7 @@ class MyDriveLoggedInTab(QDialog):
             log(actualurl)
             rlayer = QgsRasterLayer(
                 actualurl,
-                f"{self.currentTimestamp['date']['to']}_{itemdata['name']}",
+                f"{itemdata['date']['to']}_{self.currentStyle['name']}",
                 "wms",
             )
 
@@ -481,15 +483,13 @@ class MyDriveLoggedInTab(QDialog):
         if itemtype == Type.VISUAL:
             self.currentSubMode = ViewSubMode.TIMESTAMPS
             self.currentItem = item
-            log("DUBEGUGUGEIGJ")
-            log(self.currentItem)
-            log(itemdata)
+            self.currentStyle = itemdata
 
         elif itemtype == Type.TIMESTAMP:
             jlog(self.currentMetaData)
             jlog(itemdata)
             data = itemdata
-            ids = f"{data['id']}_{data['id']}"
+            ids = f"{data['id']}_{self.currentStyle['id']}"
             mapid = self.currentMetaData["id"]
             zoom = data["zoom"]
             theurl = f"{URL}/ogc/wmts/{mapid}/?token={self.loginToken}"
@@ -497,7 +497,7 @@ class MyDriveLoggedInTab(QDialog):
             log(actualurl)
             rlayer = QgsRasterLayer(
                 actualurl,
-                f"{data['date']['to']}",
+                f"{data['date']['to']}_{self.currentStyle['name']}",
                 "wms",
             )
 
@@ -608,6 +608,7 @@ class MyDriveLoggedInTab(QDialog):
         self.previousMode = None
         self.currentSubMode = ViewSubMode.NONE
         self.currentItem = None
+        self.currentStyle = None
         self.previousItem = None
         self.currentFolderId = None
         self.currentZoom = None
@@ -644,6 +645,7 @@ class MyDriveLoggedInTab(QDialog):
         self.previousMode = state["previousMode"]
         self.currentSubMode = state["currentSubMode"]
         self.currentItem = state["currentItem"]
+        self.currentStyle = state["currentStyle"]
         self.previousItem = state["previousItem"]
         self.currentFolderId = state["currentFolderId"]
         self.currentZoom = state["currentZoom"]
