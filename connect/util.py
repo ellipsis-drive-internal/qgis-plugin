@@ -34,7 +34,7 @@ URL = V3URL
 
 MAXPATHLEN = 45
 
-DEBUG = False
+DEBUG = True
 DISABLESEARCH = False
 
 
@@ -168,7 +168,7 @@ def GET(url, headers, data):
         coded_data = parse.urlencode(query=data)
         CALLURL = f"{url}?{coded_data}"
     log(f"Callurl = {CALLURL}")
-    return requests.get(CALLURL, headers=headers)
+    return requests.get(CALLURL, headers=headers, verify=False)
 
 
 def POST(url, headers, data):
@@ -176,7 +176,7 @@ def POST(url, headers, data):
     log("POST")
     log(headers)
     log(data)
-    return requests.post(url, json=data, headers=headers)
+    return requests.post(url, json=data, headers=headers, verify=False)
 
 
 def makeRequest(url, headers, data=None, version=3, method="GET"):
