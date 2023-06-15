@@ -426,8 +426,8 @@ class MyDriveLoggedInTab(QDialog):
             minzoom = 0
             maxzoom = 21  # default value
 
-            if "statistics" in itemdata and "precomputeZoom" in itemdata["statistics"]:
-                maxzoom = itemdata["statistics"]["precomputeZoom"]
+            if "precompute" in itemdata and "vectorTileZoom" in itemdata["precompute"]:
+                maxzoom = itemdata["precompute"]["vectorTileZoom"]
 
             timestampid = itemdata["id"]
             mapid = self.currentMetaData["id"]
@@ -828,9 +828,9 @@ class MyDriveLoggedInTab(QDialog):
 
         self.clearListWidget()
 
-        rasterurl = f'/path?text={self.searchText}&root=%5B%22myDrive%22%2C%22sharedWithMe%22%2C%22favorites%22%5D&type=%5B%22raster%22%5D'
-        folderurl = f'/path?text={self.searchText}&root=%5B%22myDrive%22%2C%22sharedWithMe%22%2C%22favorites%22%5D&type=%5B%22folder%22%5D'
-        vectorurl = f'/path?text={self.searchText}&root=%5B%22myDrive%22%2C%22sharedWithMe%22%2C%22favorites%22%5D&type=%5B%22vector%22%5D'
+        rasterurl = f"/path?text={self.searchText}&root=%5B%22myDrive%22%2C%22sharedWithMe%22%2C%22favorites%22%5D&type=%5B%22raster%22%5D"
+        folderurl = f"/path?text={self.searchText}&root=%5B%22myDrive%22%2C%22sharedWithMe%22%2C%22favorites%22%5D&type=%5B%22folder%22%5D"
+        vectorurl = f"/path?text={self.searchText}&root=%5B%22myDrive%22%2C%22sharedWithMe%22%2C%22favorites%22%5D&type=%5B%22vector%22%5D"
 
         sucr, resras = self.request(rasterurl)
 
