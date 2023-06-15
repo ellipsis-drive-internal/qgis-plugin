@@ -426,8 +426,8 @@ class MyDriveLoggedInTab(QDialog):
             minzoom = 0
             maxzoom = 21  # default value
 
-            if "statistics" in itemdata and "precomputeZoom" in itemdata["statistics"]:
-                maxzoom = itemdata["statistics"]["precomputeZoom"]
+            if "precompute" in itemdata and "vectorTileZoom" in itemdata["precompute"]:
+                maxzoom = itemdata["precompute"]["vectorTileZoom"]
 
             timestampid = itemdata["id"]
             mapid = self.currentMetaData["id"]
