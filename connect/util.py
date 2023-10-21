@@ -34,7 +34,7 @@ URL = V3URL
 
 MAXPATHLEN = 45
 
-DEBUG = False
+DEBUG = True
 DISABLESEARCH = False
 
 
@@ -257,6 +257,7 @@ def connected_to_internet(url=URL, timeout=5):
         log("No internet connection available.")
     return False
 
+
 def funcFind(pred, iter):
     """python version of JS find function"""
     return next(filter(pred, iter), None)
@@ -313,6 +314,7 @@ def isValidMap(m):
             return (False, "No timestamps")
 
     return (True, "")
+
 
 def toListItem(type, text, data=None, extra=None, icon=None):
     """same as convertMapdataToListItem, but for timestamps and maplayers. should be refactored sometime"""

@@ -8,32 +8,37 @@ from qgis.PyQt.QtCore import QSettings, pyqtSignal
 from .MyDriveLoggedIn import MyDriveLoggedInTab
 from .MyDriveLogIn import MyDriveLoginTab
 from .NoConnection import NoConnectionTab
+from .OAuthTab import OAuthTab
 from .util import *
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(TABSFOLDER, "MyDriveStack.ui"))
 
+
 class MyDriveTab(QDockWidget, FORM_CLASS):
-    """ the class that encapsulates the other views that are actually shown """
+    """the class that encapsulates the other views that are actually shown"""
+
     loginSignal = pyqtSignal(object)
     logoutSignal = pyqtSignal()
     closingPlugin = pyqtSignal()
+
     def __init__(self):
-        """ Tab that contains a stacked widget: the login tab and the logged in tab """
+        """Tab that contains a stacked widget: the login tab and the logged in tab"""
         super(MyDriveTab, self).__init__()
         uic.loadUi(os.path.join(TABSFOLDER, "MyDriveStack.ui"), self)
         log("__init__ of MyDriveTab")
 
-        #self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.setMinimumSize(QSize(0,0))
+        self.setMinimumSize(QSize(0, 0))
 
         self.loginWidget = MyDriveLoginTab()
         self.loggedInWidget = MyDriveLoggedInTab()
         self.noconnectionWidget = NoConnectionTab()
+        self.oauthWidget = OAuthTab()
 
         self.stackedWidget = QStackedWidget()
 
-        self.stackedWidget.setMinimumSize(QSize(0,0))
+        self.stackedWidget.setMinimumSize(QSize(0, 0))
 
         self.layout.addWidget(self.stackedWidget)
         self.setLayout(self.layout)
@@ -46,24 +51,35 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.loginWidget.loginSignal.connect(self.handleLoginSignal)
         self.loggedInWidget.logoutSignal.connect(self.handleLogoutSignal)
         self.noconnectionWidget.connectedSignal.connect(self.handleConnectedSignal)
+        self.oauthWidget.returnsignal.connect(self.handleOauthReturnSignal)
+        self.loginWidget.oauthNeeded.connect(self.handleOauthNeededSignal)
 
         self.stackedWidget.addWidget(self.loginWidget)
         self.stackedWidget.addWidget(self.loggedInWidget)
         self.stackedWidget.addWidget(self.noconnectionWidget)
-        
-        self.settings = QSettings('Ellipsis Drive', 'Ellipsis Drive Connect')
+        self.stackedWidget.addWidget(self.oauthWidget)
+
+        self.settings = QSettings("Ellipsis Drive", "Ellipsis Drive Connect")
 
         self.checkOnlineAndSetIndex()
 
+    def handleOauthNeededSignal(self):
+        """oauth needed signal handler"""
+        self.stackedWidget.setCurrentIndex(3)
+
+    def handleOauthReturnSignal(self):
+        """oauth return signal handler"""
+        self.stackedWidget.setCurrentIndex(0)
+
     def sizeHint(self):
-        """ size hint for qgis """
+        """size hint for qgis"""
         a = QWidget.sizeHint(self)
         a.setHeight(SIZEH)
         a.setWidth(SIZEW)
         return a
-        
+
     def checkOnlineAndSetIndex(self):
-        """ check if we have an internet connection, and set the (starting) tabindex accordingly """
+        """check if we have an internet connection, and set the (starting) tabindex accordingly"""
         self.isOnline = connected_to_internet()
 
         self.loginWidget.isOnline = self.isOnline
@@ -85,15 +101,15 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
             self.stackedWidget.setCurrentIndex(0)
 
     def isLoggedIn(self):
-        """ checks if a token is present, returns a tuple of (bool, token/None) """
+        """checks if a token is present, returns a tuple of (bool, token/None)"""
         if not self.settings.contains("token"):
             return [False, None]
         else:
             curToken = self.settings.value("token")
 
-            #check if token is still valid
+            # check if token is still valid
             log("Token found, checking validity")
-            headers = {'Content-Type': 'application/json', 'Accept':'application/json'}
+            headers = {"Content-Type": "application/json", "Accept": "application/json"}
             headers["Authorization"] = f"Bearer {curToken}"
             status, content = makeRequest("/validate", headers, method="POST")
             log(content)
@@ -107,16 +123,16 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
                 return [False, None]
 
     def handleConnectedSignal(self):
-        """ signal handler """
+        """signal handler"""
         self.checkOnlineAndSetIndex()
-        
+
     def closeEvent(self, event):
-        """ event handler """
+        """event handler"""
         self.closingPlugin.emit()
         event.accept()
 
     def handleLoginSignal(self, token, userInfo):
-        """ login signlar handler"""
+        """login signlar handler"""
         log("login signal received!")
         self.loginToken = token
         self.loggedIn = True
@@ -128,9 +144,9 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.loginSignal.emit(token)
         self.loggedInWidget.fillListWidget()
         self.stackedWidget.setCurrentIndex(1)
-    
+
     def handleLogoutSignal(self):
-        """ logout singal handler """
+        """logout singal handler"""
         log("logout signal received!")
         self.loggedIn = False
         self.loginToken = None
@@ -138,4 +154,3 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.loggedInWidget.loginToken = None
         self.loggedInWidget.resetState()
         self.stackedWidget.setCurrentIndex(0)
-        
