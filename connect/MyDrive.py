@@ -9,6 +9,7 @@ from .MyDriveLoggedIn import MyDriveLoggedInTab
 from .MyDriveLogIn import MyDriveLoginTab
 from .NoConnection import NoConnectionTab
 from .OAuthTab import OAuthTab
+from .Settings import SettingsTab
 from .util import *
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(TABSFOLDER, "MyDriveStack.ui"))
@@ -35,6 +36,7 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.loggedInWidget = MyDriveLoggedInTab()
         self.noconnectionWidget = NoConnectionTab()
         self.oauthWidget = OAuthTab()
+        self.settingsWidget = SettingsTab()
 
         self.stackedWidget = QStackedWidget()
 
@@ -53,15 +55,21 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.noconnectionWidget.connectedSignal.connect(self.handleConnectedSignal)
         self.oauthWidget.returnsignal.connect(self.handleOauthReturnSignal)
         self.loginWidget.oauthNeeded.connect(self.handleOauthNeededSignal)
+        self.loginWidget.settingsSignal.connect(self.handleSettingsSignal)
 
         self.stackedWidget.addWidget(self.loginWidget)
         self.stackedWidget.addWidget(self.loggedInWidget)
         self.stackedWidget.addWidget(self.noconnectionWidget)
         self.stackedWidget.addWidget(self.oauthWidget)
+        self.stackedWidget.addWidget(self.settingsWidget)
 
         self.settings = QSettings("Ellipsis Drive", "Ellipsis Drive Connect")
 
         self.checkOnlineAndSetIndex()
+
+    def handleSettingsSignal(self):
+        """settings signal handler"""
+        self.stackedWidget.setCurrentIndex(4)
 
     def handleOauthNeededSignal(self):
         """oauth needed signal handler"""

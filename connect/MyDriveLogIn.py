@@ -22,6 +22,7 @@ class MyDriveLoginTab(QDialog):
 
     loginSignal = pyqtSignal(object, object)
     oauthNeeded = pyqtSignal()
+    settingsSignal = pyqtSignal()
 
     def __init__(self):
         super(MyDriveLoginTab, self).__init__()
@@ -84,9 +85,19 @@ class MyDriveLoginTab(QDialog):
         self.gridLayout.addWidget(self.lineEdit_password, 3, 0, 1, 2)
         self.gridLayout.addWidget(self.checkBox_remember, 4, 0)
         self.gridLayout.addWidget(self.pushButton_login, 4, 1)
-        self.gridLayout.addItem(self.spacer, 5, 0, 1, 2)
+
+        # go to settings, should probably be prettified sometime
+        self.pushButton_settings = QPushButton()
+        self.pushButton_settings.setText("Settings")
+        self.pushButton_settings.clicked.connect(self.goToSettings)
+        self.gridLayout.addWidget(self.pushButton_settings, 5, 1)
+
+        self.gridLayout.addItem(self.spacer, 6, 0, 1, 2)
 
         self.setLayout(self.gridLayout)
+
+    def goToSettings(self):
+        self.settingsSignal.emit()
 
     def onChangeRemember(self, button):
         """function called when the 'remember me' checkbox is clicked"""

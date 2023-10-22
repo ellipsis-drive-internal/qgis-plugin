@@ -1,18 +1,26 @@
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QPushButton, QWidget
+from PyQt5.QtWidgets import (
+    QDialog,
+    QGridLayout,
+    QLabel,
+    QPushButton,
+    QWidget,
+    QSizePolicy,
+    QSpacerItem,
+)
 from qgis.core import *
 from qgis.PyQt.QtCore import pyqtSignal
+import webbrowser
 
 from .util import *
 
 
 class OAuthTab(QDialog):
-    """The LoggedIn tab, giving users access to their drive. Used in combination with the MyDriveTab and the MyDriveLoginTab"""
+    """Displayed when a user is logged in with OAuth. It tells the user to set a password."""
 
     returnsignal = pyqtSignal()
 
     def __init__(self):
         super(OAuthTab, self).__init__()
-        self.waittime = 2
         self.setMinimumHeight(0)
         self.setMinimumWidth(0)
 
@@ -24,18 +32,31 @@ class OAuthTab(QDialog):
         a.setWidth(SIZEW)
         return a
 
-    def retry(self):
+    def takemethere(self):
+        webbrowser.open("https://app.ellipsis-drive.com/account-settings/security")
+
+    def back(self):
         self.returnsignal.emit()
 
     def constructUI(self):
         self.gridLayout = QGridLayout()
         self.label = QLabel()
-        self.label.setText("For OAuth, you have to login by setting a password!")
+        self.label.setText(
+            "Your account uses OAuth to log in, please set a password on the website to use this plugin."
+        )
 
-        self.retryButton = QPushButton()
-        self.retryButton.setText("Retry")
-        self.retryButton.clicked.connect(self.retry)
+        self.takemethereButton = QPushButton()
+        self.takemethereButton.setText("Take me there")
+        self.takemethereButton.clicked.connect(self.takemethere)
+
+        self.backButton = QPushButton()
+        self.backButton.setText("Back")
+        self.backButton.clicked.connect(self.back)
 
         self.gridLayout.addWidget(self.label, 0, 0)
-        self.gridLayout.addWidget(self.retryButton, 0, 1)
+        self.gridLayout.addWidget(self.takemethereButton, 1, 0)
+        self.gridLayout.addWidget(self.backButton, 2, 0)
+
+        self.spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.gridLayout.addItem(self.spacer, 5, 0, 1, 2)
         self.setLayout(self.gridLayout)
