@@ -24,7 +24,7 @@ class SettingsTab(QDialog):
         super(SettingsTab, self).__init__()
 
         self.settings = QSettings("Ellipsis Drive", "Ellipsis Drive Connect")
-        self.useCustomAPIUrl = self.settings.value("useCustomAPIUrl", False)
+        self.apiUrl = self.settings.value("apiUrl", URL)
 
         self.setMinimumHeight(0)
         self.setMinimumWidth(0)
@@ -40,34 +40,35 @@ class SettingsTab(QDialog):
     def back(self):
         self.returnsignal.emit()
 
-    def onChangeUseAPI(self, button):
-        """function called when the 'use this api url' checkbox is clicked"""
-        self.useCustomAPIUrl = button.isChecked()
-        # save to the settings
-        self.settings.setValue("useCustomAPIUrl", self.useCustomAPIUrl)
+    def resetApiUrl(self):
+        self.apiUrlEdit.setText(URL)
+        self.onApiUrlChange(URL)
+
+    def onApiUrlChange(self, text):
+        # save the api url
+        self.apiUrl = text
+        self.settings.setValue("apiUrl", text)
 
     def constructUI(self):
         self.gridLayout = QGridLayout()
         self.label = QLabel()
         self.label.setText("API Settings:")
 
-        self.apiUrl = QLineEdit()
-        self.apiUrl.setText(URL)
+        self.apiUrlEdit = QLineEdit()
+        self.apiUrlEdit.setText(self.apiUrl)
+        self.apiUrlEdit.textChanged.connect(self.onApiUrlChange)
 
-        self.useThisApi = QCheckBox()
-        self.useThisApi.setText("Use this API url")
-        self.useThisApi.setChecked(self.useCustomAPIUrl)
-        self.useThisApi.stateChanged.connect(
-            lambda: self.onChangeUseAPI(self.useThisApi)
-        )
+        self.resetButton = QPushButton()
+        self.resetButton.setText("Reset")
+        self.resetButton.clicked.connect(self.resetApiUrl)
 
         self.backButton = QPushButton()
         self.backButton.setText("Back")
         self.backButton.clicked.connect(self.back)
 
         self.gridLayout.addWidget(self.label, 0, 0)
-        self.gridLayout.addWidget(self.apiUrl, 1, 0)
-        self.gridLayout.addWidget(self.useThisApi, 2, 0)
+        self.gridLayout.addWidget(self.apiUrlEdit, 1, 0)
+        self.gridLayout.addWidget(self.resetButton, 2, 0)
         self.gridLayout.addWidget(self.backButton, 2, 1)
 
         self.spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding)

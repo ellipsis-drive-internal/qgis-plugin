@@ -128,6 +128,17 @@ class MyDriveLoginTab(QDialog):
         retval = msg.exec_()
         return
 
+    def displayNoneError(self):
+        """displays an error, called when the login fails"""
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Warning)
+
+        msg.setText("Please check in the settings if your API url is correct.")
+        msg.setWindowTitle("Login failed!")
+        msg.setStandardButtons(QMessageBox.Ok)
+        retval = msg.exec_()
+        return
+
     def handleOAuthError(self):
         # emit signal
         self.oauthNeeded.emit()
@@ -176,13 +187,16 @@ class MyDriveLoginTab(QDialog):
             self.lineEdit_username.setText("")
             self.lineEdit_password.setText("")
         else:
+            log("Login failed")
             log(content)
-            if content["message"] == "No password configured.":
-                log("Hey hallo het probleem zit hem hier hoor ja niet verder zoeken")
+            if content is None:
+                self.displayNoneError()
+            elif (
+                "message" in content and content["message"] == "No password configured."
+            ):
                 self.handleOAuthError()
             else:
                 self.displayLoginError()
-            log("Login failed")
 
     def onUsernameChange(self, text):
         """makes the internal username match the form"""

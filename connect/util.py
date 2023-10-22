@@ -13,6 +13,8 @@ from PyQt5.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QListWidgetItem, QMessageBox
 from requests.structures import CaseInsensitiveDict
 
+from qgis.PyQt.QtCore import QSettings
+
 TABSFOLDER = os.path.join(os.path.dirname(__file__), "..", "tabs/")
 ICONSFOLDER = os.path.join(os.path.dirname(__file__), "..", "icons/")
 
@@ -160,6 +162,13 @@ def getUserData(token):
     return makeRequest("/account", headers=headers)
 
 
+def getAPIUrl():
+    """returns the api url"""
+    settings = QSettings("Ellipsis Drive", "Ellipsis Drive Connect")
+    theurl = settings.value("apiUrl", URL)
+    return theurl
+
+
 def GET(url, headers, data):
     """make GET request"""
     coded_data = ""
@@ -173,6 +182,10 @@ def GET(url, headers, data):
 
 def POST(url, headers, data):
     """make POST request"""
+    settings = QSettings("Ellipsis Drive", "Ellipsis Drive Connect")
+    if settings.value("useCustomAPIUrl", False):
+        url = settings.value("customAPIUrl")
+
     log("POST")
     log(headers)
     log(data)
@@ -201,7 +214,7 @@ def makeRequest(url, headers, data=None, version=3, method="GET"):
     else:
         APIURL = URL
 
-    FULLURL = f"{APIURL}{url}"
+    FULLURL = f"{getAPIUrl()}{url}"
 
     log(f"Requesting '{FULLURL}'")
     log(method)
@@ -235,6 +248,9 @@ def makeRequest(url, headers, data=None, version=3, method="GET"):
             success = ReqType.SUCC
         return success, json.loads(j1.text)
     except requests.ConnectionError:
+        # displayMessageBox("Request failed", "Please check your internet connection")
+        return ReqType.CONNERR, None
+    except requests.exceptions.MissingSchema:
         # displayMessageBox("Request failed", "Please check your internet connection")
         return ReqType.CONNERR, None
 
