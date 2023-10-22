@@ -53,9 +53,10 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         self.loginWidget.loginSignal.connect(self.handleLoginSignal)
         self.loggedInWidget.logoutSignal.connect(self.handleLogoutSignal)
         self.noconnectionWidget.connectedSignal.connect(self.handleConnectedSignal)
-        self.oauthWidget.returnsignal.connect(self.handleOauthReturnSignal)
+        self.oauthWidget.returnsignal.connect(self.handleReturnSignal)
         self.loginWidget.oauthNeeded.connect(self.handleOauthNeededSignal)
         self.loginWidget.settingsSignal.connect(self.handleSettingsSignal)
+        self.settingsWidget.returnsignal.connect(self.handleReturnSignal)
 
         self.stackedWidget.addWidget(self.loginWidget)
         self.stackedWidget.addWidget(self.loggedInWidget)
@@ -75,7 +76,7 @@ class MyDriveTab(QDockWidget, FORM_CLASS):
         """oauth needed signal handler"""
         self.stackedWidget.setCurrentIndex(3)
 
-    def handleOauthReturnSignal(self):
+    def handleReturnSignal(self):
         """oauth return signal handler"""
         self.stackedWidget.setCurrentIndex(0)
 
