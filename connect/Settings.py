@@ -37,8 +37,32 @@ class SettingsTab(QDialog):
         a.setWidth(SIZEW)
         return a
 
+    def isValidAPIUrl(self, url):
+        try:
+            # check if the result is status 200
+            # and the message contains the string "ellipsis"
+            r = requests.get(url)
+            if r.status_code != 200:
+                return False
+            if "ellipsis" not in r.text.lower():
+                return False
+            return True
+        except:
+            return False
+
     def back(self):
-        self.returnsignal.emit()
+        # check if the api url is valid
+        if self.isValidAPIUrl(self.apiUrl):
+            # save the api url
+            self.settings.setValue("apiUrl", self.apiUrl)
+            self.returnsignal.emit()
+        else:
+            # show an error message
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("The API URL does not seem to be valid. Please try again.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
 
     def resetApiUrl(self):
         self.apiUrlEdit.setText(URL)
