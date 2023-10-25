@@ -283,6 +283,20 @@ def findReason(reason, iter):
     return funcFind(lambda x: isValidTimestamp(x)[1] == reason, iter) is not None
 
 
+def isValidAPIUrl(url):
+    try:
+        # check if the result is status 200
+        # and the message contains the string "ellipsis"
+        r = requests.get(url)
+        if r.status_code != 200:
+            return False
+        if "ellipsis" not in r.text.lower():
+            return False
+        return True
+    except:
+        return False
+
+
 def isValidTimestamp(t):
     """returns true if timestamp is valid"""
     if t["status"] != "active":
