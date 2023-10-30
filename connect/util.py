@@ -182,10 +182,6 @@ def GET(url, headers, data):
 
 def POST(url, headers, data):
     """make POST request"""
-    settings = QSettings("Ellipsis Drive", "Ellipsis Drive Connect")
-    if settings.value("useCustomAPIUrl", False):
-        url = settings.value("customAPIUrl")
-
     log("POST")
     log(headers)
     log(data)
@@ -204,15 +200,6 @@ def makeRequest(url, headers, data=None, version=3, method="GET"):
             return GET(url, headers=h, data=d)
         else:  # method == "POST"
             return POST(url, headers=h, data=d)
-
-    if version == 1:
-        APIURL = V1URL
-    elif version == 2:
-        APIURL = V2URL
-    elif version == 3:
-        APIURL = V3URL
-    else:
-        APIURL = URL
 
     FULLURL = f"{getAPIUrl()}{url}"
 

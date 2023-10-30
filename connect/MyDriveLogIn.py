@@ -71,6 +71,10 @@ class MyDriveLoginTab(QDialog):
         self.pushButton_login.setText("Login")
         self.spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        self.pushButton_settings = QPushButton()
+        self.pushButton_settings.setText("Settings")
+        self.pushButton_settings.clicked.connect(self.goToSettings)
+
         self.pushButton_login.clicked.connect(self.loginButton)
         self.lineEdit_username.textChanged.connect(self.onUsernameChange)
         self.lineEdit_password.textChanged.connect(self.onPasswordChange)
@@ -84,13 +88,9 @@ class MyDriveLoginTab(QDialog):
         self.gridLayout.addWidget(self.label_password, 2, 0)
         self.gridLayout.addWidget(self.lineEdit_password, 3, 0, 1, 2)
         self.gridLayout.addWidget(self.checkBox_remember, 4, 0)
-        self.gridLayout.addWidget(self.pushButton_login, 4, 1)
 
-        # go to settings, should probably be prettified sometime
-        self.pushButton_settings = QPushButton()
-        self.pushButton_settings.setText("Settings")
-        self.pushButton_settings.clicked.connect(self.goToSettings)
         self.gridLayout.addWidget(self.pushButton_settings, 5, 1)
+        self.gridLayout.addWidget(self.pushButton_login, 4, 1)
 
         self.gridLayout.addItem(self.spacer, 6, 0, 1, 2)
 

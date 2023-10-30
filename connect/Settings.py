@@ -63,7 +63,7 @@ class SettingsTab(QDialog):
     def constructUI(self):
         self.gridLayout = QGridLayout()
         self.label = QLabel()
-        self.label.setText("API Settings:")
+        self.label.setText("API url")
 
         self.apiUrlEdit = QLineEdit()
         self.apiUrlEdit.setText(self.apiUrl)
@@ -80,8 +80,8 @@ class SettingsTab(QDialog):
         self.gridLayout.addWidget(self.label, 0, 0)
         self.gridLayout.addWidget(self.apiUrlEdit, 1, 0)
         self.gridLayout.addWidget(self.resetButton, 2, 0)
-        self.gridLayout.addWidget(self.backButton, 2, 1)
+        self.gridLayout.addWidget(self.backButton, 3, 0)
 
         self.spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.gridLayout.addItem(self.spacer, 3, 0, 1, 2)
+        self.gridLayout.addItem(self.spacer, 4, 0, 1, 2)
         self.setLayout(self.gridLayout)
