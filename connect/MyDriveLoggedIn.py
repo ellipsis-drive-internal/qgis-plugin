@@ -174,19 +174,24 @@ class MyDriveLoggedInTab(QDialog):
         log(self.currentMode)
         log(self.currentSubMode)
         log(self.folderStack)
+        # get base url from settings ()
+        baseurl = self.settings.value("apiUrl", URL)
+        if baseurl == URL:
+            baseurl = "https://app.ellipsis-drive.com"
+
         url = ""
 
         if self.currentMode == ViewMode.FOLDERS:
             folder = self.folderStack[-1]
             if folder[0] == "base":  # starting location
-                url = "https://app.ellipsis-drive.com/"
+                url = baseurl
             else:
                 mapRoot = {
                     "myDrive": "me",
                     "sharedWithMe": "shared",
                     "favorites": "favorites",
                 }
-                url = f"https://app.ellipsis-drive.com/drive/{mapRoot[self.folderStack[1][1]]}"
+                url = f"{baseurl}/drive/{mapRoot[self.folderStack[1][1]]}"
 
             if (
                 folder[0] != "root"
@@ -202,9 +207,9 @@ class MyDriveLoggedInTab(QDialog):
             ViewMode.WCS,
         ]:
             mapid = self.currentMetaData["driveLocation"]["path"][0]["id"]
-            url = f"https://app.ellipsis-drive.com/view?mapId={mapid}"
+            url = f"{baseurl}/view?mapId={mapid}"
         elif self.currentMode == ViewMode.SEARCH:
-            url = f"https://app.ellipsis-drive.com/drive/search?q={self.searchText}"
+            url = f"{baseurl}/drive/search?q={self.searchText}"
 
         if not url == "":
             log(url)
