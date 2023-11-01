@@ -207,7 +207,7 @@ class MyDriveLoggedInTab(QDialog):
             url = f"https://app.ellipsis-drive.com/drive/search?q={self.searchText}"
 
         if not url == "":
-            print(url)
+            log(url)
             webbrowser.open(url)
 
     def addReturnItem(self):

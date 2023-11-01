@@ -40,10 +40,13 @@ class OAuthTab(QDialog):
 
     def constructUI(self):
         self.gridLayout = QGridLayout()
-        self.label = QLabel()
-        self.label.setText(
-            "Your account uses OAuth to log in, please set a password on the website to use this plugin."
+        self.label1 = QLabel()
+        self.label1.setText(
+            "Your account uses OAuth to log in."
         )
+
+        self.label2 = QLabel()
+        self.label2.setText("Please set a password on the website to use this plugin.")
 
         self.takemethereButton = QPushButton()
         self.takemethereButton.setText("Take me there")
@@ -53,10 +56,11 @@ class OAuthTab(QDialog):
         self.backButton.setText("Back")
         self.backButton.clicked.connect(self.back)
 
-        self.gridLayout.addWidget(self.label, 0, 0)
-        self.gridLayout.addWidget(self.takemethereButton, 1, 0)
-        self.gridLayout.addWidget(self.backButton, 2, 0)
+        self.gridLayout.addWidget(self.label1, 0, 0)
+        self.gridLayout.addWidget(self.label2, 1, 0)
+        self.gridLayout.addWidget(self.takemethereButton, 2, 0)
+        self.gridLayout.addWidget(self.backButton, 3, 0)
 
         self.spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.gridLayout.addItem(self.spacer, 5, 0, 1, 2)
+        self.gridLayout.addItem(self.spacer, 4, 0, 1, 2)
         self.setLayout(self.gridLayout)
