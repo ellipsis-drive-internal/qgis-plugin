@@ -36,7 +36,7 @@ URL = V3URL
 
 MAXPATHLEN = 45
 
-DEBUG = True
+DEBUG = False
 DISABLESEARCH = False
 
 
