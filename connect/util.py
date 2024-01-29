@@ -33,6 +33,7 @@ SIZEW = 0
 SIZEH = 500
 
 URL = V3URL
+APPURL = "https://app.ellipsis-drive.com"
 
 MAXPATHLEN = 45
 
@@ -168,6 +169,12 @@ def getAPIUrl():
     theurl = settings.value("apiUrl", URL)
     return theurl
 
+
+def getAppUrl():
+    """returns the api url"""
+    settings = QSettings("Ellipsis Drive", "Ellipsis Drive Connect")
+    theurl = settings.value("appUrl", APPURL)
+    return theurl
 
 def GET(url, headers, data):
     """make GET request"""
@@ -305,7 +312,7 @@ def isValidMap(m):
         return (False, "No Layer")
     if m["type"] != "raster" and m["type"] != "vector":
         return (True, "")
-    if m["user"]["disabled"]:
+    if "disabled" in m["user"].keys() and m["user"]["disabled"]:
         return (False, "Layer disabled")
     if m["trashed"]:
         return (False, "Layer trashed")

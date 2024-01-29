@@ -175,9 +175,7 @@ class MyDriveLoggedInTab(QDialog):
         log(self.currentSubMode)
         log(self.folderStack)
         # get base url from settings ()
-        baseurl = self.settings.value("apiUrl", URL)
-        if baseurl == URL:
-            baseurl = "https://app.ellipsis-drive.com"
+        baseurl = getAppUrl()
 
         url = ""
 
@@ -207,7 +205,7 @@ class MyDriveLoggedInTab(QDialog):
             ViewMode.WCS,
         ]:
             mapid = self.currentMetaData["driveLocation"]["path"][0]["id"]
-            url = f"{baseurl}/view?mapId={mapid}"
+            url = f"{baseurl}/view?pathId={mapid}"
         elif self.currentMode == ViewMode.SEARCH:
             url = f"{baseurl}/drive/search?q={self.searchText}"
 
@@ -439,7 +437,7 @@ class MyDriveLoggedInTab(QDialog):
 
             styleId = self.currentMetaData["vector"]["styles"][0]["id"]
 
-            url = f"type=xyz&url={URL}/ogc/mvt/{mapid}/%7Bz%7D/%7Bx%7D/%7By%7D?zipTheResponse%3Dtrue%26style%3D{styleId}%26timestampId%3D{timestampid}%26token%3D{self.loginToken}&zmax={maxzoom}&zmin={minzoom}&http-header:referer="
+            url = f"type=xyz&url={getAPIUrl()}/ogc/mvt/{mapid}/%7Bz%7D/%7Bx%7D/%7By%7D?zipTheResponse%3Dtrue%26style%3D{styleId}%26timestampId%3D{timestampid}%26token%3D{self.loginToken}&zmax={maxzoom}&zmin={minzoom}&http-header:referer="
             log(url)
             rlayer = QgsVectorTileLayer(url, itemdata["date"]["to"])
             QgsProject.instance().addMapLayer(rlayer)
@@ -457,7 +455,7 @@ class MyDriveLoggedInTab(QDialog):
         elif itemtype == Type.TIMESTAMP:
             ids = f"{itemdata['id']}_{self.currentStyle['id']}"
             mapid = self.currentMetaData["id"]
-            theurl = f"{URL}/ogc/wms/{mapid}/"
+            theurl = f"{getAPIUrl()}/ogc/wms/{mapid}/"
             actualurl = f"CRS=EPSG:3857&format=image/png&layers={ids}&styles&url={theurl}?token={self.loginToken}"
             log("WMS")
             log(actualurl)
@@ -497,9 +495,11 @@ class MyDriveLoggedInTab(QDialog):
             ids = f"{data['id']}_{self.currentStyle['id']}"
             mapid = self.currentMetaData["id"]
             zoom = data["zoom"]
-            theurl = f"{URL}/ogc/wmts/{mapid}/?token={self.loginToken}"
+
+            theurl = f"{getAPIUrl()}/ogc/wmts/{mapid}/?token={self.loginToken}"
             actualurl = f"tileMatrixSet=matrix_{zoom}&crs=EPSG:3857&layers={ids}&styles=&format=image/png&url={theurl}"
             log(actualurl)
+            print('actualurl',actualurl)
             rlayer = QgsRasterLayer(
                 actualurl,
                 f"{data['date']['to']}_{self.currentStyle['name']}",
@@ -527,7 +527,7 @@ class MyDriveLoggedInTab(QDialog):
         itemdata = item.data((QtCore.Qt.UserRole))
         # id = item.data((QtCore.Qt.UserRole)).getData()
         mapid = self.currentMetaData["id"]
-        theurl = f"{URL}/ogc/wfs/{mapid}?"
+        theurl = f"{getAPIUrl()}/ogc/wfs/{mapid}?"
 
         extend = itemdata.getData()["extent"]
 
@@ -567,7 +567,7 @@ class MyDriveLoggedInTab(QDialog):
         timestampid = itemdata.getData()["id"]
 
         mapid = self.currentMetaData["id"]
-        theurl = f"{URL}/ogc/wcs/{mapid}/?token={self.loginToken}"
+        theurl = f"{getAPIUrl()}/ogc/wcs/{mapid}/?token={self.loginToken}"
 
         log(f"token: {self.loginToken}")
         log(theurl)

@@ -25,6 +25,7 @@ class SettingsTab(QDialog):
 
         self.settings = QSettings("Ellipsis Drive", "Ellipsis Drive Connect")
         self.apiUrl = self.settings.value("apiUrl", URL)
+        self.appUrl = self.settings.value("appUrl", APPURL)
 
         self.setMinimumHeight(0)
         self.setMinimumWidth(0)
@@ -38,7 +39,7 @@ class SettingsTab(QDialog):
         return a
 
     def back(self):
-        # check if the api url is valid
+        # check if the  is valid
         if isValidAPIUrl(self.apiUrl):
             # save the api url
             self.settings.setValue("apiUrl", self.apiUrl)
@@ -60,6 +61,12 @@ class SettingsTab(QDialog):
         self.apiUrl = text
         self.settings.setValue("apiUrl", text)
 
+
+    def onAppUrlChange(self, text):
+        # save the api url
+        self.appUrl = text
+        self.settings.setValue("appUrl", text)
+
     def constructUI(self):
         self.gridLayout = QGridLayout()
         self.label = QLabel()
@@ -69,18 +76,25 @@ class SettingsTab(QDialog):
         self.apiUrlEdit.setText(self.apiUrl)
         self.apiUrlEdit.textChanged.connect(self.onApiUrlChange)
 
+        self.appUrlEdit = QLineEdit()
+        self.appUrlEdit.setText(self.appUrl)
+        self.appUrlEdit.textChanged.connect(self.onAppUrlChange)
+
+
         self.resetButton = QPushButton()
         self.resetButton.setText("Reset")
         self.resetButton.clicked.connect(self.resetApiUrl)
 
         self.backButton = QPushButton()
-        self.backButton.setText("Back")
+        self.backButton.setText("Submit")
         self.backButton.clicked.connect(self.back)
 
         self.gridLayout.addWidget(self.label, 0, 0)
         self.gridLayout.addWidget(self.apiUrlEdit, 1, 0)
-        self.gridLayout.addWidget(self.resetButton, 2, 0)
-        self.gridLayout.addWidget(self.backButton, 3, 0)
+        self.gridLayout.addWidget(self.appUrlEdit, 2, 0)
+
+        self.gridLayout.addWidget(self.resetButton, 3, 0)
+        self.gridLayout.addWidget(self.backButton, 4, 0)
 
         self.spacer = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.gridLayout.addItem(self.spacer, 4, 0, 1, 2)

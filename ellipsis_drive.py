@@ -40,7 +40,6 @@ import os.path
 
 class EllipsisConnect:
     """QGIS Plugin Implementation."""
-
     def __init__(self, iface):
         """Constructor.
 
